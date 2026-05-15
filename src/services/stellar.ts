@@ -1,11 +1,16 @@
-import { Keypair, Networks, TransactionBuilder, Operation, BASE_FEE } from 'stellar-sdk'
+import { Keypair } from 'stellar-sdk'
 
 const NETWORK = import.meta.env.VITE_STELLAR_NETWORK || 'testnet'
 const CONTRACT_ID = import.meta.env.VITE_FOLDER_CONTRACT_ID
 
+const NETWORK_PASSPHRASES = {
+  mainnet: 'Public Global Stellar Network ; September 2015',
+  testnet: 'Test SDF Network ; September 2015',
+}
+
 export const stellarService = {
   getNetworkPassphrase: () => {
-    return NETWORK === 'mainnet' ? Networks.PUBLIC_NETWORK_PASSPHRASE : Networks.TESTNET_NETWORK_PASSPHRASE
+    return NETWORK_PASSPHRASES[NETWORK as keyof typeof NETWORK_PASSPHRASES] || NETWORK_PASSPHRASES.testnet
   },
 
   getContractId: () => CONTRACT_ID,

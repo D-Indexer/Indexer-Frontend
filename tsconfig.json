@@ -14,6 +14,8 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
