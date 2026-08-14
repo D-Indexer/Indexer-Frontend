@@ -1,9 +1,19 @@
+export type PortfolioStatus = 'created' | 'credentials_pending' | 'verified' | 'unverified'
+export type CredentialType = 'github' | 'linkedin' | 'onchain'
+
+export interface PortfolioMetadata {
+  name: string
+  bio: string
+  links: string[]
+  skills: string[]
+}
+
 export interface Portfolio {
   id: string
   userId: string
   templateId: string
   metadataCid: string
-  status: 'created' | 'credentials_pending' | 'verified' | 'unverified'
+  status: PortfolioStatus
   createdAt: string
   updatedAt: string
 }
@@ -21,7 +31,7 @@ export interface Template {
 export interface Credential {
   id: string
   portfolioId: string
-  type: 'github' | 'linkedin' | 'onchain'
+  type: CredentialType
   externalId: string
   verified: boolean
   verifiedAt?: string
@@ -40,4 +50,9 @@ export interface User {
   name?: string
   email?: string
   portfolios: Portfolio[]
+}
+
+export interface ApiError {
+  message: string
+  status?: number
 }
