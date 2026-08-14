@@ -1,16 +1,18 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { Home, PortfolioPage } from '@/pages'
-import './App.css'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { appRoutes } from '@/config/routes'
+import { AppLayout } from '@/layouts/AppLayout'
+import { CreatePortfolioPage, HomePage, PortfolioPage, TemplatesPage } from '@/pages'
 
-function App() {
+export const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/portfolio/:id" element={<PortfolioPage />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route path={appRoutes.home} element={<HomePage />} />
+        <Route path={appRoutes.templates} element={<TemplatesPage />} />
+        <Route path={appRoutes.createPortfolio} element={<CreatePortfolioPage />} />
+        <Route path={appRoutes.portfolioDetail} element={<PortfolioPage />} />
+        <Route path="*" element={<Navigate to={appRoutes.home} replace />} />
+      </Route>
+    </Routes>
   )
 }
-
-export default App
