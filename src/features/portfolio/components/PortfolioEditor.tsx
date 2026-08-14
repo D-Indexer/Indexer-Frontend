@@ -74,6 +74,8 @@ export const PortfolioEditor = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
+    setCreatedCid(null)
+    setCreatedPortfolioId(null)
 
     if (!validateForm()) {
       return
