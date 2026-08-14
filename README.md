@@ -1,4 +1,4 @@
-# Folder Frontend 🏗️
+# Indexer Frontend 🏗️
 
 [![Built on Stellar](https://img.shields.io/badge/Built%20on-Stellar-blue?logo=stellar)](https://stellar.org)
 [![React](https://img.shields.io/badge/Frontend-React-61dafb?logo=react)](https://react.dev)
