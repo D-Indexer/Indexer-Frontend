@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom'
 import { appRoutes } from '@/config/routes'
-import { Badge, Button, Card } from '@/components/ui'
+import { Badge, Card, LinkButton } from '@/components/ui'
 import type { Template } from '@/types'
 import { formatXlm } from '@/utils/format'
 
@@ -18,9 +17,9 @@ export const TemplateCard = ({ template }: TemplateCardProps) => {
       </div>
       <div className="template-card__footer">
         <span className="price">{formatXlm(template.price)}</span>
-        <Link to={`${appRoutes.createPortfolio}?template=${template.id}`}>
-          <Button variant="secondary">Use Template</Button>
-        </Link>
+        <LinkButton to={`${appRoutes.createPortfolio}?template=${template.id}`} variant="secondary">
+          Use Template
+        </LinkButton>
       </div>
     </Card>
   )

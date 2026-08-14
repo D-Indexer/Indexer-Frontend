@@ -6,7 +6,7 @@
   min-height: 2.5rem;
   padding: 0.7rem 1rem;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   font-weight: 750;
   transition:
     transform 140ms ease,
@@ -64,7 +64,7 @@
   align-items: center;
   width: fit-content;
   padding: 0.25rem 0.65rem;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -105,7 +105,7 @@
 .hero__eyebrow {
   width: fit-content;
   padding: 0.4rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--color-primary-soft);
   color: var(--color-primary);
   font-weight: 800;
@@ -113,9 +113,9 @@
 
 .hero h1 {
   margin-bottom: 0;
-  font-size: clamp(2.4rem, 7vw, 5.25rem);
+  font-size: clamp(2.4rem, 4.8rem, 5.25rem);
   line-height: 0.95;
-  letter-spacing: -0.07em;
+  letter-spacing: 0;
 }
 
 .hero__lead {
@@ -156,6 +156,10 @@
 
 .grid--3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .grid--2 {
@@ -227,6 +231,46 @@
   background: var(--color-surface-muted);
 }
 
+.table-shell {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.data-table {
+  width: 100%;
+  min-width: 52rem;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.data-table th {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.data-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.mono-cell {
+  max-width: 16rem;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .empty-state,
 .loading-state,
 .error-message {
@@ -242,4 +286,18 @@
   border-color: rgba(185, 28, 28, 0.28);
   color: var(--color-danger);
   background: var(--color-danger-soft);
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .grid--2,
+  .grid--3,
+  .grid--4 {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    align-items: start;
+    flex-direction: column;
+  }
 }

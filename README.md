@@ -37,7 +37,7 @@ At a high level, this repo does four things:
 
 - **React 18 + Vite**: fast local development and production build pipeline
 - **TypeScript**: typed portfolio, template, credential, proof-of-work, and user models
-- **React Router**: routes for `/` and `/portfolio/:id`
+- **React Router**: routes for `/`, `/dashboard`, `/templates`, `/portfolios/new`, and `/portfolio/:id`
 - **Zustand State**: lightweight auth and portfolio state stores
 - **Axios API Client**: portfolio, template, credential, and proof-of-work endpoint wrappers
 - **IPFS Client Helpers**: JSON/file upload and CID gateway URL construction
@@ -104,7 +104,8 @@ graph TB
 ### Core Components
 
 - **src/App.tsx**: application router with home and portfolio detail routes
-- **src/pages/Home.tsx**: landing page that switches between hero copy and template listing based on auth state
+- **src/pages/Home.tsx**: landing page with product positioning, stats, and template discovery
+- **src/pages/Dashboard.tsx**: portfolio operations view with status metrics and record table
 - **src/pages/Portfolio.tsx**: portfolio detail page that fetches a portfolio by ID
 - **src/components/Auth/LoginButton.tsx**: login/logout UI connected to auth state
 - **src/components/Template/TemplateList.tsx**: template catalog UI backed by the template API

@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { ErrorMessage, LoadingState, SectionHeader } from '@/components/ui'
 import { PortfolioStatusCard } from '@/features/portfolio'
+import { VerificationChecklist } from '@/features/verification'
 import { usePortfolio } from '@/hooks'
 import { PageContainer } from '@/layouts'
 
@@ -31,7 +32,10 @@ export const PortfolioPage = () => {
         title={`Portfolio ${portfolio.id}`}
         description="Current portfolio status and immutable metadata reference."
       />
-      <PortfolioStatusCard portfolio={portfolio} />
+      <div className="grid grid--2">
+        <PortfolioStatusCard portfolio={portfolio} />
+        <VerificationChecklist status={portfolio.status} />
+      </div>
     </PageContainer>
   )
 }

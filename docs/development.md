@@ -14,4 +14,4 @@ npm run build
 
 The frontend expects the Folder API to expose portfolio, template, credential, and proof endpoints documented in `README.md`.
 
-During local development, the template grid falls back to local starter templates if the API is unavailable.
+During local development, the template grid and dashboard fall back to local starter fixtures if the API is unavailable.

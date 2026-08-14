@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom'
-import { Button, Card } from '@/components/ui'
+import { Card, LinkButton } from '@/components/ui'
 import { appRoutes } from '@/config/routes'
 import { verificationSteps } from '@/data/verificationSteps'
 
@@ -14,12 +13,10 @@ export const Hero = () => {
           Stellar ownership, and credential-ready API flows.
         </p>
         <div className="hero__actions">
-          <Link to={appRoutes.createPortfolio}>
-            <Button>Create portfolio</Button>
-          </Link>
-          <Link to={appRoutes.templates}>
-            <Button variant="secondary">Browse templates</Button>
-          </Link>
+          <LinkButton to={appRoutes.createPortfolio}>Create portfolio</LinkButton>
+          <LinkButton to={appRoutes.templates} variant="secondary">
+            Browse templates
+          </LinkButton>
         </div>
       </div>
 

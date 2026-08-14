@@ -33,7 +33,7 @@
   align-items: center;
   gap: var(--space-3);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .brand__mark {
@@ -55,7 +55,7 @@
 
 .nav__link {
   padding: 0.55rem 0.75rem;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   color: var(--color-muted);
   font-weight: 650;
 }
@@ -89,4 +89,19 @@
   justify-content: space-between;
   color: var(--color-muted);
   font-size: 0.92rem;
+}
+
+@media (max-width: 760px) {
+  .app-header__inner,
+  .app-footer__inner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: var(--space-4) 0;
+  }
+
+  .nav {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+  }
 }

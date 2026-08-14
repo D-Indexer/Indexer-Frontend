@@ -1,25 +1,43 @@
 import { useMemo, useState } from 'react'
+import type { ChangeEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { FormField } from '@/components/forms'
 import { Button, Card, ErrorMessage } from '@/components/ui'
 import { ipfsService, portfolioApi, toApiError } from '@/services'
 import { usePortfolioStore } from '@/store'
 import type { PortfolioMetadata } from '@/types'
-import { isRequired, parseDelimitedList } from '@/utils/validation'
+import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
+
+type PortfolioFormData = {
+  bio: string
+  links: string
+  name: string
+  skills: string
+}
+
+type PortfolioFormErrors = Partial<Record<keyof PortfolioFormData | 'templateId', string>>
 
 export const PortfolioEditor = () => {
   const [searchParams] = useSearchParams()
   const initialTemplate = searchParams.get('template') ?? 'developer'
   const [templateId, setTemplateId] = useState(initialTemplate)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PortfolioFormData>({
     name: '',
     bio: '',
     links: '',
     skills: '',
   })
+  const [fieldErrors, setFieldErrors] = useState<PortfolioFormErrors>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdCid, setCreatedCid] = useState<string | null>(null)
   const { addPortfolio } = usePortfolioStore()
+
+  const updateField = (field: keyof PortfolioFormData) => {
+    return (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData((current) => ({ ...current, [field]: event.target.value }))
+    }
+  }
 
   const metadata = useMemo<PortfolioMetadata>(
     () => ({
@@ -31,12 +49,31 @@ export const PortfolioEditor = () => {
     [formData],
   )
 
+  const validateForm = () => {
+    const errors: PortfolioFormErrors = {}
+    if (!isRequired(metadata.name) || !isRequired(metadata.bio)) {
+      errors.name = !isRequired(metadata.name) ? 'Portfolio name is required.' : undefined
+      errors.bio = !isRequired(metadata.bio) ? 'Bio is required.' : undefined
+    }
+
+    if (!isRequired(templateId)) {
+      errors.templateId = 'Template ID is required.'
+    }
+
+    const invalidUrls = getInvalidUrls(metadata.links)
+    if (invalidUrls.length > 0) {
+      errors.links = 'Links must be valid http or https URLs.'
+    }
+
+    setFieldErrors(errors)
+    return Object.values(errors).every((value) => !value)
+  }
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
 
-    if (!isRequired(metadata.name) || !isRequired(metadata.bio)) {
-      setError('Portfolio name and bio are required.')
+    if (!validateForm()) {
       return
     }
 
@@ -60,50 +97,51 @@ export const PortfolioEditor = () => {
         {error ? <ErrorMessage message={error} /> : null}
         {createdCid ? <p className="muted">Metadata uploaded: {createdCid}</p> : null}
 
-        <div className="field">
-          <label htmlFor="templateId">Template ID</label>
-          <input id="templateId" value={templateId} onChange={(event) => setTemplateId(event.target.value)} />
-        </div>
+        <FormField
+          id="templateId"
+          label="Template ID"
+          error={fieldErrors.templateId}
+          value={templateId}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setTemplateId(event.target.value)}
+        />
 
-        <div className="field">
-          <label htmlFor="name">Portfolio name</label>
-          <input
-            id="name"
-            placeholder="Jane Doe — Product Engineer"
-            value={formData.name}
-            onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-          />
-        </div>
+        <FormField
+          id="name"
+          label="Portfolio name"
+          error={fieldErrors.name}
+          placeholder="Jane Doe, Product Engineer"
+          value={formData.name}
+          onChange={updateField('name')}
+        />
 
-        <div className="field">
-          <label htmlFor="bio">Bio</label>
-          <textarea
-            id="bio"
-            placeholder="Summarize the work this portfolio should prove."
-            value={formData.bio}
-            onChange={(event) => setFormData({ ...formData, bio: event.target.value })}
-          />
-        </div>
+        <FormField
+          control="textarea"
+          id="bio"
+          label="Bio"
+          error={fieldErrors.bio}
+          placeholder="Summarize the work this portfolio should prove."
+          value={formData.bio}
+          onChange={updateField('bio')}
+        />
 
-        <div className="field">
-          <label htmlFor="skills">Skills</label>
-          <input
-            id="skills"
-            placeholder="React, Stellar, TypeScript"
-            value={formData.skills}
-            onChange={(event) => setFormData({ ...formData, skills: event.target.value })}
-          />
-        </div>
+        <FormField
+          id="skills"
+          label="Skills"
+          helpText="Separate skills with commas."
+          placeholder="React, Stellar, TypeScript"
+          value={formData.skills}
+          onChange={updateField('skills')}
+        />
 
-        <div className="field">
-          <label htmlFor="links">Links</label>
-          <input
-            id="links"
-            placeholder="https://github.com/example, https://portfolio.example"
-            value={formData.links}
-            onChange={(event) => setFormData({ ...formData, links: event.target.value })}
-          />
-        </div>
+        <FormField
+          id="links"
+          label="Links"
+          error={fieldErrors.links}
+          helpText="Separate links with commas."
+          placeholder="https://github.com/example, https://portfolio.example"
+          value={formData.links}
+          onChange={updateField('links')}
+        />
 
         <Button type="submit" disabled={loading}>
           {loading ? 'Creating portfolio…' : 'Create portfolio'}
