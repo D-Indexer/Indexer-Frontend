@@ -84,6 +84,7 @@ export const PortfolioEditor = () => {
       const response = await portfolioApi.create(templateId, cid)
       addPortfolio(response.data)
       setCreatedCid(cid)
+      setFieldErrors({})
     } catch (requestError) {
       setError(toApiError(requestError).message)
     } finally {
@@ -103,6 +104,7 @@ export const PortfolioEditor = () => {
           error={fieldErrors.templateId}
           value={templateId}
           onChange={(event: ChangeEvent<HTMLInputElement>) => setTemplateId(event.target.value)}
+          required
         />
 
         <FormField
@@ -112,6 +114,7 @@ export const PortfolioEditor = () => {
           placeholder="Jane Doe, Product Engineer"
           value={formData.name}
           onChange={updateField('name')}
+          required
         />
 
         <FormField
@@ -122,6 +125,7 @@ export const PortfolioEditor = () => {
           placeholder="Summarize the work this portfolio should prove."
           value={formData.bio}
           onChange={updateField('bio')}
+          required
         />
 
         <FormField
