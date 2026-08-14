@@ -5,9 +5,9 @@ interface EmptyStateProps {
 
 export const EmptyState = ({ title, description }: EmptyStateProps) => {
   return (
-    <div className="empty-state">
+    <section className="empty-state" aria-label={title}>
       <h3>{title}</h3>
       <p>{description}</p>
-    </div>
+    </section>
   )
 }
