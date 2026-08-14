@@ -1,26 +1,21 @@
-import React from 'react'
-import { LoginButton, TemplateList } from '@/components'
-import { useAuthStore } from '@/store'
+import { SectionHeader } from '@/components/ui'
+import { Hero, StatsPanel } from '@/features/home'
+import { TemplateGrid } from '@/features/templates'
+import { PageContainer } from '@/layouts'
 
-export const Home: React.FC = () => {
-  const { isAuthenticated } = useAuthStore()
-
+export const HomePage = () => {
   return (
-    <div className="home">
-      <header>
-        <h1>🏗️ Folder</h1>
-        <LoginButton />
-      </header>
-      <main>
-        {isAuthenticated ? (
-          <TemplateList />
-        ) : (
-          <div className="hero">
-            <h2>Create Your Dynamic Portfolio</h2>
-            <p>Build, verify, and monetize your professional identity on Stellar</p>
-          </div>
-        )}
-      </main>
-    </div>
+    <PageContainer>
+      <Hero />
+      <StatsPanel />
+      <section className="stack">
+        <SectionHeader
+          eyebrow="Templates"
+          title="Start from a structured portfolio"
+          description="Use a template as the schema for metadata, credentials, and proof-of-work display."
+        />
+        <TemplateGrid />
+      </section>
+    </PageContainer>
   )
 }
