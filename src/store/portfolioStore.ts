@@ -15,5 +15,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   setPortfolios: (portfolios) => set({ portfolios }),
   setCurrentPortfolio: (portfolio) => set({ currentPortfolio: portfolio }),
   addPortfolio: (portfolio) =>
-    set((state) => ({ portfolios: [portfolio, ...state.portfolios] })),
+    set((state) => ({
+      portfolios: [portfolio, ...state.portfolios.filter((item) => item.id !== portfolio.id)],
+    })),
 }))
