@@ -1,388 +1,402 @@
-# 🏗️ Folder
+# Folder Frontend 🏗️
 
-[![Soroban Contract CI](https://github.com/yourusername/folder/actions/workflows/contract-ci.yml/badge.svg)](https://github.com/yourusername/folder/actions/workflows/contract-ci.yml)
+[![Built on Stellar](https://img.shields.io/badge/Built%20on-Stellar-blue?logo=stellar)](https://stellar.org)
+[![React](https://img.shields.io/badge/Frontend-React-61dafb?logo=react)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Bundler-Vite-646cff?logo=vite)](https://vitejs.dev)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178c6?logo=typescript)](https://www.typescriptlang.org)
 
-Dynamic on-chain identity and portfolio platform built on Stellar's Soroban smart contracts. Create, verify, and monetize your professional portfolio as a portable NFT.
+React/Vite frontend for Folder — a Stellar-based portfolio identity app for creating, verifying, and monetizing professional portfolios backed by IPFS metadata and Soroban contract integrations.
 
 ## Overview
 
-Folder transforms static portfolios into dynamic, verifiable on-chain identities. Users create a Stellar address, claim their portfolio namespace, and build a template-based portfolio backed by smart contracts and decentralized storage. Recruiters and clients can instantly verify authenticity. Designers can create and sell portfolio templates as digital assets.
+Folder Frontend is the browser client for the Folder platform. It provides the user interface for wallet/auth state, portfolio template discovery, portfolio creation, portfolio lookup, IPFS metadata upload, and API calls that coordinate with Folder backend services and the deployed Stellar/Soroban contract.
+
+### The Problem
+
+Professional portfolios are usually static, easy to duplicate, and disconnected from verifiable proof of work. Recruiters, clients, and collaborators often need to trust screenshots, links, or manually curated claims without a portable verification layer.
+
+Folder addresses this by treating a portfolio as a portable on-chain identity surface:
+
+- **Portfolio ownership is tied to a Stellar address** instead of a platform account alone
+- **Portfolio metadata is content-addressed through IPFS** so updates can be referenced by immutable CIDs
+- **Credential and proof-of-work flows are exposed through API endpoints** for GitHub, LinkedIn, and on-chain activity
+- **Templates provide a marketplace-oriented creation flow** for portfolio layouts and schemas
+
+### What Folder Frontend Does
+
+At a high level, this repo does four things:
+
+- **🏠 Presents the Folder landing experience** — unauthenticated users see the product hero and authenticated users see available templates
+- **🧩 Lists portfolio templates** — fetches templates from the configured API and displays name, description, and XLM price
+- **📝 Creates portfolio metadata** — uploads portfolio JSON to IPFS and sends the resulting CID to the portfolio API
+- **🔎 Displays portfolio status** — loads portfolio records by route parameter and shows creation and verification state
+
+> 🔒 **Security Model**: this repository is a frontend client. It should not store private keys, service secrets, API admin keys, or privileged contract credentials. Browser-exposed settings must use `VITE_` variables and should be treated as public.
 
 ## Features
 
-- **Dynamic On-Chain Identity**: Stellar address-based portfolio ownership with cryptographic verification
-- **Template Engine**: Pre-built Rust-based templates for different industries (Dev, Design, Admin, etc.)
-- **Portfolio as NFT**: Portable, verifiable portfolios stored as NFTs with IPFS metadata
-- **Credential Verification**: Link GitHub, LinkedIn, and on-chain credentials for proof of work
-- **Passkey Onboarding**: Thumbprint/FaceID signup via Stellar Passkeys (SEP-20) — no recovery phrases
-- **Template Marketplace**: Designers create and sell custom portfolio templates as digital assets
-- **Proof of Work Integration**: Display payment history and on-chain transaction records as verified credentials
-- **Decentralized Storage**: Portfolio files (resumes, screenshots) stored on IPFS with CID references on-chain
-
-## Why Stellar
-
-- **Minimal Costs**: Portfolio creation costs $0.00001 (fraction of a cent) vs. $20+ on other chains
-- **Near-Instant Finality**: 5-second settlement — portfolio updates live globally immediately
-- **Interoperability**: Integrate payment history (USDC, local fiat anchors) as proof of work
-- **Accessibility**: Low barriers for job seekers in any economy
+- **React 18 + Vite**: fast local development and production build pipeline
+- **TypeScript**: typed portfolio, template, credential, proof-of-work, and user models
+- **React Router**: routes for `/` and `/portfolio/:id`
+- **Zustand State**: lightweight auth and portfolio state stores
+- **Axios API Client**: portfolio, template, credential, and proof-of-work endpoint wrappers
+- **IPFS Client Helpers**: JSON/file upload and CID gateway URL construction
+- **Stellar SDK Helpers**: testnet/mainnet passphrase selection, keypair creation, address validation, and transaction signing utilities
+- **Environment-Based Configuration**: API, Stellar network, contract ID, IPFS, GitHub, and LinkedIn endpoints are configured through `.env`
 
 ## Architecture
 
 ```mermaid
 graph TB
-    subgraph Users["Users / Creators"]
-        JS[Job Seeker]
-        DES[Designer]
-        REC[Recruiter]
+    subgraph Browser["Browser Client"]
+        APP[App.tsx]
+        ROUTER[React Router]
+        HOME[Home Page]
+        PORTFOLIO[Portfolio Page]
     end
 
-    subgraph Frontend["Frontend (React/Vite)"]
-        UI[UI Components]
-        AUTH[Auth / Passkeys]
-        EDITOR[Portfolio Editor]
+    subgraph UI["UI Components"]
+        LOGIN[LoginButton]
+        TEMPLATES[TemplateList]
+        EDITOR[PortfolioEditor]
     end
 
-    subgraph API["API Service (TypeScript)"]
-        REST[REST Endpoints]
-        IPFS[IPFS Client]
-        VERIFY[Verification Service]
+    subgraph State["Client State"]
+        AUTH[authStore]
+        PORT_STORE[portfolioStore]
     end
 
-    subgraph Backend["Backend Service (TypeScript)"]
-        EVT[Event Listener / Stellar SDK]
-        WH[Webhook Handler]
-        CRED[Credential Verifier]
-        DB[(PostgreSQL)]
-        SCH[Scheduler]
+    subgraph Services["Frontend Services"]
+        API[Axios API Client]
+        IPFS[ipfsService]
+        STELLAR[stellarService]
     end
 
-    subgraph Contract["Smart Contract (Soroban / Rust)"]
-        LIB[lib.rs — Public API]
-        STOR[storage.rs]
-        TMPL[template_registry.rs]
-        ACCESS[access_control.rs]
-        VERIFY_C[verification.rs]
+    subgraph External["External Systems"]
+        BACKEND[Folder API]
+        IPFS_NODE[IPFS API / Gateway]
+        CONTRACT[Soroban Contract]
+        STELLAR_NET[Stellar Network]
+        GITHUB[GitHub API]
+        LINKEDIN[LinkedIn API]
     end
 
-    subgraph Stellar["Stellar Network"]
-        LEDGER[Ledger]
-        NFT[Portfolio NFT]
-    end
-
-    subgraph Storage["Decentralized Storage"]
-        IPFS_NET[IPFS Network]
-        FILES[Portfolio Files]
-    end
-
-    JS -->|create / update| UI
-    DES -->|create template| UI
-    REC -->|verify portfolio| UI
-    UI -->|passkey auth| AUTH
-    UI -->|edit portfolio| EDITOR
-    EDITOR --> REST
-    REST --> LIB
-    LIB --> STOR
-    LIB --> TMPL
-    LIB --> ACCESS
-    LIB --> VERIFY_C
-    LIB -->|mint NFT| NFT
-    NFT --> LEDGER
-    LEDGER -->|contract events| EVT
-    EVT --> WH
-    WH --> DB
-    REST -->|store files| IPFS
-    IPFS -->|pin files| IPFS_NET
-    IPFS_NET --> FILES
-    VERIFY_C -->|verify credentials| CRED
-    CRED -->|check GitHub/LinkedIn| VERIFY
-    CRED --> DB
-    SCH -->|periodic verification| CRED
-    SCH --> DB
+    APP --> ROUTER
+    ROUTER --> HOME
+    ROUTER --> PORTFOLIO
+    HOME --> LOGIN
+    HOME --> TEMPLATES
+    EDITOR --> IPFS
+    EDITOR --> API
+    LOGIN --> AUTH
+    TEMPLATES --> API
+    PORTFOLIO --> API
+    API --> BACKEND
+    IPFS --> IPFS_NODE
+    STELLAR --> CONTRACT
+    CONTRACT --> STELLAR_NET
+    BACKEND --> CONTRACT
+    BACKEND --> GITHUB
+    BACKEND --> LINKEDIN
+    EDITOR --> PORT_STORE
 ```
 
 ### Core Components
 
-- **lib.rs**: Main contract implementation with portfolio and template functions
-- **template_registry.rs**: Template storage, creation, and marketplace logic
-- **access_control.rs**: Authorization and ownership verification
-- **verification.rs**: Credential verification and proof validation
-- **storage.rs**: Persistent storage for portfolios, templates, and credentials
-- **types.rs**: Data structures (Portfolio, Template, Credential)
-- **events.rs**: Event emission for portfolio updates and template sales
+- **src/App.tsx**: application router with home and portfolio detail routes
+- **src/pages/Home.tsx**: landing page that switches between hero copy and template listing based on auth state
+- **src/pages/Portfolio.tsx**: portfolio detail page that fetches a portfolio by ID
+- **src/components/Auth/LoginButton.tsx**: login/logout UI connected to auth state
+- **src/components/Template/TemplateList.tsx**: template catalog UI backed by the template API
+- **src/components/Portfolio/PortfolioEditor.tsx**: portfolio metadata form, IPFS upload, and portfolio creation flow
+- **src/services/api.ts**: Axios client and endpoint wrappers for portfolios, templates, credentials, and proof of work
+- **src/services/ipfs.ts**: file and JSON upload helpers for IPFS-compatible APIs
+- **src/services/stellar.ts**: Stellar network helpers, keypair creation, transaction signing, and address validation
+- **src/store/authStore.ts**: Zustand auth state
+- **src/store/portfolioStore.ts**: Zustand portfolio collection state
+- **src/types/index.ts**: shared frontend TypeScript interfaces
 
-### Storage Model
+## Folder Platform Model
 
-- **Instance Storage**: Admin, template registry, marketplace configuration
-- **Persistent Storage**: User portfolios, templates, credentials, verification records
+Folder is designed around portfolios, templates, credentials, and proof-of-work records.
 
-## Contract Functions
+| Model | Frontend role |
+| --- | --- |
+| **Portfolio** | User-owned portfolio record with template ID, IPFS metadata CID, status, and timestamps |
+| **Template** | Reusable portfolio schema with creator, description, and XLM price |
+| **Credential** | Linked external identity or work signal from GitHub, LinkedIn, or on-chain sources |
+| **ProofOfWork** | On-chain transaction hash and amount recorded against a portfolio |
+| **User** | Stellar-address-based user object with optional profile fields and portfolios |
 
-### Portfolio Management
+## API Integration
 
-- `create_portfolio(user, template_id, metadata_cid)` - Create new portfolio (user auth required)
-- `update_portfolio(portfolio_id, metadata_cid)` - Update portfolio metadata on IPFS (owner auth required)
-- `get_portfolio(portfolio_id)` - Retrieve portfolio details and verification status
-- `verify_portfolio(portfolio_id)` - Check portfolio authenticity and credential status
+The frontend expects a backend API at `VITE_API_URL` and currently wraps these endpoints:
 
-### Template Management
+### Portfolio Endpoints
 
-- `register_template(creator, name, schema, price)` - Create new template (creator auth required)
-- `list_templates()` - Query available templates with pricing
-- `purchase_template(template_id, buyer)` - Buy template as NFT (buyer auth required)
-- `get_template(template_id)` - Retrieve template details and schema
+- `POST /portfolios` - create a portfolio from `templateId` and `metadataCid`
+- `GET /portfolios/:id` - fetch one portfolio
+- `PATCH /portfolios/:id` - update portfolio metadata CID
+- `GET /portfolios` - list portfolios
+- `POST /portfolios/:id/verify` - trigger portfolio verification
 
-### Credential Verification
+### Template Endpoints
 
-- `link_credential(portfolio_id, credential_type, external_id)` - Link GitHub/LinkedIn/on-chain credential
-- `verify_credential(portfolio_id, credential_id)` - Trigger verification of linked credential
-- `get_credentials(portfolio_id)` - List all credentials for a portfolio
-- `add_proof_of_work(portfolio_id, transaction_hash, amount)` - Add on-chain transaction as proof
+- `POST /templates` - register a template
+- `GET /templates` - list templates
+- `GET /templates/:id` - fetch one template
+- `POST /templates/:id/purchase` - purchase a template
 
-### Administrative Functions
+### Credential Endpoints
 
-- `initialize(admin)` - One-time contract initialization
-- `update_marketplace_fee(fee_bps)` - Set template marketplace fee (admin only)
-- `withdraw_marketplace_fees(to)` - Collect marketplace revenue (admin only)
+- `POST /portfolios/:portfolioId/credentials` - link a credential
+- `POST /portfolios/:portfolioId/credentials/:credentialId/verify` - verify a credential
+- `GET /portfolios/:portfolioId/credentials` - list credentials for a portfolio
 
-## Remittance Lifecycle — Sequence Diagram
+### Proof-of-Work Endpoints
+
+- `POST /portfolios/:portfolioId/proof` - add transaction-based proof of work
+- `GET /portfolios/:portfolioId/proof` - list proof-of-work records for a portfolio
+
+## Portfolio Lifecycle — Sequence Diagram
 
 ```mermaid
 sequenceDiagram
-    actor JS as Job Seeker
-    actor DES as Designer
-    actor REC as Recruiter
-    participant Contract as Folder Contract
-    participant IPFS as IPFS
-    participant Stellar as Stellar Ledger
+    actor User
+    participant UI as Folder Frontend
+    participant IPFS as IPFS API
+    participant API as Folder API
+    participant Contract as Soroban Contract
+    participant Stellar as Stellar Network
 
     rect rgb(235, 245, 255)
-        Note over JS,Contract: Portfolio Creation
-        JS->>JS: Sign with Passkey (FaceID/Thumbprint)
-        JS->>IPFS: Upload portfolio files (resume, screenshots)
-        IPFS-->>JS: CID (content hash)
-        JS->>Contract: create_portfolio(template_id, metadata_cid)
-        Contract->>Stellar: Mint Portfolio NFT
-        Stellar-->>JS: Portfolio ID + NFT
+        Note over User,API: Template Discovery
+        User->>UI: Open app
+        UI->>API: GET /templates
+        API-->>UI: Template list
+        UI-->>User: Display available templates
     end
 
     rect rgb(245, 235, 255)
-        Note over DES,Contract: Template Creation & Sale
-        DES->>Contract: register_template(name, schema, price)
-        Contract->>Stellar: Register template on-chain
-        Stellar-->>DES: Template ID
-        
-        JS->>Contract: purchase_template(template_id)
-        Contract->>Stellar: Transfer payment to designer
-        Stellar-->>DES: Payment received
-        Contract-->>JS: Template NFT
+        Note over User,API: Portfolio Creation
+        User->>UI: Fill portfolio form
+        UI->>IPFS: Upload metadata JSON
+        IPFS-->>UI: metadata CID
+        UI->>API: POST /portfolios
+        API->>Contract: Create/update portfolio state
+        Contract->>Stellar: Persist contract transaction
+        API-->>UI: Portfolio record
     end
 
     rect rgb(240, 255, 240)
-        Note over JS,Contract: Credential Verification
-        JS->>Contract: link_credential(portfolio_id, "github", username)
-        Contract->>Contract: verify_credential(portfolio_id, credential_id)
-        Contract-->>JS: Credential verified ✓
-        
-        JS->>Contract: add_proof_of_work(portfolio_id, tx_hash, amount)
-        Contract-->>JS: Proof recorded on-chain
-    end
-
-    rect rgb(255, 245, 235)
-        Note over REC,Contract: Portfolio Verification
-        REC->>Contract: get_portfolio(portfolio_id)
-        Contract-->>REC: Portfolio data + verification status
-        REC->>Contract: verify_portfolio(portfolio_id)
-        Contract-->>REC: Authenticity confirmed ✓
+        Note over User,API: Verification
+        User->>UI: Link credential or proof
+        UI->>API: Credential/proof request
+        API->>Contract: Record verification result when applicable
+        API-->>UI: Updated portfolio status
     end
 ```
 
-## State Machine
+## Portfolio State Machine
 
-Portfolio lifecycle with verification states:
+Portfolio records use the following frontend status values:
 
 ```
 ┌──────────────┐
-│   Created    │  ← initial state (portfolio minted)
+│   created    │
 └──────┬───────┘
        │
        ▼
-┌──────────────────┐
-│ Credentials      │  (credentials being verified)
-│ Pending          │
-└──────┬───────────┘
+┌──────────────────────┐
+│ credentials_pending  │
+└──────┬───────────────┘
        │
        ├─────────────────────┐
        │                     │
        ▼                     ▼
 ┌──────────────┐      ┌──────────────┐
-│ Verified     │      │ Unverified   │
-│ (Terminal)   │      │ (Terminal)   │
+│   verified   │      │  unverified  │
 └──────────────┘      └──────────────┘
 ```
 
-## Error Codes
+## Repository Structure
 
-| Code | Error | Description |
-|------|-------|-------------|
-| 1 | AlreadyInitialized | Contract already initialized |
-| 2 | NotInitialized | Contract not initialized |
-| 3 | InvalidTemplateId | Template ID does not exist |
-| 4 | InvalidPortfolioId | Portfolio ID does not exist |
-| 5 | Unauthorized | Caller is not authorized for this operation |
-| 6 | InvalidMetadataCid | Invalid IPFS content identifier |
-| 7 | CredentialNotFound | Credential record not found |
-| 8 | VerificationFailed | Credential verification failed |
-| 9 | InvalidCredentialType | Unsupported credential type |
-| 10 | TemplateAlreadyExists | Template already registered |
-| 11 | InsufficientFunds | Insufficient balance for template purchase |
-| 12 | InvalidPrice | Template price must be greater than 0 |
-| 13 | PortfolioNotFound | Portfolio not found |
-| 14 | CredentialAlreadyLinked | Credential already linked to portfolio |
-| 15 | InvalidProofOfWork | Invalid transaction hash or amount |
-| 16 | MarketplaceFeeInvalid | Marketplace fee out of valid range |
-| 17 | NoFeesToWithdraw | No accumulated marketplace fees |
-| 18 | InvalidAddress | Invalid Stellar address |
+This repository contains the Folder web frontend only. Contract, backend, and deployment infrastructure are expected to live outside this repo.
 
-## Events
-
-The contract emits events for monitoring:
-
-- `portfolio_created` - New portfolio created
-- `portfolio_updated` - Portfolio metadata updated
-- `credential_linked` - Credential linked to portfolio
-- `credential_verified` - Credential verification completed
-- `template_registered` - New template created
-- `template_purchased` - Template purchased as NFT
-- `proof_of_work_added` - On-chain transaction recorded as proof
-- `portfolio_verified` - Portfolio authenticity confirmed
-
-## Roadmap
-
-### Phase 1: The Identity
-- [x] Stellar address-based portfolio ownership
-- [x] Passkey onboarding (SEP-20)
-- [ ] Portfolio namespace claiming
-
-### Phase 2: Template Engine
-- [ ] 3-5 basic Rust-based templates (Dev, Design, Admin, etc.)
-- [ ] Template schema validation
-- [ ] IPFS metadata storage
-
-### Phase 3: Verification
-- [ ] GitHub credential linking
-- [ ] LinkedIn credential linking
-- [ ] On-chain credential verification
-- [ ] Proof of work integration (payment history)
-
-### Phase 4: The Marketplace
-- [ ] Designer template creation
-- [ ] Template NFT minting
-- [ ] Template sales and royalties
-- [ ] Community template ratings
+```
+Indexer-Frontend/
+│
+├── README.md                    ← This file
+├── package.json                 ← npm scripts and frontend dependencies
+├── package-lock.json            ← locked npm dependency graph
+├── .env.example                 ← browser-exposed configuration template
+├── index.html                   ← Vite HTML entry point
+├── vite.config.ts               ← Vite, React plugin, alias, and dev proxy config
+├── tsconfig.json                ← TypeScript project configuration
+├── tsconfig.node.json           ← TypeScript config for Vite/node-side files
+│
+├── src/
+│   ├── App.tsx                  ← route definitions
+│   ├── App.css                  ← global app styles
+│   ├── main.tsx                 ← React mount entry point
+│   ├── components/
+│   │   ├── Auth/
+│   │   │   └── LoginButton.tsx
+│   │   ├── Portfolio/
+│   │   │   └── PortfolioEditor.tsx
+│   │   └── Template/
+│   │       └── TemplateList.tsx
+│   ├── pages/
+│   │   ├── Home.tsx
+│   │   └── Portfolio.tsx
+│   ├── services/
+│   │   ├── api.ts
+│   │   ├── ipfs.ts
+│   │   └── stellar.ts
+│   ├── store/
+│   │   ├── authStore.ts
+│   │   └── portfolioStore.ts
+│   └── types/
+│       └── index.ts
+│
+└── dist/                        ← production build output when generated
+```
 
 ## Quick Start
 
-### 1. Build the Contract
+### 1. Install dependencies
 
 ```bash
-cd folder-contract
-cargo build --target wasm32-unknown-unknown --release
-soroban contract optimize --wasm target/wasm32-unknown-unknown/release/folder.wasm
+npm install
 ```
 
-### 2. Deploy to Testnet
-
-```bash
-soroban contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/folder.optimized.wasm \
-  --source deployer \
-  --network testnet
-```
-
-### 3. Initialize
-
-```bash
-soroban contract invoke \
-  --id <CONTRACT_ID> \
-  --source deployer \
-  --network testnet \
-  -- \
-  initialize \
-  --admin <ADMIN_ADDRESS>
-```
-
-### 4. Create Portfolio
-
-```bash
-soroban contract invoke \
-  --id <CONTRACT_ID> \
-  --source user \
-  --network testnet \
-  -- \
-  create_portfolio \
-  --template_id 1 \
-  --metadata_cid "QmXxxx..."
-```
-
-## Configuration
-
-Folder uses environment variables for configuration:
+### 2. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Key variables:
-- `NETWORK`: Network to connect to (`testnet` or `mainnet`)
-- `FOLDER_CONTRACT_ID`: Deployed contract address
-- `IPFS_API_URL`: IPFS node endpoint
-- `MARKETPLACE_FEE_BPS`: Template marketplace fee (basis points)
+Update `.env` for your local backend, Stellar network, deployed Folder contract, and IPFS endpoint.
 
-## Testing
+### 3. Run the development server
 
 ```bash
-cargo test
+npm run dev
 ```
 
-Covers:
-- ✅ Portfolio creation and updates
-- ✅ Template registration and purchases
-- ✅ Credential linking and verification
-- ✅ Proof of work recording
-- ✅ Authorization enforcement
-- ✅ Event emission
+The Vite dev server runs on port `3000` by default.
 
-## Security Features
+### 4. Build for production
 
-1. **Passkey Authentication**: Biometric-based signing (no recovery phrases)
-2. **Authorization Checks**: Role-based access control for all operations
-3. **Ownership Verification**: Only portfolio owners can update their portfolio
-4. **Credential Validation**: Multi-source verification (GitHub, LinkedIn, on-chain)
-5. **IPFS Integrity**: Content-addressed storage ensures immutability
+```bash
+npm run build
+```
+
+The production bundle is written to `dist/`.
+
+### 5. Preview the production build
+
+```bash
+npm run preview
+```
+
+## Configuration
+
+Folder Frontend uses Vite environment variables. Values prefixed with `VITE_` are exposed to browser code, so do not place secrets in them.
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | Base URL for the Folder backend API. Defaults to `http://localhost:3001` in the API client. |
+| `VITE_STELLAR_NETWORK` | Stellar network name used by frontend helpers. Supported values are `testnet` and `mainnet`; defaults to `testnet`. |
+| `VITE_FOLDER_CONTRACT_ID` | Deployed Folder Soroban contract ID used by frontend Stellar helpers. |
+| `VITE_IPFS_API_URL` | IPFS API/gateway base URL used for file upload and CID resolution. |
+| `VITE_GITHUB_API_URL` | GitHub API base URL reserved for credential-related integrations. |
+| `VITE_LINKEDIN_API_URL` | LinkedIn API base URL reserved for credential-related integrations. |
+
+### Dev Proxy
+
+`vite.config.ts` includes a development proxy from `/api` to `VITE_API_URL` or `http://localhost:3001`, rewriting `/api/*` to `/*`. The current API client uses `VITE_API_URL` directly.
+
+## Scripts
+
+```bash
+npm run dev          # start the Vite development server
+npm run build        # create a production build
+npm run preview      # preview the production build locally
+npm run lint         # run ESLint over src/**/*.ts and src/**/*.tsx
+npm run type-check   # run TypeScript without emitting files
+```
 
 ## Dependencies
 
-- `soroban-sdk = "25.3.1"` - Latest Soroban SDK
-- `ipfs-api` - IPFS client for file storage
-- `stellar-sdk` - Stellar blockchain integration
+### Runtime
+
+- `react` and `react-dom` - UI rendering
+- `react-router-dom` - browser routing
+- `axios` - HTTP client for the Folder API
+- `zustand` - client-side state management
+- `stellar-sdk` - Stellar keypair, address, and transaction helper support
+
+### Development
+
+- `vite` and `@vitejs/plugin-react` - local dev server and production bundling
+- `typescript` - static typing
+- `eslint`, `@typescript-eslint/parser`, and `@typescript-eslint/eslint-plugin` - linting support
+- `@types/react` and `@types/react-dom` - React type definitions
+
+## Testing and Quality Checks
+
+This repo currently defines linting and TypeScript validation scripts:
+
+```bash
+npm run lint
+npm run type-check
+```
+
+There is no test runner configured in `package.json` yet. Add one before documenting test commands such as `npm test`.
+
+## Security Notes
+
+1. **No browser secrets**: Vite variables are public in the built app. Keep private keys and privileged API credentials on the backend.
+2. **Wallet signing boundary**: `stellarService.signTransaction` signs with a provided keypair. Production wallet/passkey integrations should avoid exposing raw secret keys to frontend state.
+3. **Contract ID validation**: configure `VITE_FOLDER_CONTRACT_ID` per network and verify it before production builds.
+4. **IPFS endpoint trust**: `VITE_IPFS_API_URL` controls upload and read paths. Use a trusted pinning/API provider for production.
+5. **API authorization**: this frontend assumes the backend enforces ownership, credential verification rules, template purchase rules, and portfolio mutation permissions.
+
+## Roadmap
+
+### Phase 1: Frontend Foundation
+
+- [x] Vite React TypeScript app
+- [x] Home and portfolio routes
+- [x] Template listing component
+- [x] Portfolio editor component
+- [x] Zustand auth and portfolio stores
+
+### Phase 2: Wallet and Identity UX
+
+- [ ] Replace placeholder login flow with production Stellar wallet/passkey onboarding
+- [ ] Persist authenticated user session safely
+- [ ] Add account/network switching states
+
+### Phase 3: Portfolio Creation
+
+- [ ] Connect template selection to portfolio editor routing
+- [ ] Add schema-driven form rendering from template definitions
+- [ ] Improve portfolio creation success/error states
+- [ ] Add portfolio metadata preview before IPFS upload
+
+### Phase 4: Verification and Marketplace
+
+- [ ] Add credential linking UI
+- [ ] Add proof-of-work submission UI
+- [ ] Add template purchase flow
+- [ ] Add portfolio verification status detail views
 
 ## License
 
-MIT
+No license file is present in this repository at the time of this README update. Add a `LICENSE` file before publishing license claims.
 
 ## Support
 
-For issues and questions:
-- GitHub Issues: [Create an issue](https://github.com/yourusername/folder/issues)
-- Stellar Discord: https://discord.gg/stellar
-- Documentation: See [DEPLOYMENT.md](DEPLOYMENT.md)
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-Quick checklist:
-- All tests pass: `cargo test`
-- Code follows project style guidelines
-- New features include tests
-- Documentation is updated
+For issues and questions, use the repository issue tracker configured for this project.
