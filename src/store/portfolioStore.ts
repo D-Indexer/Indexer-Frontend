@@ -5,7 +5,7 @@ interface PortfolioState {
   portfolios: Portfolio[]
   currentPortfolio: Portfolio | null
   setPortfolios: (portfolios: Portfolio[]) => void
-  setCurrentPortfolio: (portfolio: Portfolio) => void
+  setCurrentPortfolio: (portfolio: Portfolio | null) => void
   addPortfolio: (portfolio: Portfolio) => void
 }
 
@@ -15,5 +15,5 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   setPortfolios: (portfolios) => set({ portfolios }),
   setCurrentPortfolio: (portfolio) => set({ currentPortfolio: portfolio }),
   addPortfolio: (portfolio) =>
-    set((state) => ({ portfolios: [...state.portfolios, portfolio] })),
+    set((state) => ({ portfolios: [portfolio, ...state.portfolios] })),
 }))
