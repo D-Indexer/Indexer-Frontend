@@ -230,6 +230,8 @@ Indexer-Frontend/
 ├── package.json                 ← npm scripts and frontend dependencies
 ├── package-lock.json            ← locked npm dependency graph
 ├── .env.example                 ← browser-exposed configuration template
+├── .eslintrc.cjs                ← ESLint rules for TypeScript source
+├── .gitignore                   ← ignored local, dependency, and build artifacts
 ├── index.html                   ← Vite HTML entry point
 ├── vite.config.ts               ← Vite, React plugin, alias, and dev proxy config
 ├── tsconfig.json                ← TypeScript project configuration
@@ -237,22 +239,28 @@ Indexer-Frontend/
 │
 ├── src/
 │   ├── App.tsx                  ← route definitions
-│   ├── App.css                  ← global app styles
 │   ├── main.tsx                 ← React mount entry point
+│   ├── config/                  ← route and environment normalization
+│   ├── constants/               ← navigation and status labels
+│   ├── data/                    ← local development fixtures and static product data
+│   ├── features/                ← feature-specific UI modules
+│   ├── hooks/                   ← reusable React hooks
+│   ├── layouts/                 ← app shell, header, footer, and page container
 │   ├── components/
-│   │   ├── Auth/
-│   │   │   └── LoginButton.tsx
-│   │   ├── Portfolio/
-│   │   │   └── PortfolioEditor.tsx
-│   │   └── Template/
-│   │       └── TemplateList.tsx
+│   │   └── ui/                 ← shared UI primitives
 │   ├── pages/
 │   │   ├── Home.tsx
+│   │   ├── Templates.tsx
+│   │   ├── CreatePortfolio.tsx
 │   │   └── Portfolio.tsx
 │   ├── services/
-│   │   ├── api.ts
-│   │   ├── ipfs.ts
-│   │   └── stellar.ts
+│   │   ├── credentials/
+│   │   ├── http/
+│   │   ├── ipfs/
+│   │   ├── portfolio/
+│   │   ├── proof/
+│   │   ├── stellar/
+│   │   └── templates/
 │   ├── store/
 │   │   ├── authStore.ts
 │   │   └── portfolioStore.ts
@@ -261,6 +269,8 @@ Indexer-Frontend/
 │
 └── dist/                        ← production build output when generated
 ```
+
+Additional implementation notes are available in `docs/architecture.md`, `docs/configuration.md`, `docs/development.md`, and `docs/security.md`.
 
 ## Quick Start
 
