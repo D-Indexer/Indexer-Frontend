@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FormField } from '@/components/forms'
-import { Button, Card, ErrorMessage } from '@/components/ui'
+import { Button, Card, ErrorMessage, LinkButton } from '@/components/ui'
+import { appRoutes } from '@/config/routes'
 import { ipfsService, portfolioApi, toApiError } from '@/services'
 import { usePortfolioStore } from '@/store'
 import type { PortfolioMetadata } from '@/types'
@@ -31,6 +32,7 @@ export const PortfolioEditor = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdCid, setCreatedCid] = useState<string | null>(null)
+  const [createdPortfolioId, setCreatedPortfolioId] = useState<string | null>(null)
   const { addPortfolio } = usePortfolioStore()
 
   const updateField = (field: keyof PortfolioFormData) => {
@@ -84,6 +86,7 @@ export const PortfolioEditor = () => {
       const response = await portfolioApi.create(templateId, cid)
       addPortfolio(response.data)
       setCreatedCid(cid)
+      setCreatedPortfolioId(response.data.id)
       setFieldErrors({})
     } catch (requestError) {
       setError(toApiError(requestError).message)
@@ -96,7 +99,16 @@ export const PortfolioEditor = () => {
     <Card>
       <form onSubmit={handleSubmit} className="form">
         {error ? <ErrorMessage message={error} /> : null}
-        {createdCid ? <p className="muted">Metadata uploaded: {createdCid}</p> : null}
+        {createdCid ? (
+          <div className="notice notice--success">
+            <p>Metadata uploaded: {createdCid}</p>
+            {createdPortfolioId ? (
+              <LinkButton to={appRoutes.portfolio(createdPortfolioId)} variant="secondary">
+                Open portfolio
+              </LinkButton>
+            ) : null}
+          </div>
+        ) : null}
 
         <FormField
           id="templateId"
