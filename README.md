@@ -24,14 +24,37 @@ Folder addresses this by treating a portfolio as a portable on-chain identity su
 
 ### What Folder Frontend Does
 
-At a high level, this repo does four things:
+At a high level, this repo does five things:
 
 - **🏠 Presents the Folder landing experience** — unauthenticated users see the product hero and authenticated users see available templates
+- **📊 Tracks portfolio operations** — the dashboard summarizes portfolio counts, verification rate, pending records, and recent metadata CIDs
 - **🧩 Lists portfolio templates** — fetches templates from the configured API and displays name, description, and XLM price
-- **📝 Creates portfolio metadata** — uploads portfolio JSON to IPFS and sends the resulting CID to the portfolio API
-- **🔎 Displays portfolio status** — loads portfolio records by route parameter and shows creation and verification state
+- **📝 Creates portfolio metadata** — validates form input, uploads portfolio JSON to IPFS, and sends the resulting CID to the portfolio API
+- **🔎 Displays portfolio status** — loads portfolio records by route parameter and shows creation, metadata, and verification state
 
 > 🔒 **Security Model**: this repository is a frontend client. It should not store private keys, service secrets, API admin keys, or privileged contract credentials. Browser-exposed settings must use `VITE_` variables and should be treated as public.
+
+## D-Indexer Repository Map
+
+Folder is split across three public repositories in the `D-Indexer` GitHub organization:
+
+| Repository | Role | Primary language |
+| --- | --- | --- |
+| [Indexer-Frontend](https://github.com/D-Indexer/Indexer-Frontend) | React/Vite browser client for portfolio creation, template discovery, dashboard monitoring, IPFS metadata submission, and portfolio status display. | TypeScript |
+| [Indexer-Backend](https://github.com/D-Indexer/Indexer-Backend) | Core API and indexing engine for off-chain user data, IPFS uploads, metadata caching, and Stellar ledger integration hooks. | TypeScript |
+| [Indexer-Contract](https://github.com/D-Indexer/Indexer-Contract) | Soroban smart contracts for the on-chain template registry, user identity mapping, and portfolio NFT minting on Stellar. | Rust |
+
+### How The Repositories Work Together
+
+1. `Indexer-Frontend` renders the Folder web experience and sends portfolio, template, credential, and proof requests to the backend.
+2. `Indexer-Backend` validates requests, coordinates metadata storage, caches portfolio state, and bridges browser workflows to Stellar/Soroban operations.
+3. `Indexer-Contract` persists the trust-critical on-chain registry and ownership state that makes portfolio records verifiable.
+
+### Local Development Order
+
+1. Start `Indexer-Contract` or configure this frontend with an already deployed Soroban contract ID.
+2. Start `Indexer-Backend` with API, IPFS, Stellar, and contract configuration.
+3. Start `Indexer-Frontend` and point `VITE_API_URL` at the backend service.
 
 ## Features
 
@@ -43,6 +66,8 @@ At a high level, this repo does four things:
 - **IPFS Client Helpers**: JSON/file upload and CID gateway URL construction
 - **Stellar SDK Helpers**: testnet/mainnet passphrase selection, keypair creation, address validation, and transaction signing utilities
 - **Environment-Based Configuration**: API, Stellar network, contract ID, IPFS, GitHub, and LinkedIn endpoints are configured through `.env`
+- **Local Fallback Fixtures**: template and dashboard data stay usable when the backend is not running during local development
+- **Reusable UI/Form Primitives**: shared buttons, link buttons, cards, states, stats, badges, and accessible form fields
 
 ## Architecture
 
@@ -52,13 +77,19 @@ graph TB
         APP[App.tsx]
         ROUTER[React Router]
         HOME[Home Page]
+        DASHBOARD[Dashboard Page]
+        TEMPLATES_PAGE[Templates Page]
+        CREATE[Create Portfolio Page]
         PORTFOLIO[Portfolio Page]
     end
 
     subgraph UI["UI Components"]
         LOGIN[LoginButton]
-        TEMPLATES[TemplateList]
+        TEMPLATES[TemplateGrid]
+        DASH_METRICS[DashboardMetrics]
+        TABLE[PortfolioTable]
         EDITOR[PortfolioEditor]
+        CHECKLIST[VerificationChecklist]
     end
 
     subgraph State["Client State"]
@@ -83,14 +114,23 @@ graph TB
 
     APP --> ROUTER
     ROUTER --> HOME
+    ROUTER --> DASHBOARD
+    ROUTER --> TEMPLATES_PAGE
+    ROUTER --> CREATE
     ROUTER --> PORTFOLIO
     HOME --> LOGIN
     HOME --> TEMPLATES
+    DASHBOARD --> DASH_METRICS
+    DASHBOARD --> TABLE
+    DASHBOARD --> API
+    TEMPLATES_PAGE --> TEMPLATES
+    CREATE --> EDITOR
     EDITOR --> IPFS
     EDITOR --> API
     LOGIN --> AUTH
     TEMPLATES --> API
     PORTFOLIO --> API
+    PORTFOLIO --> CHECKLIST
     API --> BACKEND
     IPFS --> IPFS_NODE
     STELLAR --> CONTRACT
@@ -103,16 +143,29 @@ graph TB
 
 ### Core Components
 
-- **src/App.tsx**: application router with home and portfolio detail routes
+- **src/App.tsx**: application router for home, dashboard, templates, create, and portfolio detail routes
 - **src/pages/Home.tsx**: landing page with product positioning, stats, and template discovery
 - **src/pages/Dashboard.tsx**: portfolio operations view with status metrics and record table
+- **src/pages/Templates.tsx**: template marketplace route
+- **src/pages/CreatePortfolio.tsx**: route-level portfolio creation workflow
 - **src/pages/Portfolio.tsx**: portfolio detail page that fetches a portfolio by ID
-- **src/components/Auth/LoginButton.tsx**: login/logout UI connected to auth state
-- **src/components/Template/TemplateList.tsx**: template catalog UI backed by the template API
-- **src/components/Portfolio/PortfolioEditor.tsx**: portfolio metadata form, IPFS upload, and portfolio creation flow
-- **src/services/api.ts**: Axios client and endpoint wrappers for portfolios, templates, credentials, and proof of work
-- **src/services/ipfs.ts**: file and JSON upload helpers for IPFS-compatible APIs
-- **src/services/stellar.ts**: Stellar network helpers, keypair creation, transaction signing, and address validation
+- **src/features/auth/components/LoginButton.tsx**: demo login/logout UI connected to auth state
+- **src/features/templates/components/TemplateGrid.tsx**: template catalog UI backed by the template API with local fallback data
+- **src/features/dashboard/components/DashboardMetrics.tsx**: portfolio count, verification, and pending-state metrics
+- **src/features/dashboard/components/PortfolioTable.tsx**: portfolio records table with status badges and detail links
+- **src/features/portfolio/components/PortfolioEditor.tsx**: validated metadata form, IPFS upload, and portfolio creation flow
+- **src/features/portfolio/components/PortfolioStatusCard.tsx**: portfolio status, CID, and timestamp summary
+- **src/features/verification/components/VerificationChecklist.tsx**: verification process detail view for portfolio pages
+- **src/components/forms/FormField.tsx**: reusable accessible text input and textarea wrapper
+- **src/components/ui/LinkButton.tsx**: router-link button primitive for navigation actions
+- **src/domain/portfolio/status.ts**: portfolio sorting, status counts, and verification-rate helpers
+- **src/services/http/client.ts**: Axios client configuration
+- **src/services/portfolio/portfolioApi.ts**: portfolio endpoint wrapper
+- **src/services/templates/templateApi.ts**: template endpoint wrapper
+- **src/services/credentials/credentialApi.ts**: credential endpoint wrapper
+- **src/services/proof/proofApi.ts**: proof-of-work endpoint wrapper
+- **src/services/ipfs/ipfsService.ts**: file and JSON upload helpers for IPFS-compatible APIs
+- **src/services/stellar/stellarService.ts**: Stellar network helpers, keypair creation, transaction signing, and address validation
 - **src/store/authStore.ts**: Zustand auth state
 - **src/store/portfolioStore.ts**: Zustand portfolio collection state
 - **src/types/index.ts**: shared frontend TypeScript interfaces
@@ -244,12 +297,23 @@ Indexer-Frontend/
 │   ├── config/                  ← route and environment normalization
 │   ├── constants/               ← navigation and status labels
 │   ├── data/                    ← local development fixtures and static product data
+│   │   └── fixtures/            ← dashboard fallback portfolio records
+│   ├── domain/
+│   │   └── portfolio/           ← pure portfolio aggregation and sorting helpers
 │   ├── features/                ← feature-specific UI modules
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── home/
+│   │   ├── portfolio/
+│   │   ├── templates/
+│   │   └── verification/
 │   ├── hooks/                   ← reusable React hooks
 │   ├── layouts/                 ← app shell, header, footer, and page container
 │   ├── components/
-│   │   └── ui/                 ← shared UI primitives
+│   │   ├── forms/               ← reusable accessible form fields
+│   │   └── ui/                  ← shared UI primitives
 │   ├── pages/
+│   │   ├── Dashboard.tsx
 │   │   ├── Home.tsx
 │   │   ├── Templates.tsx
 │   │   ├── CreatePortfolio.tsx
@@ -376,33 +440,60 @@ There is no test runner configured in `package.json` yet. Add one before documen
 
 ## Roadmap
 
+This roadmap reflects the current repository state. Checked items are implemented in this frontend; unchecked items still need production-ready implementation or integration work.
+
 ### Phase 1: Frontend Foundation
 
 - [x] Vite React TypeScript app
-- [x] Home and portfolio routes
-- [x] Template listing component
-- [x] Portfolio editor component
+- [x] App shell with header, footer, and page container layouts
+- [x] Home, dashboard, templates, create portfolio, and portfolio detail routes
+- [x] Template grid and card components
+- [x] Portfolio editor component with field-level validation
+- [x] Portfolio status detail card
+- [x] Verification checklist detail view
+- [x] Dashboard metrics and portfolio records table
+- [x] Reusable UI primitives and accessible form field wrapper
 - [x] Zustand auth and portfolio stores
+- [x] Local template and portfolio fallback fixtures for development without a backend
+- [x] Production Vite build output generated in `dist/`
 
 ### Phase 2: Wallet and Identity UX
 
+- [x] Demo Stellar identity creation for local auth-state development
 - [ ] Replace placeholder login flow with production Stellar wallet/passkey onboarding
 - [ ] Persist authenticated user session safely
 - [ ] Add account/network switching states
+- [ ] Add transaction signing UX that does not expose raw secret keys to frontend state
 
 ### Phase 3: Portfolio Creation
 
-- [ ] Connect template selection to portfolio editor routing
+- [x] Connect template selection to portfolio editor routing through `?template=`
+- [x] Upload portfolio metadata JSON through the IPFS service
+- [x] Submit created metadata CIDs to the portfolio API
+- [x] Add required-field and URL validation for portfolio metadata forms
+- [x] Improve portfolio creation error states with API error normalization
 - [ ] Add schema-driven form rendering from template definitions
-- [ ] Improve portfolio creation success/error states
 - [ ] Add portfolio metadata preview before IPFS upload
+- [ ] Redirect to the created portfolio detail route after successful creation when the backend returns the record ID
 
-### Phase 4: Verification and Marketplace
+### Phase 4: Dashboard and Portfolio Operations
 
+- [x] List portfolios through the portfolio API
+- [x] Provide local dashboard fallback records when the API is unavailable
+- [x] Display portfolio counts, pending status count, verified count, and verification rate
+- [x] Sort portfolio records by most recently updated
+- [x] Link dashboard rows to portfolio detail routes
+- [ ] Add filtering and search for portfolio records
+- [ ] Add dashboard actions for verify, update metadata, and copy CID
+
+### Phase 5: Verification and Marketplace
+
+- [x] Document credential and proof-of-work endpoint wrappers
+- [x] Add portfolio verification status detail views
 - [ ] Add credential linking UI
 - [ ] Add proof-of-work submission UI
 - [ ] Add template purchase flow
-- [ ] Add portfolio verification status detail views
+- [ ] Add verification retry and audit-history states
 
 ## License
 
