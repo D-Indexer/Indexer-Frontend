@@ -1,40 +1,37 @@
-import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { portfolioAPI } from '@/services'
-import type { Portfolio } from '@/types'
+import { ErrorMessage, LoadingState, SectionHeader } from '@/components/ui'
+import { PortfolioStatusCard } from '@/features/portfolio'
+import { usePortfolio } from '@/hooks'
+import { PageContainer } from '@/layouts'
 
-export const PortfolioPage: React.FC = () => {
+export const PortfolioPage = () => {
   const { id } = useParams<{ id: string }>()
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: portfolio, error, loading } = usePortfolio(id)
 
-  useEffect(() => {
-    if (!id) return
+  if (loading) {
+    return (
+      <PageContainer>
+        <LoadingState label="Loading portfolio…" />
+      </PageContainer>
+    )
+  }
 
-    const fetchPortfolio = async () => {
-      try {
-        const response = await portfolioAPI.get(id)
-        setPortfolio(response.data)
-      } catch (error) {
-        console.error('Failed to fetch portfolio:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchPortfolio()
-  }, [id])
-
-  if (loading) return <div>Loading portfolio...</div>
-  if (!portfolio) return <div>Portfolio not found</div>
+  if (error || !portfolio) {
+    return (
+      <PageContainer>
+        <ErrorMessage message={error?.message ?? 'Portfolio not found'} />
+      </PageContainer>
+    )
+  }
 
   return (
-    <div className="portfolio-page">
-      <h1>Portfolio</h1>
-      <div className="portfolio-details">
-        <p>Status: {portfolio.status}</p>
-        <p>Created: {new Date(portfolio.createdAt).toLocaleDateString()}</p>
-      </div>
-    </div>
+    <PageContainer>
+      <SectionHeader
+        eyebrow="Portfolio"
+        title={`Portfolio ${portfolio.id}`}
+        description="Current portfolio status and immutable metadata reference."
+      />
+      <PortfolioStatusCard portfolio={portfolio} />
+    </PageContainer>
   )
 }
