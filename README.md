@@ -294,12 +294,15 @@ Indexer-Frontend/
 ├── src/
 │   ├── App.tsx                  ← route definitions
 │   ├── main.tsx                 ← React mount entry point
+│   ├── app/                     ← app assembly and route definition modules
 │   ├── config/                  ← route and environment normalization
 │   ├── constants/               ← navigation and status labels
 │   ├── data/                    ← local development fixtures and static product data
 │   │   └── fixtures/            ← dashboard fallback portfolio records
 │   ├── domain/
-│   │   └── portfolio/           ← pure portfolio aggregation and sorting helpers
+│   │   ├── portfolio/           ← pure portfolio aggregation and sorting helpers
+│   │   ├── templates/           ← template pricing and marketplace helpers
+│   │   └── verification/        ← verification display-state helpers
 │   ├── features/                ← feature-specific UI modules
 │   │   ├── auth/
 │   │   ├── dashboard/
@@ -329,13 +332,14 @@ Indexer-Frontend/
 │   ├── store/
 │   │   ├── authStore.ts
 │   │   └── portfolioStore.ts
+│   ├── testing/                 ← typed builders for future tests
 │   └── types/
 │       └── index.ts
 │
 └── dist/                        ← production build output when generated
 ```
 
-Additional implementation notes are available in `docs/architecture.md`, `docs/configuration.md`, `docs/development.md`, and `docs/security.md`.
+Additional implementation notes are available in `docs/architecture.md`, `docs/configuration.md`, `docs/development.md`, `docs/security.md`, `docs/adr/`, `docs/roadmap/`, and `docs/contributing/`.
 
 ## Quick Start
 

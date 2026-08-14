@@ -1,21 +1,10 @@
 import { Badge, Card } from '@/components/ui'
 import { verificationSteps } from '@/data/verificationSteps'
+import { getVerificationStepTone } from '@/domain/verification'
 import type { PortfolioStatus } from '@/types'
 
 interface VerificationChecklistProps {
   status: PortfolioStatus
-}
-
-const getStepTone = (index: number, status: PortfolioStatus) => {
-  if (status === 'verified') {
-    return 'success'
-  }
-
-  if (status === 'credentials_pending' && index === 1) {
-    return 'warning'
-  }
-
-  return index === 0 ? 'success' : 'neutral'
 }
 
 export const VerificationChecklist = ({ status }: VerificationChecklistProps) => {
@@ -28,7 +17,7 @@ export const VerificationChecklist = ({ status }: VerificationChecklistProps) =>
               <strong>{step.title}</strong>
               <p className="muted">{step.description}</p>
             </div>
-            <Badge tone={getStepTone(index, status)}>{index + 1}</Badge>
+            <Badge tone={getVerificationStepTone(index, status)}>{index + 1}</Badge>
           </div>
         ))}
       </div>

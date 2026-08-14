@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react'
 import { classNames } from '@/utils/classNames'
 
-type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger'
+export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger'
 
 interface BadgeProps {
   tone?: BadgeTone

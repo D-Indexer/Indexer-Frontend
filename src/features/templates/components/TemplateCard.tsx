@@ -1,5 +1,6 @@
 import { appRoutes } from '@/config/routes'
 import { Badge, Card, LinkButton } from '@/components/ui'
+import { getTemplatePriceTierLabel } from '@/domain/templates'
 import type { Template } from '@/types'
 import { formatXlm } from '@/utils/format'
 
@@ -10,7 +11,12 @@ interface TemplateCardProps {
 export const TemplateCard = ({ template }: TemplateCardProps) => {
   return (
     <Card interactive className="template-card">
-      <Badge>Template</Badge>
+      <div className="cluster">
+        <Badge>Template</Badge>
+        <Badge tone={template.price > 0 ? 'warning' : 'success'}>
+          {getTemplatePriceTierLabel(template.price)}
+        </Badge>
+      </div>
       <div>
         <h3>{template.name}</h3>
         <p className="muted">{template.description}</p>
