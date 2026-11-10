@@ -32,7 +32,7 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
   return (
     <Card>
       <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="claim-title">
-        <h3 id="claim-title">Claim your folder name</h3>
+        <h2 id="claim-title" className="form__title">Claim your folder name</h2>
         <FormField
           id="folder-name"
           label="Folder name"

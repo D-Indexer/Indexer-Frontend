@@ -42,7 +42,7 @@ describe('TemplateGrid', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading templates…')
     expect(await screen.findByRole('heading', { name: 'Developer' })).toBeInTheDocument()
     expect(screen.getByText('Work history')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Use template' })).toHaveAttribute('href', '/dashboard?template=1')
+    expect(screen.getByRole('link', { name: 'Use template Developer' })).toHaveAttribute('href', '/dashboard?template=1')
   })
 
   it('shows an empty state when no templates are registered', async () => {

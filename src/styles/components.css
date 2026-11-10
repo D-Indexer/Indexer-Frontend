@@ -692,3 +692,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.form__title {
+  margin-bottom: 0;
+  font-size: 1.25rem;
+}
+
+.template-card__title {
+  margin-bottom: var(--space-2);
+  font-size: 1.15rem;
+}

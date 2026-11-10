@@ -14,7 +14,7 @@ export const HomePage = () => {
           title="Start from a structured portfolio"
           description="Use a template as the schema for metadata, credentials, and proof-of-work display."
         />
-        <TemplateGrid />
+        <TemplateGrid headingLevel={3} />
       </section>
     </PageContainer>
   )

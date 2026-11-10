@@ -149,7 +149,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   return (
     <Card>
       <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="portfolio-form-title">
-        <h3 id="portfolio-form-title">{isUpdate ? 'Update your portfolio' : 'Mint your portfolio'}</h3>
+        <h2 id="portfolio-form-title" className="form__title">{isUpdate ? 'Update your portfolio' : 'Mint your portfolio'}</h2>
         {contentNotice ? (
           <div className="notice notice--warning" role="status">
             <p>{contentNotice}</p>

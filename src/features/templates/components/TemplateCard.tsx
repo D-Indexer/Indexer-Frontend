@@ -5,10 +5,13 @@ import { humanizeField } from '@/utils/format'
 
 interface TemplateCardProps {
   action?: React.ReactNode
+  /** Heading level for the card title, so it nests under the surrounding heading. */
+  headingLevel?: 2 | 3
   template: TemplateWithMetadata
 }
 
-export const TemplateCard = ({ action, template }: TemplateCardProps) => {
+export const TemplateCard = ({ action, headingLevel = 2, template }: TemplateCardProps) => {
+  const Heading = `h${headingLevel}` as const
   const { metadata } = template
   const cid = cidFromIpfsUri(template.metadataUri)
   const headingId = `template-${template.id}-title`
@@ -20,7 +23,9 @@ export const TemplateCard = ({ action, template }: TemplateCardProps) => {
         {metadata ? <Badge tone="success">{metadata.target_industry}</Badge> : <Badge tone="warning">Metadata unavailable</Badge>}
       </div>
       <div>
-        <h3 id={headingId}>{metadata?.name ?? `Template ${template.id}`}</h3>
+        <Heading id={headingId} className="template-card__title">
+          {metadata?.name ?? `Template ${template.id}`}
+        </Heading>
         <p className="muted">
           {metadata?.description ??
             'The metadata for this template could not be loaded from IPFS. It is registered on-chain and can still be used.'}

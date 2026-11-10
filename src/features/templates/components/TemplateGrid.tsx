@@ -3,7 +3,11 @@ import { appRoutes } from '@/config/routes'
 import { useTemplates } from '@/hooks'
 import { TemplateCard } from './TemplateCard'
 
-export const TemplateGrid = () => {
+interface TemplateGridProps {
+  headingLevel?: 2 | 3
+}
+
+export const TemplateGrid = ({ headingLevel = 2 }: TemplateGridProps) => {
   const { data, error, loading, refetch } = useTemplates()
 
   return (
@@ -24,9 +28,10 @@ export const TemplateGrid = () => {
             <TemplateCard
               key={template.id}
               template={template}
+              headingLevel={headingLevel}
               action={
                 <LinkButton to={`${appRoutes.dashboard}?template=${template.id}`} variant="secondary">
-                  Use template
+                  Use template<span className="sr-only"> {template.metadata?.name ?? template.id}</span>
                 </LinkButton>
               }
             />
