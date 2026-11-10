@@ -8,7 +8,7 @@ export const TemplatesPage = () => {
       <SectionHeader
         eyebrow="Marketplace"
         title="Portfolio templates"
-        description="Template data is loaded from the configured Folder API, with local starter templates available during development."
+        description="Templates registered on the Folder contract, as indexed by the backend. Their metadata is read from IPFS."
       />
       <TemplateGrid />
     </PageContainer>

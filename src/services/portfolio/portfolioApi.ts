@@ -1,12 +1,8 @@
 import { apiClient } from '@/services/http/client'
+import { nullIfNotFound } from '@/services/http/errors'
 import type { Portfolio } from '@/types'
 
 export const portfolioApi = {
-  create: (templateId: string, metadataCid: string) =>
-    apiClient.post<Portfolio>('/portfolios', { templateId, metadataCid }),
-  get: (id: string) => apiClient.get<Portfolio>(`/portfolios/${id}`),
-  update: (id: string, metadataCid: string) =>
-    apiClient.patch<Portfolio>(`/portfolios/${id}`, { metadataCid }),
-  list: () => apiClient.get<Portfolio[]>('/portfolios'),
-  verify: (id: string) => apiClient.post(`/portfolios/${id}/verify`),
+  getByOwner: (address: string) =>
+    nullIfNotFound(apiClient.get<Portfolio>(`/portfolios/${encodeURIComponent(address)}`)),
 }
