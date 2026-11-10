@@ -2,7 +2,6 @@ export const appRoutes = {
   home: '/',
   dashboard: '/dashboard',
   templates: '/templates',
-  createPortfolio: '/portfolios/new',
-  portfolioDetail: '/portfolio/:id',
-  portfolio: (id: string) => `/portfolio/${id}`,
+  publicPortfolio: '/p/:folderName',
+  publicPortfolioFor: (folderName: string) => `/p/${encodeURIComponent(folderName)}`,
 } as const

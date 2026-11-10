@@ -1,14 +1,5 @@
-import { mockTemplates } from '@/data/mockTemplates'
-import { templateApi } from '@/services'
+import { folderData } from '@/services'
 import { useAsync } from './useAsync'
 
-export const useTemplates = () => {
-  return useAsync(async () => {
-    try {
-      const response = await templateApi.list()
-      return response.data
-    } catch {
-      return mockTemplates
-    }
-  }, [])
-}
+/** Registered templates with their IPFS metadata. No fallback: failures surface as `error`. */
+export const useTemplates = () => useAsync(() => folderData.listTemplates(), [])

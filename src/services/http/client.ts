@@ -3,12 +3,5 @@ import { env } from '@/config/env'
 
 export const apiClient = axios.create({
   baseURL: env.apiUrl,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 15_000,
 })
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error: unknown) => Promise.reject(error),
-)

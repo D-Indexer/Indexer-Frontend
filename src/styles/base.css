@@ -43,3 +43,27 @@ h3,
 h4 {
   margin-top: 0;
 }
+
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -3rem;
+  z-index: 50;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  color: white;
+  background: var(--color-primary);
+}
+
+.skip-link:focus {
+  top: var(--space-2);
+}

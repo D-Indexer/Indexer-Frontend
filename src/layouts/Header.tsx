@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
-import { LoginButton } from '@/features/auth/components/LoginButton'
+import { WalletButton } from '@/features/wallet'
 import { appRoutes } from '@/config/routes'
 import { navigationItems } from '@/constants/navigation'
 import { classNames } from '@/utils/classNames'
@@ -23,7 +23,7 @@ export const Header = () => {
             </NavLink>
           ))}
         </nav>
-        <LoginButton />
+        <WalletButton />
       </div>
     </header>
   )

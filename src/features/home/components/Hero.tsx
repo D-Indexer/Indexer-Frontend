@@ -9,11 +9,11 @@ export const Hero = () => {
         <span className="hero__eyebrow">Stellar-native professional identity</span>
         <h1 className="text-balance">Build a portfolio people can verify.</h1>
         <p className="hero__lead">
-          Folder turns professional profiles into portable identity records with IPFS metadata,
-          Stellar ownership, and credential-ready API flows.
+          Folder lets you claim a name, pick a template and mint a portfolio NFT on Stellar testnet.
+          Its content lives on IPFS and anyone can verify it against the contract.
         </p>
         <div className="hero__actions">
-          <LinkButton to={appRoutes.createPortfolio}>Create portfolio</LinkButton>
+          <LinkButton to={appRoutes.dashboard}>Get started</LinkButton>
           <LinkButton to={appRoutes.templates} variant="secondary">
             Browse templates
           </LinkButton>

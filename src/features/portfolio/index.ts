@@ -1,2 +1,1 @@
-export { PortfolioEditor } from './components/PortfolioEditor'
-export { PortfolioStatusCard } from './components/PortfolioStatusCard'
+export { PortfolioForm } from './components/PortfolioForm'
