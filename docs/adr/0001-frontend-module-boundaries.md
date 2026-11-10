@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted. Amended 2026-11-10: `src/domain/` was removed together with the list dashboard and
+template pricing, which modelled API fields the backend does not provide. Pure helpers now live
+next to their service (`src/services/ipfs/cid.ts`, `src/utils/validation.ts`).
 
 ## Context
 
