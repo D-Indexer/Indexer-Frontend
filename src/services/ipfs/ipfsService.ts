@@ -5,7 +5,7 @@ export const ipfsService = {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await fetch(`${env.ipfsApiUrl}/api/v0/add`, {
+    const response = await fetch(`${env.apiUrl}/upload`, {
       method: 'POST',
       body: formData,
     })
@@ -28,5 +28,5 @@ export const ipfsService = {
     return ipfsService.uploadFile(file)
   },
 
-  getFileUrl: (cid: string): string => `${env.ipfsApiUrl}/ipfs/${cid}`,
+  getFileUrl: (cid: string): string => `${env.ipfsGatewayUrl}/${cid}`,
 }
