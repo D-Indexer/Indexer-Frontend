@@ -32,7 +32,9 @@ const renderGrid = () =>
   )
 
 describe('TemplateGrid', () => {
-  beforeEach(() => listTemplates.mockReset())
+  beforeEach(() => {
+    listTemplates.mockReset()
+  })
 
   it('shows a loading state, then the templates', async () => {
     listTemplates.mockResolvedValue([template])
