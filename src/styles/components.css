@@ -334,3 +334,52 @@
     flex-direction: column;
   }
 }
+
+.notice--warning {
+  border-color: rgba(180, 83, 9, 0.3);
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.notice--danger {
+  border-color: rgba(185, 28, 28, 0.28);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.wallet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.wallet__network {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.wallet__network--wrong {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.wallet__address {
+  color: var(--color-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.wallet__error {
+  flex-basis: 100%;
+  max-width: 22rem;
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.9rem;
+  text-align: right;
+}
