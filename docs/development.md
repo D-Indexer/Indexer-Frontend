@@ -5,7 +5,7 @@
 ```bash
 npm install
 npm run dev
-npm run type-check
+npm run typecheck
 npm run lint
 npm run build
 ```
