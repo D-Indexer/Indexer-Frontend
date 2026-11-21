@@ -108,6 +108,45 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 }
 
+/**
+ * Runtime configuration file served next to `index.html` by the production container
+ * (`docker/entrypoint.sh` renders it from env vars). It lets one image be deployed with
+ * different settings. When present it wins over the build-time `VITE_*` values.
+ */
+export const RUNTIME_CONFIG_PATH = '/config.json'
+
+export type RuntimeConfig = Partial<Record<keyof AppConfig, unknown>>
+
+/** Maps the camelCase keys of `config.json` back to the `VITE_*` names `parseEnv` reads. */
+export const runtimeConfigToRawEnv = (runtime: RuntimeConfig): RawEnv => {
+  const raw: RawEnv = {}
+  const keys: Array<[keyof AppConfig, string]> = [
+    ['apiUrl', 'VITE_API_URL'],
+    ['demoMode', 'VITE_DEMO_MODE'],
+    ['folderContractId', 'VITE_FOLDER_CONTRACT_ID'],
+    ['ipfsGatewayUrl', 'VITE_IPFS_GATEWAY_URL'],
+    ['sorobanRpcUrl', 'VITE_SOROBAN_RPC_URL'],
+    ['stellarNetwork', 'VITE_STELLAR_NETWORK'],
+  ]
+  for (const [key, variable] of keys) {
+    const value = runtime[key]
+    if (typeof value === 'string' || typeof value === 'boolean') raw[variable] = value
+  }
+  return raw
+}
+
+/** Fetches `config.json`; a missing file (dev server, static hosting) is not an error. */
+export const loadRuntimeConfig = async (): Promise<RuntimeConfig | null> => {
+  try {
+    const response = await fetch(RUNTIME_CONFIG_PATH, { cache: 'no-store' })
+    if (!response.ok) return null
+    const body: unknown = await response.json()
+    return body && typeof body === 'object' ? (body as RuntimeConfig) : null
+  } catch {
+    return null
+  }
+}
+
 const parsed = parseEnv(import.meta.env)
 
 export const env: AppConfig = parsed.config
