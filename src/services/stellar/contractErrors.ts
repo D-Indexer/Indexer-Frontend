@@ -33,7 +33,7 @@ export const contractErrorMessages: Record<number, { name: string; message: stri
 /** Finds `Error(Contract, #N)` in a simulation or diagnostic message. */
 export const extractContractErrorCode = (text: string): number | null => {
   const match = /Error\(Contract, #(\d+)\)/.exec(text)
-  return match ? Number(match[1]) : null
+  return match && match[1] ? Number(match[1]) : null
 }
 
 export const describeContractError = (code: number) =>

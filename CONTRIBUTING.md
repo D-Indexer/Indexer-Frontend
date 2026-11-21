@@ -37,5 +37,6 @@ Thanks for helping! This guide is short on purpose; the [README](README.md) cove
 - Client-side validation should mirror the contract (`Indexer-Contract/docs/VALIDATION.md`), not invent new rules.
 - Every `VITE_*` variable is public. Secrets belong in the backend.
 - New `VITE_*` variables must be added to `src/config/env.ts`, `.env.example` and `docs/configuration.md`.
+- TypeScript: Strict compiler options (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`) are enabled in `tsconfig.json`. Handle undefined index accesses and optional properties explicitly. Non-null assertions (`!`) are lint-banned in `src/services`.
 - Tests: Vitest + Testing Library. Query by role/label, as a user would. Network calls are mocked,
   except the opt-in testnet smoke test.

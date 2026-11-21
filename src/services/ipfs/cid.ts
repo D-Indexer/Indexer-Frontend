@@ -66,5 +66,5 @@ export const isRawCidV1 = (cid: string) => cid.startsWith('bafkrei')
 /** `ipfs://<cid>[/path]` → `<cid>`; returns null for anything else. */
 export const cidFromIpfsUri = (uri: string): string | null => {
   const match = /^ipfs:\/\/([^/?#]+)/.exec(uri)
-  return match ? match[1] : null
+  return match && match[1] ? match[1] : null
 }
