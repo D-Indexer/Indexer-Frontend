@@ -147,6 +147,13 @@ export const stellarService = {
     })
   },
 
+  /** Soroban RPC health plus the latest ledger it knows about (used by the status page). */
+  getRpcHealth: async (): Promise<{ latestLedger: number; latestLedgerCloseTime: number }> => {
+    await getServer().getHealth()
+    const latest = await getServer().getLatestLedger()
+    return { latestLedger: latest.sequence, latestLedgerCloseTime: latest.closeTime }
+  },
+
   /** Read-only `verify_portfolio(owner)` via simulation; true when a portfolio NFT exists on-chain. */
   verifyPortfolio: async (owner: string): Promise<boolean> => {
     const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'verify_portfolio', [new Address(owner).toScVal()])
