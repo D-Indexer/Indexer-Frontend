@@ -4,6 +4,11 @@
  * Every variable is documented in `.env.example` and `docs/configuration.md`.
  * `parseEnv` is pure so it can be unit-tested; `main.tsx` renders a
  * configuration error screen when `envErrors` is non-empty.
+ *
+ * The dev container (`.devcontainer/`) writes the same values to
+ * `public/runtime-config.js` at container start, so the image can be built once
+ * and pointed at a different contract/backend without a rebuild. `loadRuntimeConfig`
+ * merges that file over the build-time values.
  */
 
 export type StellarNetwork = 'testnet'
@@ -108,7 +113,47 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 }
 
-const parsed = parseEnv(import.meta.env)
+/** Shape of `public/runtime-config.js` (`window.__FOLDER_CONFIG__`). */
+export type RuntimeConfig = Partial<Record<keyof AppConfig, string | boolean>>
+
+declare global {
+  interface Window {
+    __FOLDER_CONFIG__?: RuntimeConfig
+  }
+}
+
+const runtimeKeys: Record<keyof AppConfig, string> = {
+  apiUrl: 'VITE_API_URL',
+  demoMode: 'VITE_DEMO_MODE',
+  folderContractId: 'VITE_FOLDER_CONTRACT_ID',
+  ipfsGatewayUrl: 'VITE_IPFS_GATEWAY_URL',
+  sorobanRpcUrl: 'VITE_SOROBAN_RPC_URL',
+  stellarNetwork: 'VITE_STELLAR_NETWORK',
+}
+
+/**
+ * Merges runtime overrides (from `window.__FOLDER_CONFIG__`) over the build-time
+ * `VITE_*` values. Runtime values win, so one image can serve any local stack.
+ */
+export const loadRuntimeConfig = (
+  buildEnv: RawEnv,
+  runtime: RuntimeConfig | undefined,
+): { config: AppConfig; errors: EnvIssue[] } => {
+  const merged: RawEnv = { ...buildEnv }
+  if (runtime) {
+    for (const [key, variable] of Object.entries(runtimeKeys)) {
+      const value = runtime[key as keyof AppConfig]
+      if (typeof value === 'string' && value.trim()) merged[variable] = value
+      else if (typeof value === 'boolean') merged[variable] = String(value)
+    }
+  }
+  return parseEnv(merged)
+}
+
+const parsed = loadRuntimeConfig(
+  import.meta.env,
+  typeof window === 'undefined' ? undefined : window.__FOLDER_CONFIG__,
+)
 
 export const env: AppConfig = parsed.config
 export const envErrors: EnvIssue[] = parsed.errors
