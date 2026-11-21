@@ -13,6 +13,8 @@ export interface AppConfig {
   demoMode: boolean
   folderContractId: string
   ipfsGatewayUrl: string
+  rumEndpoint: string
+  rumSampleRate: number
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
 }
@@ -45,6 +47,7 @@ export const isContractId = (value: string) => /^C[A-Z2-7]{55}$/.test(value)
 
 export const defaults = {
   ipfsGatewayUrl: 'https://ipfs.io/ipfs',
+  rumSampleRate: 1,
   sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
   stellarNetwork: 'testnet',
 } as const
@@ -95,12 +98,34 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
 
+  // Real-user monitoring is opt-in: unset (or invalid) means no collection at all.
+  const rumEndpoint = read(raw, 'VITE_RUM_ENDPOINT')
+  if (rumEndpoint && !isHttpUrl(rumEndpoint)) {
+    errors.push({ variable: 'VITE_RUM_ENDPOINT', message: `"${rumEndpoint}" is not an http(s) URL.` })
+  }
+
+  const rawSampleRate = read(raw, 'VITE_RUM_SAMPLE_RATE')
+  let rumSampleRate = defaults.rumSampleRate
+  if (rawSampleRate) {
+    const parsedRate = Number(rawSampleRate)
+    if (!Number.isFinite(parsedRate) || parsedRate < 0 || parsedRate > 1) {
+      errors.push({
+        variable: 'VITE_RUM_SAMPLE_RATE',
+        message: `"${rawSampleRate}" must be a number between 0 and 1.`,
+      })
+    } else {
+      rumSampleRate = parsedRate
+    }
+  }
+
   return {
     config: {
       apiUrl,
       demoMode,
       folderContractId,
       ipfsGatewayUrl,
+      rumEndpoint,
+      rumSampleRate,
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
     },
