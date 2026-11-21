@@ -108,7 +108,17 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 }
 
-const parsed = parseEnv(import.meta.env)
+/**
+ * `import.meta.env` is a Vite-only construct. Node entry points (e.g. `scripts/verify.ts`) call
+ * `configureEnv` with `process.env` before importing anything that reads `env`.
+ */
+let rawEnv: RawEnv = import.meta.env
+
+export const configureEnv = (raw: RawEnv) => {
+  rawEnv = raw
+}
+
+const parsed = parseEnv(rawEnv)
 
 export const env: AppConfig = parsed.config
 export const envErrors: EnvIssue[] = parsed.errors

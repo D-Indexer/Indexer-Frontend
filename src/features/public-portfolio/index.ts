@@ -1,4 +1,7 @@
 export { VerificationBadge } from './components/VerificationBadge'
-export { loadPublicPortfolio, usePublicPortfolio } from './hooks/usePublicPortfolio'
+export { loadPublicPortfolio } from './hooks/usePublicPortfolio'
+export { usePublicPortfolio } from './hooks/usePublicPortfolioAsync'
 export type { PublicPortfolio, Verification } from './hooks/usePublicPortfolio'
 export { PortfolioView } from './templates/PortfolioView'
+export { describeVerification, portfolioVerdict } from './verdict'
+export type { PortfolioVerdict } from './verdict'
