@@ -57,6 +57,7 @@ export const buildDiagnostics = (context: DiagnosticsContext): DiagnosticsBundle
     config: {
       apiUrl: env.apiUrl,
       demoMode: env.demoMode,
+      errorReportingDsn: env.errorReportingDsn ? REDACTED : '',
       folderContractId: env.folderContractId,
       ipfsGatewayUrl: env.ipfsGatewayUrl,
       sorobanRpcUrl: env.sorobanRpcUrl,

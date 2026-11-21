@@ -16,6 +16,8 @@ export type StellarNetwork = 'testnet'
 export interface AppConfig {
   apiUrl: string
   demoMode: boolean
+  /** Sentry-compatible DSN. Empty disables error reporting (and its bundle cost). */
+  errorReportingDsn: string
   folderContractId: string
   ipfsGatewayUrl: string
   sorobanRpcUrl: string
@@ -100,10 +102,19 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
 
+  const errorReportingDsn = read(raw, 'VITE_ERROR_REPORTING_DSN')
+  if (errorReportingDsn && !isHttpUrl(errorReportingDsn)) {
+    errors.push({
+      variable: 'VITE_ERROR_REPORTING_DSN',
+      message: `"${errorReportingDsn}" is not an http(s) URL. Leave it empty to disable error reporting.`,
+    })
+  }
+
   return {
     config: {
       apiUrl,
       demoMode,
+      errorReportingDsn,
       folderContractId,
       ipfsGatewayUrl,
       sorobanRpcUrl,
@@ -125,6 +136,7 @@ declare global {
 const runtimeKeys: Record<keyof AppConfig, string> = {
   apiUrl: 'VITE_API_URL',
   demoMode: 'VITE_DEMO_MODE',
+  errorReportingDsn: 'VITE_ERROR_REPORTING_DSN',
   folderContractId: 'VITE_FOLDER_CONTRACT_ID',
   ipfsGatewayUrl: 'VITE_IPFS_GATEWAY_URL',
   sorobanRpcUrl: 'VITE_SOROBAN_RPC_URL',
