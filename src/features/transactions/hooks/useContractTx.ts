@@ -8,10 +8,12 @@ export interface ContractTxState {
   error: string | null
   /** Hash of a submitted transaction, also set when it failed or is still pending. */
   hash: string | null
+  /** Contract method being called, shown with the contract identity before signing. */
+  method: string | null
   stage: FlowStage
 }
 
-const initialState: ContractTxState = { error: null, hash: null, stage: 'idle' }
+const initialState: ContractTxState = { error: null, hash: null, method: null, stage: 'idle' }
 
 /**
  * Runs one Folder contract write with Freighter as signer. `prepare` can do async work first
@@ -27,14 +29,15 @@ export const useContractTx = () => {
     setState({ ...initialState, stage: 'preparing' })
     try {
       const write = await prepare(() => setState((current) => ({ ...current, stage: 'uploading' })))
+      setState((current) => ({ ...current, method: write.method }))
       const result = await stellarService.invoke(owner, write, freighterWallet.signTransaction, (stage) =>
         setState((current) => ({ ...current, stage })),
       )
-      setState({ error: null, hash: result.hash, stage: 'done' })
+      setState({ error: null, hash: result.hash, method: write.method, stage: 'done' })
       return result
     } catch (error) {
       const hash = error instanceof TransactionError ? (error.options.hash ?? null) : null
-      setState({ error: toApiError(error).message, hash, stage: 'failed' })
+      setState((current) => ({ ...current, error: toApiError(error).message, hash, stage: 'failed' }))
       return null
     } finally {
       running.current = false

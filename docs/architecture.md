@@ -41,6 +41,24 @@ Browser (this repo)
   backend produces for single-block files).
 - The browser holds no secrets; uploads go through the backend.
 
+## Verifying a contract ID before signing
+
+Phishing sites can look like this app. Before you approve a transaction in Freighter, the pre-sign
+step of `TxStatus` shows the contract identity: an identicon, the shortened contract ID and the
+method being called.
+
+1. Compare the shortened contract ID with `VITE_FOLDER_CONTRACT_ID` in the deployment's
+   configuration (see [configuration.md](configuration.md)).
+2. Compare the identicon with the one shown for the same contract ID elsewhere (a previous session,
+   another device, or the team's published reference). The identicon is generated offline from the
+   contract ID with FNV-1a, so it never depends on the network and cannot be swapped by a server.
+3. Open the contract on stellar.expert from the link in the pre-sign step and check that the
+   contract ID matches exactly.
+4. Check the method name (`claim_folder`, `mint_portfolio`, `update_portfolio`) matches what you
+   intended to do.
+
+If any of these differ, reject the signature in Freighter.
+
 ## Decisions
 
 See [docs/adr/](adr/).
