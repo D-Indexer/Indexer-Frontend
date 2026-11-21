@@ -1,4 +1,4 @@
-import { Badge, Card, ExternalLink } from '@/components/ui'
+import { Badge, Card, Identifier } from '@/components/ui'
 import { cidFromIpfsUri, ipfsService } from '@/services'
 import type { TemplateWithMetadata } from '@/types'
 import { humanizeField } from '@/utils/format'
@@ -40,9 +40,7 @@ export const TemplateCard = ({ action, headingLevel = 2, template }: TemplateCar
       ) : null}
       <div className="template-card__footer">
         {cid ? (
-          <ExternalLink href={ipfsService.gatewayUrl(cid)} className="muted mono small">
-            {cid.slice(0, 12)}…
-          </ExternalLink>
+          <Identifier className="muted small" label="Metadata CID" value={cid} href={ipfsService.gatewayUrl(cid)} visible={6} />
         ) : null}
         {action}
       </div>

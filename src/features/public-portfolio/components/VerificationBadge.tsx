@@ -1,4 +1,4 @@
-import { ExternalLink } from '@/components/ui'
+import { ExternalLink, Identifier } from '@/components/ui'
 import { env } from '@/config/env'
 import { explorerLinks } from '@/services'
 import type { Verification } from '../hooks/usePublicPortfolio'
@@ -12,10 +12,14 @@ export const VerificationBadge = ({ owner, verification }: VerificationBadgeProp
   const links = (
     <p className="verification__links">
       <ExternalLink href={explorerLinks.account(owner)}>Owner&apos;s transactions</ExternalLink>
+      {' · '}
+      <Identifier label="Owner address" value={owner} />
       {env.folderContractId ? (
         <>
           {' · '}
           <ExternalLink href={explorerLinks.contract(env.folderContractId)}>Folder contract</ExternalLink>
+          {' · '}
+          <Identifier label="Folder contract" value={env.folderContractId} visible={6} />
         </>
       ) : null}
     </p>

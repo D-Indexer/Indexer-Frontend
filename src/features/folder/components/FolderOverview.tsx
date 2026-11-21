@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AsyncContent, ExternalLink } from '@/components/ui'
+import { AsyncContent, Identifier } from '@/components/ui'
 import { PortfolioForm } from '@/features/portfolio'
 import { useFolder, usePortfolio } from '@/hooks'
 import { explorerLinks } from '@/services'
@@ -45,9 +45,8 @@ export const FolderOverview = ({ address }: FolderOverviewProps) => {
         <div className="notice notice--success notice--stack" role="status">
           <p>{lastTx.label} confirmed on Stellar testnet.</p>
           <p>
-            <ExternalLink className="mono" href={explorerLinks.transaction(lastTx.hash)}>
-              View transaction {lastTx.hash.slice(0, 10)}… on stellar.expert
-            </ExternalLink>
+            View transaction <Identifier label="Transaction hash" value={lastTx.hash} href={explorerLinks.transaction(lastTx.hash)} visible={5} /> on
+            stellar.expert
           </p>
         </div>
       ) : null}

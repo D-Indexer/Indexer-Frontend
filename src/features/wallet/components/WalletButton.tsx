@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { Button } from '@/components/ui'
+import { Button, Identifier } from '@/components/ui'
 import { env } from '@/config/env'
-import { explorerLinks, freighterWallet, shortenKey } from '@/services'
+import { explorerLinks, freighterWallet } from '@/services'
 import { selectIsTestnet, useWalletStore } from '@/store'
 
 export const WalletButton = () => {
@@ -27,10 +27,7 @@ export const WalletButton = () => {
         <span className={isTestnet ? 'wallet__network' : 'wallet__network wallet__network--wrong'}>
           {isTestnet ? 'Testnet' : `${network ?? 'Unknown'} (switch to Testnet)`}
         </span>
-        <a className="wallet__address mono" href={explorerLinks.account(address)} target="_blank" rel="noreferrer" title={address}>
-          {shortenKey(address)}
-          <span className="sr-only"> (full address {address}, opens stellar.expert)</span>
-        </a>
+        <Identifier className="wallet__address" label="Wallet address" value={address} href={explorerLinks.account(address)} />
         <Button type="button" variant="secondary" onClick={disconnect}>
           Disconnect
         </Button>

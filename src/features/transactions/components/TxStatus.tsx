@@ -1,5 +1,5 @@
-import { ExternalLink } from '@/components/ui'
-import { explorerLinks, shortenKey } from '@/services'
+import { Identifier } from '@/components/ui'
+import { explorerLinks } from '@/services'
 import type { ContractTxState, FlowStage } from '../hooks/useContractTx'
 
 const stageLabels: Partial<Record<FlowStage, string>> = {
@@ -18,11 +18,8 @@ interface TxStatusProps extends ContractTxState {
 export const TxStatus = ({ error, hash, stage, successMessage }: TxStatusProps) => {
   const hashLink = hash ? (
     <p>
-      Transaction:{' '}
-      <ExternalLink className="mono" href={explorerLinks.transaction(hash)}>
-        {shortenKey(hash, 8)}
-      </ExternalLink>{' '}
-      on stellar.expert
+      Transaction: <Identifier label="Transaction hash" value={hash} href={explorerLinks.transaction(hash)} visible={8} /> on
+      stellar.expert
     </p>
   ) : null
 
