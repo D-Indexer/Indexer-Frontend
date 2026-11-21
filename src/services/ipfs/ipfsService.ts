@@ -3,7 +3,7 @@ import { knownTemplateMetadata } from '@/data/knownTemplateMetadata'
 import { apiClient } from '@/services/http/client'
 import { toApiError } from '@/services/http/errors'
 import type { PortfolioContent, Template, TemplateMetadata } from '@/types'
-import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid } from './cid'
+import { cidFromIpfsUri, computeRawCidV1, isValidContractCid, verifyRawCidV1 } from './cid'
 
 export class IpfsError extends Error {
   constructor(message: string) {
@@ -19,7 +19,7 @@ const UNSUPPORTED_TYPE_HINT =
 export const serializePortfolioContent = (content: PortfolioContent) => `${JSON.stringify(content, null, 2)}\n`
 
 const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
-  if (isRawCidV1(cid) && (await computeRawCidV1(bytes)) !== cid) {
+  if (!(await verifyRawCidV1(cid, bytes))) {
     throw new IpfsError(`${source} returned content that does not match CID ${cid}.`)
   }
 }

@@ -8,6 +8,8 @@
  * CID really is the hash of the bytes it uploaded or downloaded.
  */
 
+import { computeRawCidV1OffThread } from './cidWorkerClient'
+
 const BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]+$/
 const BASE32_LOWER_RE = /^[a-z2-7]+$/
 
@@ -29,7 +31,7 @@ export const isValidContractCid = (cid: string): boolean => {
 
 const BASE32_ALPHABET = 'abcdefghijklmnopqrstuvwxyz234567'
 
-const toBase32Lower = (bytes: Uint8Array) => {
+export const toBase32Lower = (bytes: Uint8Array) => {
   let output = ''
   let buffer = 0
   let bits = 0
@@ -52,7 +54,7 @@ const toBase32Lower = (bytes: Uint8Array) => {
  * `ipfs add --cid-version 1` produces for a single-block file (< 256 KiB), which is what
  * Indexer-Backend `/upload` and the contract's template manifest use.
  */
-export const computeRawCidV1 = async (content: Uint8Array | string): Promise<string> => {
+export const computeRawCidV1Sync = async (content: Uint8Array | string): Promise<string> => {
   const bytes = typeof content === 'string' ? new TextEncoder().encode(content) : content
   // Copy into a plain ArrayBuffer-backed view (TS rejects SharedArrayBuffer-backed views here).
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(bytes)))
@@ -60,8 +62,23 @@ export const computeRawCidV1 = async (content: Uint8Array | string): Promise<str
   return `b${toBase32Lower(cidBytes)}`
 }
 
+/**
+ * Same as `computeRawCidV1Sync`, but hashes in a Web Worker when one is available so large
+ * payloads do not block the main thread. Falls back to the main thread otherwise.
+ */
+export const computeRawCidV1 = (content: Uint8Array | string): Promise<string> =>
+  computeRawCidV1OffThread(content)
+
 /** True when `cid` is a raw CIDv1 we can recompute locally (single-block content). */
 export const isRawCidV1 = (cid: string) => cid.startsWith('bafkrei')
+
+/**
+ * Verifies that `bytes` hash to `cid` when `cid` is a recomputable raw CIDv1. Hashing runs off the
+ * main thread when a Worker is available. Returns false on mismatch, true when it matches or when
+ * the CID cannot be recomputed locally.
+ */
+export const verifyRawCidV1 = async (cid: string, bytes: Uint8Array): Promise<boolean> =>
+  !isRawCidV1(cid) || (await computeRawCidV1(bytes)) === cid
 
 /** `ipfs://<cid>[/path]` → `<cid>`; returns null for anything else. */
 export const cidFromIpfsUri = (uri: string): string | null => {
