@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  sbom:
+    name: Generate CycloneDX SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate SBOM (production dependencies)
+        run: npx --yes @cyclonedx/cyclonedx-npm@^1 --omit dev --output-file sbom.cdx.json --output-format json
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v1
+        with:
+          subject-path: package.json
+          sbom-path: sbom.cdx.json
+
+      - name: Scan SBOM with Grype
+        uses: anchore/scan-action@v4
+        with:
+          sbom: sbom.cdx.json
+          fail-build: false
+          output-format: table
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+          if-no-files-found: error
+
+      - name: Attach SBOM to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sbom.cdx.json
+          fail_on_unmatched_files: true
