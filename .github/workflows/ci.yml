@@ -12,10 +12,16 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Public build-time config; the same values are used locally via .env.example.
+  VITE_API_URL: http://localhost:3000
+  VITE_FOLDER_CONTRACT_ID: CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV
+
 jobs:
-  check:
+  typecheck:
+    name: typecheck (node 20)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,10 +29,91 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.cache/tsbuildinfo
+            *.tsbuildinfo
+          key: tsbuildinfo-${{ runner.os }}-node20-${{ hashFiles('tsconfig*.json', 'src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            tsbuildinfo-${{ runner.os }}-node20-
       - run: npm run typecheck
+
+  lint:
+    name: lint (node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
       - run: npm run lint
+
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - name: Cache Vitest
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.vite
+            node_modules/.vitest
+          key: vitest-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('package-lock.json', 'vite.config.ts', 'src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            vitest-${{ runner.os }}-node${{ matrix.node }}-
       - run: npm test
+
+  build:
+    name: build (node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Cache Vite build
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.vite
+          key: vite-build-${{ runner.os }}-node20-${{ hashFiles('package-lock.json', 'vite.config.ts', 'src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            vite-build-${{ runner.os }}-node20-
       - run: npm run build
-        env:
-          VITE_API_URL: http://localhost:3000
-          VITE_FOLDER_CONTRACT_ID: CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV
+
+  # Single required status check: branch protection only needs "ci-required".
+  ci-required:
+    name: ci-required
+    if: always()
+    needs: [typecheck, lint, test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any job did not succeed
+        run: |
+          echo "typecheck: ${{ needs.typecheck.result }}"
+          echo "lint:      ${{ needs.lint.result }}"
+          echo "test:      ${{ needs.test.result }}"
+          echo "build:     ${{ needs.build.result }}"
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "true" ]; then
+            echo "::error::One or more CI jobs did not succeed."
+            exit 1
+          fi
