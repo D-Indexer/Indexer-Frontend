@@ -454,6 +454,18 @@
   font-size: 0.92rem;
 }
 
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: var(--space-2) var(--space-4);
+  color: #4a1d1d;
+  background: #fecaca;
+  border-bottom: 1px solid #ef4444;
+  text-align: center;
+  font-size: 0.92rem;
+}
+
 .definition-list {
   display: grid;
   gap: var(--space-3);

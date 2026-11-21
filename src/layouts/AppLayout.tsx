@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { DemoBanner } from '@/components/ui'
+import { DemoBanner, OfflineBanner } from '@/components/ui'
 import { env } from '@/config/env'
 import { Footer } from './Footer'
 import { Header } from './Header'
@@ -26,6 +26,7 @@ export const AppLayout = () => {
         Skip to content
       </a>
       {env.demoMode ? <DemoBanner /> : null}
+      <OfflineBanner />
       <Header />
       <main className="app-main" id="main-content" tabIndex={-1} ref={mainRef}>
         <Outlet />
