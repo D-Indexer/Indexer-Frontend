@@ -79,12 +79,16 @@ npm run typecheck   # tsc --noEmit
 npm run lint        # ESLint
 npm test            # Vitest + Testing Library
 npm run build       # production build in dist/
+npm run format      # Prettier (npm run format:check to verify)
 
 # Optional: run claim → mint → update → verify against the testnet contract
 FOLDER_TESTNET_SMOKE=1 npx vitest run src/services/stellar/testnet
 ```
 
 Every `VITE_*` variable is documented in [docs/configuration.md](docs/configuration.md).
+
+`npm ci` also installs git hooks (lint-staged on commit, typecheck + related tests on push). See
+[CONTRIBUTING.md](CONTRIBUTING.md#git-hooks) for details and how to skip them.
 
 ## How it works
 
