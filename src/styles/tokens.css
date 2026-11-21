@@ -9,12 +9,25 @@
   --color-primary: #2563eb;
   --color-primary-dark: #1d4ed8;
   --color-primary-soft: #dbeafe;
+  --color-on-primary: #ffffff;
   --color-success: #15803d;
   --color-success-soft: #dcfce7;
   --color-warning: #b45309;
   --color-warning-soft: #fef3c7;
   --color-danger: #b91c1c;
   --color-danger-soft: #fee2e2;
+  --color-demo-text: #3b2a00;
+  --color-demo-bg: #fde68a;
+  --color-demo-border: #f59e0b;
+  --color-glow: rgba(37, 99, 235, 0.12);
+  --color-header-bg: rgba(255, 255, 255, 0.88);
+  --color-header-border: rgba(217, 224, 234, 0.84);
+  --color-surface-translucent: rgba(255, 255, 255, 0.92);
+  --color-surface-faint: rgba(255, 255, 255, 0.72);
+  --color-primary-border: rgba(37, 99, 235, 0.34);
+  --color-success-border: rgba(21, 128, 61, 0.24);
+  --color-warning-border: rgba(180, 83, 9, 0.3);
+  --color-danger-border: rgba(185, 28, 28, 0.28);
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
   --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
   --radius-sm: 0.25rem;
@@ -30,4 +43,76 @@
   --space-10: 2.5rem;
   --space-12: 3rem;
   --max-width: 1180px;
+}
+
+/* Dark theme: applied by the pre-paint script (system preference or manual override). */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #0b1120;
+  --color-surface: #111a2e;
+  --color-surface-muted: #1a2438;
+  --color-text: #e8edf7;
+  --color-muted: #a3aec2;
+  --color-border: #2b3852;
+  --color-primary: #7aa2ff;
+  --color-primary-dark: #a8c0ff;
+  --color-primary-soft: #1c2c4d;
+  --color-on-primary: #0b1120;
+  --color-success: #6ee7a0;
+  --color-success-soft: #10291c;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #2c2109;
+  --color-danger: #fca5a5;
+  --color-danger-soft: #2f1414;
+  --color-demo-text: #fde68a;
+  --color-demo-bg: #2c2109;
+  --color-demo-border: #b45309;
+  --color-glow: rgba(122, 162, 255, 0.16);
+  --color-header-bg: rgba(11, 17, 32, 0.88);
+  --color-header-border: rgba(43, 56, 82, 0.84);
+  --color-surface-translucent: rgba(17, 26, 46, 0.92);
+  --color-surface-faint: rgba(17, 26, 46, 0.72);
+  --color-primary-border: rgba(122, 162, 255, 0.4);
+  --color-success-border: rgba(110, 231, 160, 0.32);
+  --color-warning-border: rgba(251, 191, 36, 0.36);
+  --color-danger-border: rgba(252, 165, 165, 0.36);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* Follow the OS preference when the user has not picked a theme explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-bg: #0b1120;
+    --color-surface: #111a2e;
+    --color-surface-muted: #1a2438;
+    --color-text: #e8edf7;
+    --color-muted: #a3aec2;
+    --color-border: #2b3852;
+    --color-primary: #7aa2ff;
+    --color-primary-dark: #a8c0ff;
+    --color-primary-soft: #1c2c4d;
+    --color-on-primary: #0b1120;
+    --color-success: #6ee7a0;
+    --color-success-soft: #10291c;
+    --color-warning: #fbbf24;
+    --color-warning-soft: #2c2109;
+    --color-danger: #fca5a5;
+    --color-danger-soft: #2f1414;
+    --color-demo-text: #fde68a;
+    --color-demo-bg: #2c2109;
+    --color-demo-border: #b45309;
+    --color-glow: rgba(122, 162, 255, 0.16);
+    --color-header-bg: rgba(11, 17, 32, 0.88);
+    --color-header-border: rgba(43, 56, 82, 0.84);
+    --color-surface-translucent: rgba(17, 26, 46, 0.92);
+    --color-surface-faint: rgba(17, 26, 46, 0.72);
+    --color-primary-border: rgba(122, 162, 255, 0.4);
+    --color-success-border: rgba(110, 231, 160, 0.32);
+    --color-warning-border: rgba(251, 191, 36, 0.36);
+    --color-danger-border: rgba(252, 165, 165, 0.36);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.45);
+  }
 }
