@@ -8,6 +8,8 @@ import { readFileSync } from 'fs'
 const { version } = JSON.parse(readFileSync(path.resolve(__dirname, './package.json'), 'utf8')) as { version: string }
 
 export default defineConfig({
+  // Relative asset paths so the bundle works from any gateway path (`/ipfs/<cid>/`).
+  base: './',
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(version),

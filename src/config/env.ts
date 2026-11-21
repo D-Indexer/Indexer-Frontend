@@ -118,7 +118,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
  * (`docker/entrypoint.sh` renders it from env vars). It lets one image be deployed with
  * different settings. When present it wins over the build-time `VITE_*` values.
  */
-export const RUNTIME_CONFIG_PATH = '/config.json'
+export const RUNTIME_CONFIG_PATH = `${import.meta.env.BASE_URL}config.json`
 
 export type RuntimeConfig = Partial<Record<keyof AppConfig, unknown>>
 

@@ -16,6 +16,7 @@ listing each problem instead of starting.
 | `VITE_SOROBAN_RPC_URL` | No | `https://soroban-testnet.stellar.org` | http(s) URL | Soroban RPC used to simulate, submit and poll transactions and to call `verify_portfolio`. |
 | `VITE_IPFS_GATEWAY_URL` | No | `https://ipfs.io/ipfs` | http(s) URL | Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node. |
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
+| `VITE_IPFS_BUILD` | No | `false` | `true` enables it | Switches to hash routing for the IPFS release build (see [IPFS releases](#ipfs-releases)). |
 
 ## PR preview deployments
 
@@ -45,6 +46,37 @@ Versions follow [SemVer](https://semver.org/) and are managed by
 Merging the release PR bumps `package.json`, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and
 publishes the GitHub release. The footer shows the version from `package.json`, injected at build
 time as `__APP_VERSION__` by `vite.config.ts` (not a `VITE_*` variable).
+
+## IPFS releases
+
+Every published GitHub release is also uploaded to IPFS by
+[`.github/workflows/ipfs-release.yml`](../.github/workflows/ipfs-release.yml). The build uses
+relative asset paths (`base: './'` in `vite.config.ts`) and hash routing (`VITE_IPFS_BUILD=true`),
+so the same CID renders every route, including deep links such as `#/p/<folderName>`, from any
+gateway path (`https://<gateway>/ipfs/<cid>/#/dashboard`).
+
+The workflow:
+
+1. Builds `dist/` with `VITE_IPFS_BUILD=true` and the public `VITE_*` values from repository
+   variables (never secrets).
+2. Uploads `dist/` to IPFS with `ipfs add --cid-version 1 --recursive` and pins it.
+3. Verifies the CID through two public gateways (`ipfs.io` and `dweb.link`): `index.html` must
+   return 200 and contain the app root, and the hashed JS asset must return 200.
+4. Appends the CID and gateway links to the GitHub release notes.
+5. Optionally updates the DNSLink TXT record `_dnslink.<domain>` when `IPFS_DNSLINK_DOMAIN` is set.
+
+Repository setup (maintainers):
+
+| Kind | Name | Purpose |
+| --- | --- | --- |
+| Variable | `IPFS_API_URL` | Kubo RPC endpoint of the pinning node, e.g. `https://ipfs.example.com:5001`. |
+| Secret | `IPFS_API_TOKEN` | Bearer token for that endpoint (omit if the node is unauthenticated). |
+| Variable | `IPFS_DNSLINK_DOMAIN` | Optional. Domain whose `_dnslink` TXT record points at the release CID. |
+| Secret | `CLOUDFLARE_API_TOKEN` | Only for DNSLink: token with `Zone.DNS:Edit` on the domain's zone. |
+| Variable | `CLOUDFLARE_ZONE_ID` | Only for DNSLink: zone ID of `IPFS_DNSLINK_DOMAIN`. |
+
+Manual run: `workflow_dispatch` with a tag input re-publishes an existing release. To publish
+locally, run `VITE_IPFS_BUILD=true npm run build` and `ipfs add -r --cid-version 1 dist`.
 
 ## Demo mode
 
