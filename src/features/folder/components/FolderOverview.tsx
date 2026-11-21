@@ -42,7 +42,7 @@ export const FolderOverview = ({ address }: FolderOverviewProps) => {
   return (
     <section className="stack" aria-label="Your folder">
       {lastTx ? (
-        <div className="notice notice--success notice--stack" role="status">
+        <div className="notice notice--success notice--stack" aria-atomic="true">
           <p>{lastTx.label} confirmed on Stellar testnet.</p>
           <p>
             View transaction <Identifier label="Transaction hash" value={lastTx.hash} href={explorerLinks.transaction(lastTx.hash)} visible={5} /> on

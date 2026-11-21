@@ -32,14 +32,14 @@ export const PublicPortfolioPage = () => {
                 <PortfolioView content={portfolio.content} templateId={portfolio.templateId} />
               </Card>
             ) : portfolio.cid ? (
-              <div className="notice notice--warning notice--stack" role="status">
+              <div className="notice notice--warning notice--stack" aria-atomic="true">
                 <p>The portfolio content could not be loaded from IPFS: {portfolio.contentError}</p>
                 <p>
                   CID: <ExternalLink className="mono" href={ipfsService.gatewayUrl(portfolio.cid)}>{portfolio.cid}</ExternalLink>
                 </p>
               </div>
             ) : (
-              <div className="empty-state" role="status">
+              <div className="empty-state">
                 <h1 className="page-title">{portfolio.folder.name}</h1>
                 <p>This folder is claimed, but its owner has not minted a portfolio yet.</p>
               </div>

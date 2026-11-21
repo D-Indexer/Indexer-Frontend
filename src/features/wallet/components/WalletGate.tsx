@@ -10,7 +10,7 @@ export const WalletGate = ({ children }: WalletGateProps) => {
   const { address, blockedReason } = useWalletGuard()
   if (blockedReason || !address) {
     return (
-      <div className="notice notice--warning" role="status">
+      <div className="notice notice--warning">
         <p>{blockedReason}</p>
       </div>
     )

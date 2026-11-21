@@ -79,7 +79,7 @@ export const Identifier = ({ value, href, visible = 4, label, className }: Ident
       <button type="button" className="identifier__copy" onClick={() => void onCopy()} aria-label={`Copy ${label ?? 'identifier'} ${value}`}>
         Copy
       </button>
-      <span className="sr-only" role="status" aria-live="polite">
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {announcement}
       </span>
     </span>

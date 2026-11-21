@@ -41,7 +41,7 @@ export const WalletButton = () => {
         {status === 'connecting' ? 'Connecting…' : 'Connect Freighter'}
       </Button>
       {error ? (
-        <p id="wallet-error" className="wallet__error" role="alert">
+        <p id="wallet-error" className="wallet__error" role="alert" aria-atomic="true">
           {error}
         </p>
       ) : null}

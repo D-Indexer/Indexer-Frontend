@@ -151,7 +151,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
       <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="portfolio-form-title">
         <h2 id="portfolio-form-title" className="form__title">{isUpdate ? 'Update your portfolio' : 'Mint your portfolio'}</h2>
         {contentNotice ? (
-          <div className="notice notice--warning" role="status">
+          <div className="notice notice--warning" role="status" aria-atomic="true">
             <p>{contentNotice}</p>
           </div>
         ) : null}
