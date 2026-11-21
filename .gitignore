@@ -4,6 +4,10 @@ node_modules/
 # Production build output
 dist/
 
+# Mutation testing
+.stryker-tmp/
+reports/
+
 # Local environment
 .env
 .env.local
