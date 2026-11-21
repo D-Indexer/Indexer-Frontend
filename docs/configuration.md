@@ -17,6 +17,25 @@ listing each problem instead of starting.
 | `VITE_IPFS_GATEWAY_URL` | No | `https://ipfs.io/ipfs` | http(s) URL | Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node. |
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
 
+## PR preview deployments
+
+Every pull request is built with `VITE_DEMO_MODE=true` by
+[`.github/workflows/preview.yml`](../.github/workflows/preview.yml) and published to Cloudflare
+Pages (SPA fallback via `dist/404.html`). The workflow comments the preview URL on the PR and
+deletes the preview deployment when the PR closes.
+
+Repository setup (maintainers):
+
+| Kind | Name | Purpose |
+| --- | --- | --- |
+| Secret | `CLOUDFLARE_API_TOKEN` | Pages:Edit token for the preview project. |
+| Secret | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account owning the project. |
+| Variable | `CLOUDFLARE_PAGES_PROJECT` | Pages project name (Direct Upload). |
+
+Fork PRs only run the build job: the deploy and cleanup jobs are gated on
+`pull_request.head.repo.full_name == github.repository`, so fork code never runs with deployment
+secrets.
+
 ## Demo mode
 
 With `VITE_DEMO_MODE=true` the app does not call the backend. Templates, a sample folder
