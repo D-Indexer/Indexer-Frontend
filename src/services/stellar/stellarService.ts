@@ -48,7 +48,17 @@ const getServer = () => {
   return server
 }
 
-const toArgs = (owner: string, write: FolderWrite): xdr.ScVal[] => {
+/** Test seam: swaps the RPC server (e.g. one backed by recorded exchanges) and returns a restore fn. */
+export const setSorobanServer = (next: rpc.Server | null) => {
+  const previous = server
+  server = next
+  return () => {
+    server = previous
+  }
+}
+
+/** Contract method + arguments for a write; exported so tests can pin the encoded XDR. */
+export const toArgs = (owner: string, write: FolderWrite): xdr.ScVal[] => {
   const ownerArg = new Address(owner).toScVal()
   switch (write.method) {
     case 'claim_folder':
@@ -81,10 +91,16 @@ const loadAccount = async (address: string) => {
   }
 }
 
+/** Builds the unsigned transaction that `invoke` simulates for a write. */
+export const buildInvokeTransaction = (source: Account, owner: string, write: FolderWrite) =>
+  new TransactionBuilder(source, { fee: BASE_FEE, networkPassphrase: getNetworkPassphrase() })
+    .addOperation(new Contract(env.folderContractId).call(write.method, ...toArgs(owner, write)))
+    .setTimeout(120)
+    .build()
+
 const simulate = async (source: Account, method: string, args: xdr.ScVal[]) => {
-  const contractId = env.folderContractId
   const tx = new TransactionBuilder(source, { fee: BASE_FEE, networkPassphrase: getNetworkPassphrase() })
-    .addOperation(new Contract(contractId).call(method, ...args))
+    .addOperation(new Contract(env.folderContractId).call(method, ...args))
     .setTimeout(120)
     .build()
 
