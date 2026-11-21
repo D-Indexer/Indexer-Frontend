@@ -30,7 +30,17 @@ export const VerificationBadge = ({ owner, verification }: VerificationBadgeProp
       return (
         <aside className="verification verification--verified" aria-label="Verification">
           <p className="verification__title">
-            <span aria-hidden="true">✓</span> Verified on Stellar
+            <svg className="verification__icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+              <path
+                d="M2.5 8.5 6 12l7.5-8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>{' '}
+            Verified on Stellar
           </p>
           <p>
             <code>verify_portfolio</code> returned true for this owner on testnet, and the content below was loaded by the CID stored
