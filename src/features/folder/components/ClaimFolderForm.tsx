@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { FormField } from '@/components/forms'
-import { Button, Card } from '@/components/ui'
+import { Button, Card, Dialog, useConfirmDialog } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
 import { toFolderName, validateFolderName } from '@/utils/validation'
@@ -13,10 +13,12 @@ interface ClaimFolderFormProps {
 export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
   const [name, setName] = useState('')
   const [fieldError, setFieldError] = useState<string | undefined>()
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const confirmDialog = useConfirmDialog()
   const tx = useContractTx()
   const { blockedReason } = useWalletGuard()
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const error = validateFolderName(name) ?? undefined
     setFieldError(error)
@@ -24,14 +26,25 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
       document.getElementById('folder-name')?.focus()
       return
     }
+    setReviewOpen(true)
+  }
+
+  const handleConfirm = async () => {
     const folderName = toFolderName(name)
+    const confirmed = await confirmDialog.confirm({
+      title: `Claim ${folderName}?`,
+      description: 'This name is registered to your address on Stellar testnet and cannot be changed later.',
+      confirmLabel: 'Claim folder',
+    })
+    if (!confirmed) return
+    setReviewOpen(false)
     const result = await tx.run(owner, async () => ({ method: 'claim_folder', folderName }))
     if (result) onClaimed(result.hash)
   }
 
   return (
     <Card>
-      <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="claim-title">
+      <form className="form" onSubmit={handleSubmit} noValidate aria-labelledby="claim-title">
         <h2 id="claim-title" className="form__title">Claim your folder name</h2>
         <FormField
           id="folder-name"
@@ -53,6 +66,28 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
           {tx.busy ? 'Claiming…' : 'Claim folder'}
         </Button>
       </form>
+      <Dialog
+        open={reviewOpen}
+        title="Review your folder claim"
+        description="Check the name before signing. The transaction is submitted to Stellar testnet."
+        onClose={() => setReviewOpen(false)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setReviewOpen(false)}>
+              Back
+            </Button>
+            <Button onClick={() => void handleConfirm()} disabled={tx.busy || Boolean(blockedReason)}>
+              Continue
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Folder name: <strong className="mono">{toFolderName(name)}</strong>
+        </p>
+        <p className="muted">Owner: {owner}</p>
+      </Dialog>
+      {confirmDialog.dialog}
     </Card>
   )
 }
