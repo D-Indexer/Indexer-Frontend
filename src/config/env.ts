@@ -133,7 +133,35 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 }
 
+export interface ResourceHint {
+  href: string
+  rel: 'preconnect' | 'dns-prefetch'
+}
+
+/**
+ * Origins the app talks to at runtime, derived from config so the browser can open
+ * connections before the first request. `main.tsx` injects them into `<head>`.
+ */
+export const resourceHintsFor = (config: AppConfig): ResourceHint[] => {
+  const origins = [config.sorobanRpcUrl, config.apiUrl, config.ipfsGatewayUrl]
+    .filter((value) => value !== '')
+    .map((value) => {
+      try {
+        return new URL(value).origin
+      } catch {
+        return ''
+      }
+    })
+    .filter((origin, index, all) => origin !== '' && all.indexOf(origin) === index)
+
+  return origins.flatMap((origin) => [
+    { href: origin, rel: 'preconnect' as const },
+    { href: origin, rel: 'dns-prefetch' as const },
+  ])
+}
+
 const parsed = parseEnv(import.meta.env)
 
 export const env: AppConfig = parsed.config
 export const envErrors: EnvIssue[] = parsed.errors
+export const resourceHints: ResourceHint[] = resourceHintsFor(env)
