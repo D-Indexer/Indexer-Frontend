@@ -1,3 +1,6 @@
+export { walletRememberedEntry } from './storage/keys'
+export { clearAllLocalData, clearIndexedDbCaches, clearNamespacedStorage, createStorageEntry, STORAGE_NAMESPACE } from './storage/storage'
+export type { StorageEntry, StorageKeyDefinition } from './storage/storage'
 export { folderData } from './data/folderData'
 export { folderApi } from './folders/folderApi'
 export { apiClient } from './http/client'

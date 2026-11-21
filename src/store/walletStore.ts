@@ -1,25 +1,14 @@
 import { create } from 'zustand'
 import { freighterWallet, type WalletSnapshot } from '@/services/stellar/freighterWallet'
 import { isTestnetPassphrase } from '@/services/stellar/network'
-
-const REMEMBER_KEY = 'folder.wallet.connected'
+import { walletRememberedEntry } from '@/services/storage/keys'
 
 const remember = (value: boolean) => {
-  try {
-    if (value) localStorage.setItem(REMEMBER_KEY, '1')
-    else localStorage.removeItem(REMEMBER_KEY)
-  } catch {
-    // Storage can be unavailable (private mode); reconnecting just needs a click then.
-  }
+  if (value) walletRememberedEntry.write(true)
+  else walletRememberedEntry.clear()
 }
 
-const isRemembered = () => {
-  try {
-    return localStorage.getItem(REMEMBER_KEY) === '1'
-  } catch {
-    return false
-  }
-}
+const isRemembered = () => walletRememberedEntry.read() === true
 
 export type WalletStatus = 'idle' | 'connecting' | 'connected'
 
