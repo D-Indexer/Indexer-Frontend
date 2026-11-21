@@ -26,6 +26,7 @@ portfolio pages.
 | Public page `/p/:folderName` + "Verified on Stellar" | 🟡 | Uses `verify_portfolio` / `get_portfolio` on-chain and loads the content from IPFS by the on-chain CID. The contract reads are exercised against testnet by the integration test, and the page has component tests. It has not been run end to end against a live Indexer-Backend yet. |
 | Loading / empty / error states, demo mode | ✅ | No silent fixture fallback. Fixtures only with `VITE_DEMO_MODE=true`, behind a visible banner. |
 | Config validation | ✅ | Missing or invalid `VITE_*` variables render an error screen. |
+| Soroban RPC failover | ✅ | `VITE_SOROBAN_RPC_URLS` lists ordered providers; reads and `getTransaction` polling fail over on outage, unhealthy or lagging providers. Writes go to one provider and are never resubmitted. |
 | Accessibility of the main flow | ✅ | Labels, inline errors, focus management, axe checks in tests. Not yet audited with a screen reader. |
 | CI (typecheck, lint, test, build) | ✅ | `.github/workflows/ci.yml` |
 | More templates, other wallets, i18n, edit history, OG images, mobile layout, Playwright E2E | ⬜ | Tracked as [issues](https://github.com/D-Indexer/Indexer-Frontend/issues). |
@@ -98,6 +99,20 @@ Every `VITE_*` variable is documented in [docs/configuration.md](docs/configurat
    and `get_portfolio` on-chain, and renders the IPFS content with its template.
 
 See [docs/architecture.md](docs/architecture.md) for the module layout.
+
+### Soroban RPC failover
+
+Set `VITE_SOROBAN_RPC_URLS` to an ordered, comma-separated list of Soroban RPC endpoints (the
+single `VITE_SOROBAN_RPC_URL` keeps working and is appended as a last-resort provider). The
+provider pool in `src/services/stellar/rpcPool.ts`:
+
+- **Reads** (`getAccount`, simulation, `verify_portfolio`, `get_portfolio`) and **`getTransaction`
+  polling** try providers in health/latency order and fail over when one errors, is unhealthy or
+  lags behind the highest ledger seen across the pool.
+- **Writes** (`sendTransaction`) go to exactly one provider. A submission is never retried on
+  another provider, so a transaction cannot be submitted twice; if the submit call itself fails the
+  error is surfaced and the user decides whether to retry. Polling for the result may use any
+  provider, because `getTransaction` is idempotent by hash.
 
 ## Related repositories
 
