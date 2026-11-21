@@ -1,12 +1,14 @@
 import { ExternalLink } from '@/components/ui'
-import { env } from '@/config/env'
+import { appVersion, env } from '@/config/env'
 import { explorerLinks, shortenKey } from '@/services'
 
 export const Footer = () => {
   return (
     <footer className="app-footer">
       <div className="app-footer__inner">
-        <span>Folder · MIT licensed</span>
+        <span>
+          Folder · MIT licensed · v{appVersion}
+        </span>
         <span>
           Stellar {env.stellarNetwork}
           {env.folderContractId ? (

@@ -36,6 +36,16 @@ Fork PRs only run the build job: the deploy and cleanup jobs are gated on
 `pull_request.head.repo.full_name == github.repository`, so fork code never runs with deployment
 secrets.
 
+## Releases
+
+Versions follow [SemVer](https://semver.org/) and are managed by
+[release-please](https://github.com/googleapis/release-please) from Conventional Commits on `main`
+(`release-please-config.json`, `.release-please-manifest.json`). PR titles are validated by
+[`.github/workflows/pr-title.yml`](../.github/workflows/pr-title.yml) and `commitlint.config.cjs`.
+Merging the release PR bumps `package.json`, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and
+publishes the GitHub release. The footer shows the version from `package.json`, injected at build
+time as `__APP_VERSION__` by `vite.config.ts` (not a `VITE_*` variable).
+
 ## Demo mode
 
 With `VITE_DEMO_MODE=true` the app does not call the backend. Templates, a sample folder

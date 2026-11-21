@@ -6,6 +6,11 @@
  * configuration error screen when `envErrors` is non-empty.
  */
 
+/** Injected by Vite from `package.json` (see `vite.config.ts`); bumped by release-please. */
+declare const __APP_VERSION__: string
+
+export const appVersion = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0'
+
 export type StellarNetwork = 'testnet'
 
 export interface AppConfig {
