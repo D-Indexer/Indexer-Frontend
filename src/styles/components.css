@@ -503,6 +503,11 @@
   overflow-wrap: anywhere;
 }
 
+.external-link__host {
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
 .small {
   font-size: 0.85rem;
 }

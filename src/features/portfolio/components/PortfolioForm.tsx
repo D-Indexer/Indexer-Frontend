@@ -6,7 +6,7 @@ import { useWalletGuard } from '@/features/wallet'
 import { useTemplates } from '@/hooks'
 import { folderData, ipfsService } from '@/services'
 import type { Folder, Portfolio, PortfolioContent } from '@/types'
-import { humanizeField } from '@/utils/format'
+import { humanizeField, sanitizeDisplayText } from '@/utils/format'
 import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
 
 /** Fields every template shares; template-specific fields become free-text sections. */
@@ -174,7 +174,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
           <option value="">{templates.loading ? 'Loading templates…' : 'Choose a template'}</option>
           {(templates.data ?? []).map((template) => (
             <option key={template.id} value={template.id}>
-              {template.metadata?.name ?? `Template ${template.id}`} (#{template.id})
+              {sanitizeDisplayText(template.metadata?.name ?? `Template ${template.id}`, 120)} (#{template.id})
             </option>
           ))}
         </FormField>
