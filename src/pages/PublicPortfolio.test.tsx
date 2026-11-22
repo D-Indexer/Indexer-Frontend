@@ -92,6 +92,15 @@ describe('PublicPortfolioPage', () => {
     expect(screen.getByText('Verified on Stellar')).toBeInTheDocument()
   })
 
+  it('renders a malformed-content state when the document fails validation', async () => {
+    data.getPortfolioContent.mockRejectedValue(
+      Object.assign(new Error('Content at bafy is not a valid portfolio document.'), { name: 'IpfsError', code: 'invalid_shape' }),
+    )
+    renderPage()
+    expect(await screen.findByRole('alert')).toHaveTextContent(/malformed and cannot be displayed/)
+    expect(screen.queryByRole('heading', { level: 1, name: 'Jane Doe' })).not.toBeInTheDocument()
+  })
+
   it('shows backend errors with a retry button', async () => {
     data.getFolderByName.mockRejectedValueOnce(new Error('Could not reach the Folder backend.'))
     renderPage()

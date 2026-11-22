@@ -6,7 +6,9 @@ const post = vi.hoisted(() => vi.fn())
 vi.mock('@/services/http/client', () => ({ apiClient: { post } }))
 vi.mock('@/config/env', () => ({ env: { apiUrl: 'http://localhost:3000', ipfsGatewayUrl: 'https://gw.test/ipfs' } }))
 
-const { ipfsService, serializePortfolioContent } = await import('./ipfsService')
+const { ipfsService, isPortfolioContent, isTemplateMetadata, safeParseJson, serializePortfolioContent } = await import(
+  './ipfsService'
+)
 
 const content: PortfolioContent = {
   schema_version: 1,
@@ -74,5 +76,65 @@ describe('ipfsService.fetchJson', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"tampered":true}')))
     await expect(ipfsService.fetchJson(cid)).rejects.toThrow('does not match CID')
     vi.unstubAllGlobals()
+  })
+
+  it('rejects dangerous keys and never puts them on application objects', async () => {
+    const text = '{"__proto__":{"polluted":true},"ok":true}'
+    const cid = await computeRawCidV1(text)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(text)))
+    await expect(ipfsService.fetchJson(cid)).rejects.toMatchObject({ code: 'invalid_shape' })
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined()
+    vi.unstubAllGlobals()
+  })
+
+  it('rejects documents that fail the shape guard', async () => {
+    const text = '{"schema_version":1}'
+    const cid = await computeRawCidV1(text)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(text)))
+    await expect(ipfsService.fetchJson(cid, isPortfolioContent)).rejects.toMatchObject({ code: 'invalid_shape' })
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('safeParseJson', () => {
+  it('returns null-prototype objects', () => {
+    const value = safeParseJson('{"a":{"b":1}}') as Record<string, Record<string, number>>
+    expect(Object.getPrototypeOf(value)).toBeNull()
+    expect(Object.getPrototypeOf(value.a)).toBeNull()
+    expect(value.a.b).toBe(1)
+  })
+
+  it.each(['__proto__', 'constructor', 'prototype'])('rejects the %s key', (key) => {
+    expect(() => safeParseJson(`{"${key}":{}}`)).toThrow(/forbidden key/)
+  })
+
+  it('enforces maxDepth and maxKeys', () => {
+    expect(() => safeParseJson('{"a":{"b":{"c":1}}}', { maxDepth: 2, maxKeys: 10 })).toThrow(/nested deeper/)
+    expect(() => safeParseJson('{"a":1,"b":2}', { maxDepth: 5, maxKeys: 1 })).toThrow(/more than 1 keys/)
+  })
+
+  it('reports invalid JSON with a specific code', () => {
+    expect(() => safeParseJson('{')).toThrow(expect.objectContaining({ code: 'invalid_json' }))
+  })
+})
+
+describe('document guards', () => {
+  it('accepts a valid portfolio and rejects a malformed one', () => {
+    expect(isPortfolioContent(safeParseJson(serializePortfolioContent(content)))).toBe(true)
+    expect(isPortfolioContent({ ...content, skills: 'nope' })).toBe(false)
+    expect(isPortfolioContent(null)).toBe(false)
+  })
+
+  it('accepts valid template metadata and rejects a malformed one', () => {
+    const metadata = {
+      schema_version: 1,
+      template_id: 1,
+      name: 'Dev',
+      description: 'd',
+      target_industry: 'tech',
+      fields: ['projects'],
+    }
+    expect(isTemplateMetadata(metadata)).toBe(true)
+    expect(isTemplateMetadata({ ...metadata, fields: [1] })).toBe(false)
   })
 })

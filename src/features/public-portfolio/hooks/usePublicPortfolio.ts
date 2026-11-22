@@ -1,6 +1,6 @@
 import { env } from '@/config/env'
 import { useAsync } from '@/hooks'
-import { folderData, toApiError } from '@/services'
+import { folderData, IpfsError, toApiError } from '@/services'
 import { stellarService } from '@/services/stellar/stellarService'
 import type { Folder, PortfolioContent } from '@/types'
 
@@ -15,6 +15,8 @@ export interface PublicPortfolio {
   cid: string | null
   content: PortfolioContent | null
   contentError: string | null
+  /** True when the document was fetched but is not a valid portfolio (malformed content). */
+  contentInvalid: boolean
   folder: Folder
   templateId: number | null
   verification: Verification
@@ -58,15 +60,17 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
 
   let content: PortfolioContent | null = null
   let contentError: string | null = null
+  let contentInvalid = false
   if (cid) {
     try {
       content = await folderData.getPortfolioContent(cid)
     } catch (error) {
       contentError = toApiError(error).message
+      contentInvalid = error instanceof IpfsError && error.code === 'invalid_shape'
     }
   }
 
-  return { cid, content, contentError, folder, templateId, verification }
+  return { cid, content, contentError, contentInvalid, folder, templateId, verification }
 }
 
 export const usePublicPortfolio = (folderName: string) => useAsync(() => loadPublicPortfolio(folderName), [folderName])

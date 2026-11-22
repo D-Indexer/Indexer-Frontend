@@ -31,6 +31,14 @@ export const PublicPortfolioPage = () => {
               <Card>
                 <PortfolioView content={portfolio.content} templateId={portfolio.templateId} />
               </Card>
+            ) : portfolio.contentInvalid ? (
+              <div className="notice notice--danger notice--stack" role="alert">
+                <p>This portfolio's content is malformed and cannot be displayed.</p>
+                <p>
+                  CID: <ExternalLink className="mono" href={ipfsService.gatewayUrl(portfolio.cid ?? '')}>{portfolio.cid}</ExternalLink>
+                </p>
+                <p>{portfolio.contentError}</p>
+              </div>
             ) : portfolio.cid ? (
               <div className="notice notice--warning notice--stack" role="status">
                 <p>The portfolio content could not be loaded from IPFS: {portfolio.contentError}</p>
