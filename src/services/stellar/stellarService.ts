@@ -23,6 +23,7 @@ export type FolderWrite =
   | { method: 'claim_folder'; folderName: string }
   | { method: 'mint_portfolio'; templateId: number; ipfsCid: string }
   | { method: 'update_portfolio'; ipfsCid: string }
+  | { method: 'register_template'; templateId: number; metadataUri: string }
 
 export interface TxResult {
   hash: string
@@ -57,6 +58,8 @@ const toArgs = (owner: string, write: FolderWrite): xdr.ScVal[] => {
       return [ownerArg, nativeToScVal(write.templateId, { type: 'u32' }), nativeToScVal(write.ipfsCid, { type: 'string' })]
     case 'update_portfolio':
       return [ownerArg, nativeToScVal(write.ipfsCid, { type: 'string' })]
+    case 'register_template':
+      return [ownerArg, nativeToScVal(write.templateId, { type: 'u32' }), nativeToScVal(write.metadataUri, { type: 'string' })]
   }
 }
 

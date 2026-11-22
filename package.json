@@ -9,6 +9,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest run",
     "test:watch": "vitest",
+    "template:new": "node scripts/scaffold-template.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -10,6 +10,7 @@ describe('parseEnv', () => {
     expect(config).toEqual({
       apiUrl: 'http://localhost:3000',
       demoMode: false,
+      explorer: 'stellar.expert',
       folderContractId: CONTRACT,
       ipfsGatewayUrl: 'https://ipfs.io/ipfs',
       sorobanRpcUrl: 'https://soroban-testnet.stellar.org',

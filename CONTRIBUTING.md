@@ -39,3 +39,14 @@ Thanks for helping! This guide is short on purpose; the [README](README.md) cove
 - New `VITE_*` variables must be added to `src/config/env.ts`, `.env.example` and `docs/configuration.md`.
 - Tests: Vitest + Testing Library. Query by role/label, as a user would. Network calls are mocked,
   except the opt-in testnet smoke test.
+
+## Adding a Template in 5 Steps
+
+1. **Scaffold template**: Run the CLI generator:
+   ```bash
+   npm run template:new -- --id <id> --name <Name> --industry <Industry> --fields <field1,field2>
+   ```
+2. **Metadata schema**: Verify the generated `templates/<id>.json` schema matches `TemplateMetadata`.
+3. **Custom layout**: Implement custom layout in `src/features/public-portfolio/templates/layouts/<Name>Layout.tsx` using `TemplateRendererProps`.
+4. **Registry**: Ensure the template is registered in `src/features/public-portfolio/templates/registry.ts`.
+5. **Validation**: Verify that layout rendering passes tests and accessibility audits.

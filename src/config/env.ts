@@ -7,10 +7,12 @@
  */
 
 export type StellarNetwork = 'testnet'
+export type ExplorerType = 'stellar.expert' | 'stellarchain' | 'none'
 
 export interface AppConfig {
   apiUrl: string
   demoMode: boolean
+  explorer: ExplorerType
   folderContractId: string
   ipfsGatewayUrl: string
   sorobanRpcUrl: string
@@ -44,6 +46,7 @@ const isHttpUrl = (value: string) => {
 export const isContractId = (value: string) => /^C[A-Z2-7]{55}$/.test(value)
 
 export const defaults = {
+  explorer: 'stellar.expert' as ExplorerType,
   ipfsGatewayUrl: 'https://ipfs.io/ipfs',
   sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
   stellarNetwork: 'testnet',
@@ -95,10 +98,15 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
 
+  const rawExplorer = read(raw, 'VITE_EXPLORER') || defaults.explorer
+  const explorer: ExplorerType =
+    rawExplorer === 'stellarchain' || rawExplorer === 'none' ? rawExplorer : 'stellar.expert'
+
   return {
     config: {
       apiUrl,
       demoMode,
+      explorer,
       folderContractId,
       ipfsGatewayUrl,
       sorobanRpcUrl,
