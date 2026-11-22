@@ -11,7 +11,7 @@ import {
   type xdr,
 } from '@stellar/stellar-sdk'
 import { env } from '@/config/env'
-import { describeContractError, extractContractErrorCode } from './contractErrors'
+import { describeContractError, extractContractErrorCode, getContractErrorCodeString } from './contractErrors'
 import { getNetworkPassphrase } from './network'
 
 /** Stages reported while a write is in flight, so the UI can say what is happening. */
@@ -30,12 +30,17 @@ export interface TxResult {
 }
 
 export class TransactionError extends Error {
+  readonly code?: string
+  readonly docsAnchor?: string
+
   constructor(
     message: string,
-    readonly options: { contractErrorCode?: number; hash?: string; pending?: boolean } = {},
+    readonly options: { code?: string; contractErrorCode?: number; docsAnchor?: string; hash?: string; pending?: boolean } = {},
   ) {
     super(message)
     this.name = 'TransactionError'
+    this.code = options.code ?? (options.contractErrorCode ? getContractErrorCodeString(options.contractErrorCode) : undefined)
+    this.docsAnchor = options.docsAnchor ?? (this.code ? this.code.toLowerCase() : undefined)
   }
 }
 
@@ -90,10 +95,10 @@ const simulate = async (source: Account, method: string, args: xdr.ScVal[]) => {
 
   const simulation = await getServer().simulateTransaction(tx)
   if (rpc.Api.isSimulationError(simulation)) {
-    throw errorFromText(simulation.error) ?? new TransactionError(`Simulation failed: ${simulation.error.split('\n')[0]}`)
+    throw errorFromText(simulation.error) ?? new TransactionError(`Simulation failed: ${simulation.error.split('\n')[0]}`, { code: 'FOLDER-TX-100' })
   }
   if (rpc.Api.isSimulationRestore(simulation)) {
-    throw new TransactionError('Some contract state has expired and must be restored before this call. Please try again later.')
+    throw new TransactionError('Some contract state has expired and must be restored before this call. Please try again later.', { code: 'FOLDER-TX-100' })
   }
   return { simulation, tx }
 }
@@ -126,7 +131,7 @@ export const stellarService = {
         sent.status === 'TRY_AGAIN_LATER'
           ? 'The network is busy. Please try again in a few seconds.'
           : `The network rejected the transaction (${detail}).`,
-        { hash: sent.hash },
+        { code: 'FOLDER-TX-101', hash: sent.hash },
       )
     }
 
@@ -142,6 +147,7 @@ export const stellarService = {
         : new TransactionError('The transaction failed on-chain. Open it on stellar.expert for details.', { hash: sent.hash })
     }
     throw new TransactionError('The transaction was submitted but not confirmed yet. Check its status on stellar.expert.', {
+      code: 'FOLDER-TX-102',
       hash: sent.hash,
       pending: true,
     })

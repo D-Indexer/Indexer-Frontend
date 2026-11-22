@@ -1,5 +1,5 @@
 /**
- * Runtime configuration, read from `VITE_*` variables at build time.
+ * Runtime configuration, loaded from `/config.json` at boot or from `VITE_*` variables at build time.
  *
  * Every variable is documented in `.env.example` and `docs/configuration.md`.
  * `parseEnv` is pure so it can be unit-tested; `main.tsx` renders a
@@ -22,7 +22,7 @@ export interface EnvIssue {
   variable: string
 }
 
-type RawEnv = Record<string, string | boolean | undefined>
+export type RawEnv = Record<string, string | boolean | undefined>
 
 const read = (raw: RawEnv, key: string) => {
   const value = raw[key]
@@ -108,7 +108,51 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 }
 
-const parsed = parseEnv(import.meta.env)
+// Initial parse of build-time env
+const initialParsed = parseEnv(import.meta.env)
 
-export const env: AppConfig = parsed.config
-export const envErrors: EnvIssue[] = parsed.errors
+export const env: AppConfig = { ...initialParsed.config }
+export const envErrors: EnvIssue[] = [...initialParsed.errors]
+
+let initialized = false
+
+export const isEnvInitialized = () => initialized
+
+export const getEnv = (): AppConfig => env
+
+/**
+ * Initializes runtime configuration by fetching `/config.json` (no-cache)
+ * and merging it over build-time `import.meta.env`.
+ */
+export const initEnv = async (customConfig?: RawEnv): Promise<{ config: AppConfig; errors: EnvIssue[] }> => {
+  let runtimeValues: RawEnv = {}
+
+  if (customConfig) {
+    runtimeValues = customConfig
+  } else if (typeof window !== 'undefined' && typeof fetch === 'function') {
+    try {
+      const response = await fetch('/config.json', {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      })
+      if (response.ok) {
+        runtimeValues = (await response.json()) as RawEnv
+      }
+    } catch {
+      // If fetching /config.json fails, proceed with build-time env
+    }
+  }
+
+  const merged: RawEnv = {
+    ...import.meta.env,
+    ...runtimeValues,
+  }
+
+  const parsed = parseEnv(merged)
+  Object.assign(env, parsed.config)
+  envErrors.length = 0
+  envErrors.push(...parsed.errors)
+  initialized = true
+
+  return parsed
+}

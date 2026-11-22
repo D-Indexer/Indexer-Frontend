@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Button } from '@/components/ui'
-import { env } from '@/config/env'
 import { explorerLinks, freighterWallet, shortenKey } from '@/services'
+import { isDemoMode } from '@/services/data/dataSourceFactory'
 import { selectIsTestnet, useWalletStore } from '@/store'
 
 export const WalletButton = () => {
@@ -9,7 +9,7 @@ export const WalletButton = () => {
   const isTestnet = useWalletStore(selectIsTestnet)
 
   useEffect(() => {
-    if (!env.demoMode) void restore()
+    if (!isDemoMode()) void restore()
   }, [restore])
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export const WalletButton = () => {
     return freighterWallet.watch(update)
   }, [status, update])
 
-  if (env.demoMode) {
+  if (isDemoMode()) {
     return null
   }
 

@@ -17,6 +17,20 @@ listing each problem instead of starting.
 | `VITE_IPFS_GATEWAY_URL` | No | `https://ipfs.io/ipfs` | http(s) URL | Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node. |
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
 
+## Runtime Configuration (`/config.json`)
+
+To deploy a single pre-built `dist/` bundle across multiple staging or production environments,
+the frontend supports runtime configuration.
+
+At boot before React renders, `src/main.tsx` requests `/config.json` with `{ cache: 'no-store' }`.
+Any variables present in `/config.json` take precedence over build-time `VITE_*` variables.
+See `public/config.example.json` for an example configuration file.
+
+Precedence order:
+1. Runtime `/config.json` served at the host root.
+2. Build-time `VITE_*` variables baked into bundle via Vite.
+3. System defaults declared in `src/config/env.ts`.
+
 ## Demo mode
 
 With `VITE_DEMO_MODE=true` the app does not call the backend. Templates, a sample folder
