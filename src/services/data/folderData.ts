@@ -4,7 +4,21 @@ import { folderApi } from '@/services/folders/folderApi'
 import { ipfsService } from '@/services/ipfs/ipfsService'
 import { portfolioApi } from '@/services/portfolio/portfolioApi'
 import { templateApi } from '@/services/templates/templateApi'
-import type { Folder, Portfolio, PortfolioContent, TemplateWithMetadata } from '@/types'
+import type { Folder, Portfolio, PortfolioContent, Template, TemplateWithMetadata } from '@/types'
+
+/** Runs `task` over `items` with at most `limit` promises in flight, preserving input order. */
+const mapWithConcurrency = async <T, R>(items: T[], limit: number, task: (item: T) => Promise<R>): Promise<R[]> => {
+  const results = new Array<R>(items.length)
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++
+      results[index] = await task(items[index])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(Math.max(limit, 1), items.length) }, worker))
+  return results
+}
 
 /**
  * The single read path for Folder data. Uses Indexer-Backend + IPFS, or the demo fixtures when
@@ -13,9 +27,21 @@ import type { Folder, Portfolio, PortfolioContent, TemplateWithMetadata } from '
 export const folderData = {
   listTemplates: async (): Promise<TemplateWithMetadata[]> => {
     const templates = env.demoMode ? demoTemplates : await templateApi.list()
-    return Promise.all(
-      templates.map(async (template) => ({ ...template, metadata: await ipfsService.resolveTemplateMetadata(template) })),
-    )
+    return mapWithConcurrency(templates, env.ipfsMaxConcurrency, async (template) => ({
+      ...template,
+      metadata: await ipfsService.resolveTemplateMetadata(template),
+    }))
+  },
+
+  /**
+   * Lists templates and reports each one as soon as its metadata resolves, so cards can render
+   * progressively. `onTemplate` is called once per template, in resolution order.
+   */
+  streamTemplates: async (onTemplate: (template: TemplateWithMetadata) => void): Promise<void> => {
+    const templates: Template[] = env.demoMode ? demoTemplates : await templateApi.list()
+    await mapWithConcurrency(templates, env.ipfsMaxConcurrency, async (template) => {
+      onTemplate({ ...template, metadata: await ipfsService.resolveTemplateMetadata(template) })
+    })
   },
 
   getFolderByOwner: async (address: string): Promise<Folder | null> =>

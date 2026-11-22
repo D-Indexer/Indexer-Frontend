@@ -24,6 +24,28 @@ const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
   }
 }
 
+/** In-flight gateway requests, keyed by CID, so duplicate CIDs are fetched once. */
+const inFlightJson = new Map<string, Promise<unknown>>()
+
+const fetchJsonOnce = async <T>(cid: string): Promise<T> => {
+  let response: Response
+  try {
+    response = await fetch(ipfsService.gatewayUrl(cid))
+  } catch {
+    throw new IpfsError(`Could not reach the IPFS gateway (${env.ipfsGatewayUrl}).`)
+  }
+  if (!response.ok) {
+    throw new IpfsError(`The IPFS gateway returned ${response.status} for ${cid}. The content may not be pinned or propagated yet.`)
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer())
+  await verifyCid(cid, bytes, 'The IPFS gateway')
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes)) as T
+  } catch {
+    throw new IpfsError(`Content at ${cid} is not valid JSON.`)
+  }
+}
+
 export const ipfsService = {
   gatewayUrl: (cid: string) => `${env.ipfsGatewayUrl}/${cid}`,
 
@@ -62,22 +84,14 @@ export const ipfsService = {
 
   /** Fetches JSON from the gateway and checks it against its CID when the CID is recomputable. */
   fetchJson: async <T>(cid: string): Promise<T> => {
-    let response: Response
-    try {
-      response = await fetch(ipfsService.gatewayUrl(cid))
-    } catch {
-      throw new IpfsError(`Could not reach the IPFS gateway (${env.ipfsGatewayUrl}).`)
-    }
-    if (!response.ok) {
-      throw new IpfsError(`The IPFS gateway returned ${response.status} for ${cid}. The content may not be pinned or propagated yet.`)
-    }
-    const bytes = new Uint8Array(await response.arrayBuffer())
-    await verifyCid(cid, bytes, 'The IPFS gateway')
-    try {
-      return JSON.parse(new TextDecoder().decode(bytes)) as T
-    } catch {
-      throw new IpfsError(`Content at ${cid} is not valid JSON.`)
-    }
+    const existing = inFlightJson.get(cid)
+    if (existing) return existing as Promise<T>
+
+    const request = fetchJsonOnce<T>(cid).finally(() => {
+      inFlightJson.delete(cid)
+    })
+    inFlightJson.set(cid, request)
+    return request
   },
 
   /**

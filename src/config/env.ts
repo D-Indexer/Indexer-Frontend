@@ -13,6 +13,8 @@ export interface AppConfig {
   demoMode: boolean
   folderContractId: string
   ipfsGatewayUrl: string
+  /** Maximum concurrent IPFS gateway requests when resolving template metadata. */
+  ipfsMaxConcurrency: number
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
 }
@@ -45,6 +47,7 @@ export const isContractId = (value: string) => /^C[A-Z2-7]{55}$/.test(value)
 
 export const defaults = {
   ipfsGatewayUrl: 'https://ipfs.io/ipfs',
+  ipfsMaxConcurrency: 4,
   sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
   stellarNetwork: 'testnet',
 } as const
@@ -95,12 +98,22 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
 
+  const ipfsMaxConcurrencyRaw = read(raw, 'VITE_IPFS_MAX_CONCURRENCY')
+  const ipfsMaxConcurrency = ipfsMaxConcurrencyRaw ? Number(ipfsMaxConcurrencyRaw) : defaults.ipfsMaxConcurrency
+  if (!Number.isInteger(ipfsMaxConcurrency) || ipfsMaxConcurrency < 1) {
+    errors.push({
+      variable: 'VITE_IPFS_MAX_CONCURRENCY',
+      message: `"${ipfsMaxConcurrencyRaw}" is not a positive integer.`,
+    })
+  }
+
   return {
     config: {
       apiUrl,
       demoMode,
       folderContractId,
       ipfsGatewayUrl,
+      ipfsMaxConcurrency: Number.isInteger(ipfsMaxConcurrency) && ipfsMaxConcurrency >= 1 ? ipfsMaxConcurrency : defaults.ipfsMaxConcurrency,
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
     },
