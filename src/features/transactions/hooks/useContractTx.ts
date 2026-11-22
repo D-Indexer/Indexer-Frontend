@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { freighterWallet, toApiError } from '@/services'
 import { stellarService, TransactionError, type FolderWrite, type TxResult, type TxStage } from '@/services/stellar/stellarService'
+import { emit } from '../events'
 
 export type FlowStage = 'idle' | 'uploading' | TxStage | 'done' | 'failed'
 
@@ -12,6 +13,22 @@ export interface ContractTxState {
 }
 
 const initialState: ContractTxState = { error: null, hash: null, stage: 'idle' }
+
+/** Maps a confirmed contract write to its typed domain event. */
+const emitConfirmedWrite = (owner: string, write: FolderWrite, result: TxResult) => {
+  const base = { hash: result.hash, ledger: result.ledger, owner }
+  switch (write.method) {
+    case 'claim_folder':
+      emit('folder.claimed', { ...base, folderName: write.folderName })
+      break
+    case 'mint_portfolio':
+      emit('portfolio.minted', { ...base, templateId: write.templateId, ipfsCid: write.ipfsCid })
+      break
+    case 'update_portfolio':
+      emit('portfolio.updated', { ...base, ipfsCid: write.ipfsCid })
+      break
+  }
+}
 
 /**
  * Runs one Folder contract write with Freighter as signer. `prepare` can do async work first
@@ -31,6 +48,7 @@ export const useContractTx = () => {
         setState((current) => ({ ...current, stage })),
       )
       setState({ error: null, hash: result.hash, stage: 'done' })
+      emitConfirmedWrite(owner, write, result)
       return result
     } catch (error) {
       const hash = error instanceof TransactionError ? (error.options.hash ?? null) : null
