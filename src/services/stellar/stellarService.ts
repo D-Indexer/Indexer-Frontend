@@ -106,6 +106,9 @@ export const stellarService = {
   /**
    * Builds, simulates and prepares a Folder contract call, has `sign` sign it (Freighter in the
    * app), submits it, and polls until it is final. Contract errors are mapped to readable messages.
+   *
+   * Sequence diagrams (claim, mint, update, public verification) with trust boundaries:
+   * `docs/architecture.md#flows`.
    */
   invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void): Promise<TxResult> => {
     const networkPassphrase = getNetworkPassphrase()

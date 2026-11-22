@@ -24,6 +24,8 @@ export interface PublicPortfolio {
  * Resolves `<name>.folder` through the indexer, checks the owner's portfolio on-chain with
  * `verify_portfolio` / `get_portfolio`, and loads the content from IPFS by the on-chain CID.
  * Returns null when the folder does not exist.
+ *
+ * Sequence diagram with trust boundaries: `docs/architecture.md#flows`.
  */
 export const loadPublicPortfolio = async (folderName: string): Promise<PublicPortfolio | null> => {
   const folder = await folderData.getFolderByName(folderName)
