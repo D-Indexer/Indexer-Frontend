@@ -13,6 +13,7 @@ import {
 import { env } from '@/config/env'
 import { describeContractError, extractContractErrorCode } from './contractErrors'
 import { getNetworkPassphrase } from './network'
+import { createReadCache } from './readCache'
 
 /** Stages reported while a write is in flight, so the UI can say what is happening. */
 export type TxStage = 'preparing' | 'signing' | 'submitting' | 'confirming'
@@ -98,6 +99,29 @@ const simulate = async (source: Account, method: string, args: xdr.ScVal[]) => {
   return { simulation, tx }
 }
 
+/** Latest ledger sequence from Soroban RPC, or null when it cannot be read (reads then skip the cache). */
+const latestLedger = async (): Promise<number | null> => {
+  try {
+    const { sequence } = await getServer().getLatestLedger()
+    return typeof sequence === 'number' ? sequence : null
+  } catch {
+    return null
+  }
+}
+
+/** Ledger-scoped cache for read-only contract calls (`verify_portfolio`, `get_portfolio`). */
+const readCache = createReadCache({ getLedger: latestLedger })
+
+/** Runs a read-only simulation through the ledger-scoped cache, keyed by method + args XDR. */
+const cachedRead = <T>(method: string, args: xdr.ScVal[], load: () => Promise<T>): Promise<T> =>
+  readCache.read(readCache.key(method, args.map((arg) => arg.toXDR('base64'))), load)
+
+/** Drops cached reads of `owner` after a write, so the next read sees the new state. */
+const invalidateOwner = (owner: string) => {
+  const ownerXdr = new Address(owner).toScVal().toXDR('base64')
+  readCache.invalidate((key) => key.includes(ownerXdr))
+}
+
 export const stellarService = {
   getNetworkPassphrase,
   getContractId: () => env.folderContractId,
@@ -133,6 +157,7 @@ export const stellarService = {
     onStage?.('confirming')
     const final = await getServer().pollTransaction(sent.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy })
     if (final.status === rpc.Api.GetTransactionStatus.SUCCESS) {
+      invalidateOwner(owner)
       return { hash: sent.hash, ledger: final.ledger }
     }
     if (final.status === rpc.Api.GetTransactionStatus.FAILED) {
@@ -149,22 +174,34 @@ export const stellarService = {
 
   /** Read-only `verify_portfolio(owner)` via simulation; true when a portfolio NFT exists on-chain. */
   verifyPortfolio: async (owner: string): Promise<boolean> => {
-    const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'verify_portfolio', [new Address(owner).toScVal()])
-    return simulation.result ? scValToNative(simulation.result.retval) === true : false
+    const args = [new Address(owner).toScVal()]
+    return cachedRead('verify_portfolio', args, async () => {
+      const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'verify_portfolio', args)
+      return simulation.result ? scValToNative(simulation.result.retval) === true : false
+    })
   },
 
   /** Read-only `get_portfolio(owner)`: the CID and template currently anchored on-chain. */
   getOnChainPortfolio: async (owner: string): Promise<{ ipfsCid: string; templateId: number; mintedAt: number } | null> => {
-    try {
-      const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'get_portfolio', [new Address(owner).toScVal()])
-      if (!simulation.result) return null
-      const value = scValToNative(simulation.result.retval) as { ipfs_cid: string; template_id: number; minted_at: bigint }
-      return { ipfsCid: value.ipfs_cid, templateId: value.template_id, mintedAt: Number(value.minted_at) }
-    } catch (error) {
-      if (error instanceof TransactionError && error.options.contractErrorCode === 5) return null
-      throw error
-    }
+    const args = [new Address(owner).toScVal()]
+    return cachedRead('get_portfolio', args, async () => {
+      try {
+        const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'get_portfolio', args)
+        if (!simulation.result) return null
+        const value = scValToNative(simulation.result.retval) as { ipfs_cid: string; template_id: number; minted_at: bigint }
+        return { ipfsCid: value.ipfs_cid, templateId: value.template_id, mintedAt: Number(value.minted_at) }
+      } catch (error) {
+        if (error instanceof TransactionError && error.options.contractErrorCode === 5) return null
+        throw error
+      }
+    })
   },
+
+  /** Cache hit/miss counters for diagnostics. */
+  readCacheMetrics: () => readCache.metrics(),
+
+  /** Drops cached reads of `owner` (e.g. after a write made outside this service). */
+  invalidateReads: (owner: string) => invalidateOwner(owner),
 }
 
 /** Finds the first contract error (`Error(Contract, #N)`) in a failed transaction's diagnostic events. */
