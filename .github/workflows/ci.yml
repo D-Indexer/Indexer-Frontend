@@ -30,3 +30,21 @@ jobs:
         env:
           VITE_API_URL: http://localhost:3000
           VITE_FOLDER_CONTRACT_ID: CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV
+      - run: npm run docs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/api
+
+  publish-docs:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
