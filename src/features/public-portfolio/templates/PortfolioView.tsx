@@ -1,6 +1,7 @@
 import { ExternalLink } from '@/components/ui'
 import type { PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
+import { getTemplateThemeStyles } from './theme'
 
 interface ViewProps {
   content: PortfolioContent
@@ -105,5 +106,10 @@ interface PortfolioViewProps extends ViewProps {
 /** Renders portfolio content with its template's layout; unknown templates use the developer layout. */
 export const PortfolioView = ({ content, templateId }: PortfolioViewProps) => {
   const View = (templateId !== null && views[templateId]) || DeveloperView
-  return <View content={content} />
+  const styles = getTemplateThemeStyles(templateId)
+  return (
+    <div className="portfolio-theme-root" style={styles}>
+      <View content={content} />
+    </div>
+  )
 }

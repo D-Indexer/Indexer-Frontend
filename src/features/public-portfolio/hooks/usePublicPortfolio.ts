@@ -1,6 +1,7 @@
 import { env } from '@/config/env'
 import { useAsync } from '@/hooks'
-import { folderData, toApiError } from '@/services'
+import { folderData, toApiError, useServices } from '@/services'
+import type { ServicesRegistry } from '@/services'
 import { stellarService } from '@/services/stellar/stellarService'
 import type { Folder, PortfolioContent } from '@/types'
 
@@ -25,17 +26,24 @@ export interface PublicPortfolio {
  * `verify_portfolio` / `get_portfolio`, and loads the content from IPFS by the on-chain CID.
  * Returns null when the folder does not exist.
  */
-export const loadPublicPortfolio = async (folderName: string): Promise<PublicPortfolio | null> => {
-  const folder = await folderData.getFolderByName(folderName)
+export const loadPublicPortfolio = async (
+  folderName: string,
+  services?: Partial<ServicesRegistry>,
+): Promise<PublicPortfolio | null> => {
+  const currentFolderData = services?.folderData ?? folderData
+  const currentStellarService = services?.stellarService ?? stellarService
+
+  const folder = await currentFolderData.getFolderByName(folderName)
   if (!folder) return null
 
   const [indexed, chain] = await Promise.all([
-    folderData.getPortfolio(folder.owner),
+    currentFolderData.getPortfolio(folder.owner),
     env.demoMode
       ? Promise.resolve(null)
-      : Promise.all([stellarService.verifyPortfolio(folder.owner), stellarService.getOnChainPortfolio(folder.owner)]).catch(
-          (error: unknown) => error as Error,
-        ),
+      : Promise.all([
+          currentStellarService.verifyPortfolio(folder.owner),
+          currentStellarService.getOnChainPortfolio(folder.owner),
+        ]).catch((error: unknown) => error as Error),
   ])
 
   let verification: Verification
@@ -60,7 +68,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
   let contentError: string | null = null
   if (cid) {
     try {
-      content = await folderData.getPortfolioContent(cid)
+      content = await currentFolderData.getPortfolioContent(cid)
     } catch (error) {
       contentError = toApiError(error).message
     }
@@ -69,4 +77,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
   return { cid, content, contentError, folder, templateId, verification }
 }
 
-export const usePublicPortfolio = (folderName: string) => useAsync(() => loadPublicPortfolio(folderName), [folderName])
+export const usePublicPortfolio = (folderName: string) => {
+  const services = useServices()
+  return useAsync(() => loadPublicPortfolio(folderName, services), [folderName, services])
+}

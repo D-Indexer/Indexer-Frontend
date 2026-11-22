@@ -14,7 +14,10 @@ export const folderData = {
   listTemplates: async (): Promise<TemplateWithMetadata[]> => {
     const templates = env.demoMode ? demoTemplates : await templateApi.list()
     return Promise.all(
-      templates.map(async (template) => ({ ...template, metadata: await ipfsService.resolveTemplateMetadata(template) })),
+      templates.map(async (template) => {
+        const { metadata, metadataStatus } = await ipfsService.resolveTemplateMetadataWithStatus(template)
+        return { ...template, metadata, metadataStatus }
+      }),
     )
   },
 

@@ -1,3 +1,5 @@
+export { ActivityCenter } from './components/ActivityCenter'
 export { TxStatus } from './components/TxStatus'
+export { useActivityStore } from './activityStore'
 export { useContractTx } from './hooks/useContractTx'
 export type { ContractTxState, FlowStage } from './hooks/useContractTx'
