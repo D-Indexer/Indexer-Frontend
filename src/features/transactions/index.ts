@@ -1,3 +1,5 @@
 export { TxStatus } from './components/TxStatus'
+export { TxStepper, resolveStepStatuses, txSteps } from './components/TxStepper'
+export type { StepStatus } from './components/TxStepper'
 export { useContractTx } from './hooks/useContractTx'
 export type { ContractTxState, FlowStage } from './hooks/useContractTx'
