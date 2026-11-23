@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import { ExternalLink } from '@/components/ui'
 import type { PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'

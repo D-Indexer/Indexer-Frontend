@@ -1,0 +1,15 @@
+{
+  "name": "@folder/validation",
+  "version": "0.1.0",
+  "description": "Folder-name and CID rules shared with Indexer-Contract, verified against contract-generated test vectors.",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./vectors": "./vectors/contract-vectors.json"
+  },
+  "files": ["src", "vectors"],
+  "license": "MIT"
+}

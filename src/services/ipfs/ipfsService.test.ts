@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PortfolioContent } from '@/types'
-import { computeRawCidV1 } from './cid'
+import { computeRawCidV1 } from '@folder/validation'
 
 const post = vi.hoisted(() => vi.fn())
 vi.mock('@/services/http/client', () => ({ apiClient: { post } }))

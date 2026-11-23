@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeRawCidV1, isValidContractCid } from '@/services/ipfs/cid'
+import { computeRawCidV1, isValidContractCid } from '@folder/validation'
 import { serializePortfolioContent } from '@/services/ipfs/ipfsService'
 import { DEMO_PORTFOLIO_CID, demoPortfolioContent } from './demo'
 
