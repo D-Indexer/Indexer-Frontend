@@ -1,4 +1,4 @@
-import { ExternalLink } from '@/components/ui'
+import { ExternalLink, Markdown } from '@/components/ui'
 import type { PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
 
@@ -29,14 +29,22 @@ const Skills = ({ label = 'Skills', skills }: { label?: string; skills: string[]
     </section>
   ) : null
 
-const Sections = ({ sections, only }: { only?: string[]; sections: Record<string, string> }) => (
+/** Long-form text: Markdown for new documents, the unchanged plain-text paragraph for older ones. */
+const Prose = ({ className = '', content, text }: { className?: string; content: Pick<PortfolioContent, 'content_format'>; text: string }) =>
+  content.content_format === 'markdown' ? (
+    <Markdown className={`portfolio__prose ${className}`.trim()} source={text} />
+  ) : (
+    <p className={`portfolio__prose ${className}`.trim()}>{text}</p>
+  )
+
+const Sections = ({ content, sections, only }: { content: PortfolioContent; only?: string[]; sections: Record<string, string> }) => (
   <>
     {Object.entries(sections)
       .filter(([key, value]) => value && (!only || only.includes(key)))
       .map(([key, value]) => (
         <section key={key} className="portfolio__section">
           <h2>{humanizeField(key)}</h2>
-          <p className="portfolio__prose">{value}</p>
+          <Prose content={content} text={value} />
         </section>
       ))}
   </>
@@ -54,9 +62,9 @@ const Header = ({ content }: ViewProps) => (
 const DeveloperView = ({ content }: ViewProps) => (
   <article className="portfolio portfolio--developer">
     <Header content={content} />
-    <p className="portfolio__prose">{content.bio}</p>
+    <Prose content={content} text={content.bio} />
     <Skills skills={content.skills} />
-    <Sections sections={content.sections} />
+    <Sections content={content} sections={content.sections} />
     <Links links={content.links} />
   </article>
 )
@@ -65,9 +73,9 @@ const DeveloperView = ({ content }: ViewProps) => (
 const DesignerView = ({ content }: ViewProps) => (
   <article className="portfolio portfolio--designer">
     <Header content={content} />
-    <p className="portfolio__prose portfolio__lead">{content.bio}</p>
+    <Prose className="portfolio__lead" content={content} text={content.bio} />
     <div className="portfolio__grid">
-      <Sections sections={content.sections} />
+      <Sections content={content} sections={content.sections} />
     </div>
     <Skills label="Tools and skills" skills={content.skills} />
     <Links links={content.links} />
@@ -80,12 +88,12 @@ const OperationsView = ({ content }: ViewProps) => (
     <Header content={content} />
     <div className="portfolio__resume">
       <div>
-        <p className="portfolio__prose">{content.bio}</p>
-        <Sections sections={content.sections} only={['experience', 'references']} />
+        <Prose content={content} text={content.bio} />
+        <Sections content={content} sections={content.sections} only={['experience', 'references']} />
       </div>
       <div>
         <Skills skills={content.skills} />
-        <Sections sections={content.sections} only={['certifications']} />
+        <Sections content={content} sections={content.sections} only={['certifications']} />
         <Links links={content.links} />
       </div>
     </div>

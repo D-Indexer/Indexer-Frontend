@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { FormField } from '@/components/forms'
-import { Button, Card, ExternalLink, LoadingState } from '@/components/ui'
+import { Button, Card, ExternalLink, LoadingState, Markdown } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
 import { useTemplates } from '@/hooks'
@@ -118,6 +118,21 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     }
   }, [owner, portfolio])
 
+  /** New documents use Markdown; an existing plain-text document stays plain so it renders as before. */
+  const markdown = !published || published.content_format === 'markdown'
+  const withPreview = (field: ReactNode, text: string, label: string) =>
+    markdown ? (
+      <div className="editor-split">
+        {field}
+        <aside className="editor-split__preview" aria-label={`Preview of ${label}`}>
+          <p className="muted">Preview</p>
+          <Markdown className="portfolio__prose" source={text} />
+        </aside>
+      </div>
+    ) : (
+      field
+    )
+
   const selectedTemplate = templates.data?.find((template) => String(template.id) === values.templateId)
   const sectionFields = (selectedTemplate?.metadata?.fields ?? []).filter((field) => !CORE_FIELDS.has(field))
 
@@ -157,6 +172,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
       sections: Object.fromEntries(
         sectionFields.map((field) => [field, (values.sections[field] ?? '').trim()]).filter(([, value]) => value),
       ),
+      ...(markdown ? { content_format: 'markdown' as const } : {}),
       updated_at: new Date().toISOString(),
     }
 
@@ -264,7 +280,20 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
           value={values.headline}
           onChange={set('headline')}
         />
-        <FormField control="textarea" id="portfolio-bio" label="Bio" required error={errors.bio} value={values.bio} onChange={set('bio')} />
+        {withPreview(
+          <FormField
+            control="textarea"
+            id="portfolio-bio"
+            label="Bio"
+            required
+            helpText={markdown ? 'Markdown: emphasis, lists, links, headings and code. HTML is not rendered.' : undefined}
+            error={errors.bio}
+            value={values.bio}
+            onChange={set('bio')}
+          />,
+          values.bio,
+          'Bio',
+        )}
         <FormField id="portfolio-skills" label="Skills" helpText="Separate skills with commas." value={values.skills} onChange={set('skills')} />
         <FormField
           id="portfolio-links"
@@ -277,15 +306,20 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
         />
 
         {sectionFields.map((field) => (
-          <FormField
-            key={field}
-            control="textarea"
-            id={`portfolio-section-${field}`}
-            label={humanizeField(field)}
-            value={values.sections[field] ?? ''}
-            rows={4}
-            onChange={(event) => setValues((current) => ({ ...current, sections: { ...current.sections, [field]: event.target.value } }))}
-          />
+          <div key={field}>
+            {withPreview(
+              <FormField
+                control="textarea"
+                id={`portfolio-section-${field}`}
+                label={humanizeField(field)}
+                value={values.sections[field] ?? ''}
+                rows={4}
+                onChange={(event) => setValues((current) => ({ ...current, sections: { ...current.sections, [field]: event.target.value } }))}
+              />,
+              values.sections[field] ?? '',
+              humanizeField(field),
+            )}
+          </div>
         ))}
 
         <TxStatus

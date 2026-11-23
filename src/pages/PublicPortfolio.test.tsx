@@ -125,4 +125,14 @@ describe('PublicPortfolioPage', () => {
     expect(screen.getByText('Verified on Stellar')).toBeInTheDocument()
     expect(data.getPortfolioContent).toHaveBeenCalledWith(CID_V2)
   })
+
+  it('renders Markdown for content_format "markdown" and keeps older documents as plain text', async () => {
+    data.getPortfolioContent.mockResolvedValue({ ...content, bio: 'I **run** things.', content_format: 'markdown' })
+    const { unmount } = renderPage()
+    expect(await screen.findByText('run')).toHaveProperty('tagName', 'STRONG')
+    unmount()
+    data.getPortfolioContent.mockResolvedValue({ ...content, bio: 'I **run** things.' })
+    renderPage()
+    expect(await screen.findByText('I **run** things.')).toBeInTheDocument()
+  })
 })
