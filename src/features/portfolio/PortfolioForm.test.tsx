@@ -85,6 +85,10 @@ describe('PortfolioForm', () => {
     expect(screen.getByLabelText(/Template/)).toBeDisabled()
 
     await userEvent.click(screen.getByRole('button', { name: 'Upload and update portfolio' }))
+    expect(invoke).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Review your changes' })).toBeInTheDocument()
+    expect(screen.getByText(/No changes compared/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm and upload update' }))
     expect(invoke).toHaveBeenCalledWith(OWNER, { method: 'update_portfolio', ipfsCid: CID_V2 }, expect.any(Function), expect.any(Function))
   })
 

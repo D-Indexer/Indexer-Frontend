@@ -8,6 +8,8 @@ import { folderData, ipfsService } from '@/services'
 import type { Folder, Portfolio, PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
 import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
+import { diffPortfolioContent, type FieldChange } from '../utils/diffPortfolioContent'
+import { DiffReview } from './DiffReview'
 
 /** Fields every template shares; template-specific fields become free-text sections. */
 const CORE_FIELDS = new Set(['bio', 'skills'])
@@ -78,6 +80,8 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const [errors, setErrors] = useState<FormErrors>({})
   const [contentNotice, setContentNotice] = useState<string | null>(null)
   const [loadingContent, setLoadingContent] = useState(isUpdate)
+  const [published, setPublished] = useState<PortfolioContent | null>(null)
+  const [review, setReview] = useState<{ changes: FieldChange[]; content: PortfolioContent } | null>(null)
 
   useEffect(() => {
     if (!portfolio) return undefined
@@ -86,7 +90,9 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     folderData
       .getPortfolioContent(portfolio.ipfsCid)
       .then((content) => {
-        if (active) setValues(fromContent(content, String(portfolio.templateId)))
+        if (!active) return
+        setPublished(content)
+        setValues(fromContent(content, String(portfolio.templateId)))
       })
       .catch((error: unknown) => {
         if (active)
@@ -107,6 +113,16 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
 
   const set = (key: Exclude<keyof FormValues, 'sections'>) => (event: { target: { value: string } }) =>
     setValues((current) => ({ ...current, [key]: event.target.value }))
+
+  const publish = async (content: PortfolioContent) => {
+    const templateId = content.template_id
+    const result = await tx.run(owner, async (setUploading) => {
+      setUploading()
+      const ipfsCid = await ipfsService.uploadPortfolioContent(content)
+      return isUpdate ? { method: 'update_portfolio', ipfsCid } : { method: 'mint_portfolio', templateId, ipfsCid }
+    })
+    if (result) onPublished(result.hash)
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -134,16 +150,30 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
       updated_at: new Date().toISOString(),
     }
 
-    const result = await tx.run(owner, async (setUploading) => {
-      setUploading()
-      const ipfsCid = await ipfsService.uploadPortfolioContent(content)
-      return isUpdate ? { method: 'update_portfolio', ipfsCid } : { method: 'mint_portfolio', templateId, ipfsCid }
-    })
-    if (result) onPublished(result.hash)
+    // Updates get a review step against the published version before anything is uploaded or signed.
+    if (isUpdate && published) {
+      setReview({ changes: diffPortfolioContent(published, content), content })
+      return
+    }
+    await publish(content)
   }
 
   if (loadingContent) {
     return <LoadingState label="Loading your current portfolio content…" minHeight="24rem" />
+  }
+
+  if (review && !tx.busy && tx.stage !== 'done') {
+    return (
+      <Card>
+        <DiffReview
+          changes={review.changes}
+          confirmLabel="Confirm and upload update"
+          onBack={() => setReview(null)}
+          onConfirm={() => void publish(review.content)}
+        />
+        <TxStatus {...tx} successMessage="" />
+      </Card>
+    )
   }
 
   return (
