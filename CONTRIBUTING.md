@@ -37,5 +37,29 @@ Thanks for helping! This guide is short on purpose; the [README](README.md) cove
 - Client-side validation should mirror the contract (`Indexer-Contract/docs/VALIDATION.md`), not invent new rules.
 - Every `VITE_*` variable is public. Secrets belong in the backend.
 - New `VITE_*` variables must be added to `src/config/env.ts`, `.env.example` and `docs/configuration.md`.
-- Tests: Vitest + Testing Library. Query by role/label, as a user would. Network calls are mocked,
-  except the opt-in testnet smoke test.
+- Tests: Vitest + Testing Library. Query by role/label, as a user would. Network calls are mocked
+  at the HTTP level with MSW (`src/testing/msw/`); seed `mockDb` per test and use `server.use(...)`
+  for error cases. Unhandled requests fail the test. The opt-in testnet smoke test is the only
+  exception.
+- Wallet state: read it through the selector hooks in `src/store` (`useWalletAddress`,
+  `useWalletStatus`, ...). Never subscribe to the whole `useWalletStore`.
+
+## Mock mode
+
+`npm run dev:mock` starts the app with the MSW service worker in the browser, serving the same
+handlers the tests use (seeded with the demo fixtures). No backend, IPFS node or wallet funds needed.
+
+## Nightly testnet smoke test
+
+`.github/workflows/testnet-smoke.yml` runs `FOLDER_TESTNET_SMOKE=1 npm test -- testnet` every night
+(and on demand via *Run workflow*). On failure it opens, or comments on, a single
+**Testnet smoke failing** issue, and closes it when a later run passes.
+
+Setup (maintainers):
+
+1. Generate a testnet keypair, e.g. at https://laboratory.stellar.org, and fund it with Friendbot.
+2. Add its secret key as the repository secret `FOLDER_TESTNET_FUNDER_SECRET`
+   (*Settings → Secrets and variables → Actions*). It only funds a fresh account per run, so it
+   holds testnet lumens only. Never use a mainnet key.
+3. After a testnet reset the test re-funds the funder via Friendbot automatically. If the secret is
+   missing, the test falls back to funding the fresh account directly with Friendbot.

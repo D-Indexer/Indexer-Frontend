@@ -36,7 +36,10 @@ describe('useAsync', () => {
     })
     rerender({ key: 2 })
     await waitFor(() => expect(result.current.data).toBe('second'))
-    await act(async () => resolveFirst('first'))
+    await act(async () => {
+      resolveFirst('first')
+      await Promise.resolve()
+    })
     expect(result.current.data).toBe('second')
   })
 })

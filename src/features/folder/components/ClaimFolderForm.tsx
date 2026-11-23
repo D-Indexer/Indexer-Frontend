@@ -25,7 +25,7 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
       return
     }
     const folderName = toFolderName(name)
-    const result = await tx.run(owner, async () => ({ method: 'claim_folder', folderName }))
+    const result = await tx.run(owner, () => Promise.resolve({ method: 'claim_folder' as const, folderName }))
     if (result) onClaimed(result.hash)
   }
 
