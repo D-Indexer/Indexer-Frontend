@@ -23,3 +23,19 @@ With `VITE_DEMO_MODE=true` the app does not call the backend. Templates, a sampl
 (`demo.folder`) and its portfolio come from `src/data/fixtures`. Every page shows a "Demo data"
 banner, and claim/mint/update buttons are disabled. Without demo mode, fixtures are never used:
 API failures show an error state with a retry button.
+
+## Feature flags
+
+Work-in-progress features sit behind typed flags declared in `src/config/flags.ts` (name,
+description, owner, date added). Read them with `useFlag('name')` in components or
+`isFlagEnabled('name')` elsewhere. Sources, later wins:
+
+1. The registry `defaultValue`.
+2. Runtime config: a deployment can enable flags without a rebuild by adding
+   `<script>window.__FOLDER_FLAGS__ = { sponsorship: true }</script>` before the app bundle in `index.html`.
+3. Dev server only: `?flags=sponsorship,-trustlessIpfs` (a leading `-` turns a flag off).
+4. Dev server only: localStorage overrides set from the console with `setFlagOverride('sponsorship', true)`
+   (stored under `folder:flags`, applied on reload).
+
+Production builds ignore 3 and 4. `src/config/flags.test.ts` fails once a flag is older than 180
+days: remove the flag, or bump its `added` date after reviewing it.

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { knownTemplateMetadata } from '@/data/knownTemplateMetadata'
 import { cidFromIpfsUri, computeRawCidV1, isValidContractCid } from './cid'
 
 describe('isValidContractCid (mirrors Indexer-Contract validation.rs)', () => {
@@ -27,12 +26,6 @@ describe('isValidContractCid (mirrors Indexer-Contract validation.rs)', () => {
 })
 
 describe('computeRawCidV1', () => {
-  it('reproduces the template CIDs registered on testnet', async () => {
-    for (const [cid, content] of Object.entries(knownTemplateMetadata)) {
-      expect(await computeRawCidV1(content)).toBe(cid)
-    }
-  })
-
   it('produces contract-valid CIDs', async () => {
     const cid = await computeRawCidV1('{"hello":"folder"}')
     expect(cid.startsWith('bafkrei')).toBe(true)

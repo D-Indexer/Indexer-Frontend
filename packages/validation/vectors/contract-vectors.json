@@ -1,0 +1,102 @@
+{
+  "source": "Indexer-Contract src/validation.rs",
+  "note": "Regenerate from the Indexer-Contract test run; see docs/adr/0002-shared-validation-package.md.",
+  "folderName": [
+    {
+      "input": "jane-doe.folder",
+      "valid": true
+    },
+    {
+      "input": "007.folder",
+      "valid": true
+    },
+    {
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.folder",
+      "valid": true
+    },
+    {
+      "input": ".folder",
+      "valid": false,
+      "reason": "empty_label"
+    },
+    {
+      "input": "ab.folder",
+      "valid": false,
+      "reason": "label_too_short"
+    },
+    {
+      "input": "-abc.folder",
+      "valid": false,
+      "reason": "edge_hyphen"
+    },
+    {
+      "input": "abc-.folder",
+      "valid": false,
+      "reason": "edge_hyphen"
+    },
+    {
+      "input": "a.b.folder",
+      "valid": false,
+      "reason": "invalid_char"
+    },
+    {
+      "input": "Alice.folder",
+      "valid": false,
+      "reason": "invalid_char"
+    },
+    {
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.folder",
+      "valid": false,
+      "reason": "too_long"
+    }
+  ],
+  "cid": [
+    {
+      "input": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+      "valid": true
+    },
+    {
+      "input": "bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhc4yeq",
+      "valid": true
+    },
+    {
+      "input": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "valid": true
+    },
+    {
+      "input": "",
+      "valid": false,
+      "reason": "bad_prefix"
+    },
+    {
+      "input": "BAFKREIBM6JG3UX5QUMHCN2B3FLC3TYU6DMLB4XA7U5BF44YEGNRJHC4YEQ",
+      "valid": false,
+      "reason": "bad_prefix"
+    },
+    {
+      "input": "Qm0wAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+      "valid": false,
+      "reason": "invalid_char"
+    },
+    {
+      "input": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbd",
+      "valid": false,
+      "reason": "bad_length"
+    },
+    {
+      "input": "bafkrei",
+      "valid": false,
+      "reason": "bad_length"
+    },
+    {
+      "input": "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "valid": false,
+      "reason": "bad_length"
+    },
+    {
+      "input": "bafy_not_a_cid",
+      "valid": false,
+      "reason": "invalid_char"
+    }
+  ]
+}

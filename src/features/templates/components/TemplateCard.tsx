@@ -1,5 +1,6 @@
 import { Badge, Card, ExternalLink } from '@/components/ui'
-import { cidFromIpfsUri, ipfsService } from '@/services'
+import { cidFromIpfsUri } from '@folder/validation'
+import { ipfsService } from '@/services'
 import type { TemplateWithMetadata } from '@/types'
 import { humanizeField } from '@/utils/format'
 

@@ -3,7 +3,7 @@ import { knownTemplateMetadata } from '@/data/knownTemplateMetadata'
 import { apiClient } from '@/services/http/client'
 import { toApiError } from '@/services/http/errors'
 import type { PortfolioContent, Template, TemplateMetadata } from '@/types'
-import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid } from './cid'
+import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid } from '@folder/validation'
 
 export class IpfsError extends Error {
   constructor(message: string) {

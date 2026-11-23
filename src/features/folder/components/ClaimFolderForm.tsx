@@ -1,9 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useActionState, useState } from 'react'
 import { FormField } from '@/components/forms'
 import { Button, Card } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
-import { toFolderName, validateFolderName } from '@/utils/validation'
+import { toFolderName, validateFolderName } from '@folder/validation'
 
 interface ClaimFolderFormProps {
   onClaimed: (hash: string) => void
@@ -12,26 +12,27 @@ interface ClaimFolderFormProps {
 
 export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
   const [name, setName] = useState('')
-  const [fieldError, setFieldError] = useState<string | undefined>()
   const tx = useContractTx()
   const { blockedReason } = useWalletGuard()
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault()
+  // React 19 form action: returns the submit-time validation error (undefined when the name was valid).
+  const [submitError, claimAction, isPending] = useActionState<string | undefined>(async () => {
     const error = validateFolderName(name) ?? undefined
-    setFieldError(error)
     if (error) {
       document.getElementById('folder-name')?.focus()
-      return
+      return error
     }
-    const folderName = toFolderName(name)
-    const result = await tx.run(owner, async () => ({ method: 'claim_folder', folderName }))
+    const result = await tx.run(owner, async () => ({ method: 'claim_folder', folderName: toFolderName(name) }))
     if (result) onClaimed(result.hash)
-  }
+    return undefined
+  }, undefined)
+  // After a failed submit, re-validate live as the user corrects the name.
+  const fieldError = submitError && (validateFolderName(name) ?? undefined)
+  const busy = tx.busy || isPending
 
   return (
     <Card>
-      <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="claim-title">
+      <form className="form" action={claimAction} noValidate aria-labelledby="claim-title">
         <h2 id="claim-title" className="form__title">Claim your folder name</h2>
         <FormField
           id="folder-name"
@@ -42,15 +43,12 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
           autoComplete="off"
           spellCheck={false}
           required
-          onChange={(event) => {
-            setName(event.target.value)
-            if (fieldError) setFieldError(validateFolderName(event.target.value) ?? undefined)
-          }}
+          onChange={(event) => setName(event.target.value)}
           suffix=".folder"
         />
         <TxStatus {...tx} successMessage={`Claimed ${toFolderName(name)}. It will show up here once the indexer picks it up.`} />
-        <Button type="submit" disabled={tx.busy || Boolean(blockedReason)}>
-          {tx.busy ? 'Claiming…' : 'Claim folder'}
+        <Button type="submit" disabled={busy || Boolean(blockedReason)}>
+          {busy ? 'Claiming…' : 'Claim folder'}
         </Button>
       </form>
     </Card>

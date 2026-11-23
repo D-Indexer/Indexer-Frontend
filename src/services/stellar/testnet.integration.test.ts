@@ -21,7 +21,7 @@ vi.mock('@/config/env', () => ({
 }))
 
 const { stellarService, TransactionError } = await import('./stellarService')
-const { computeRawCidV1 } = await import('@/services/ipfs/cid')
+const { computeRawCidV1 } = await import('@folder/validation')
 
 describe.skipIf(process.env.FOLDER_TESTNET_SMOKE !== '1')('testnet smoke', () => {
   it('claims a folder, mints, updates and verifies a portfolio', async () => {
