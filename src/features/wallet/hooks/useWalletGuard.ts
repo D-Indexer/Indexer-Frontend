@@ -1,5 +1,5 @@
 import { env } from '@/config/env'
-import { selectIsTestnet, useWalletStore } from '@/store'
+import { useIsTestnet, useWalletAddress, useWalletNetwork, useWalletStatus } from '@/store'
 
 export interface WalletGuard {
   address: string | null
@@ -10,10 +10,10 @@ export interface WalletGuard {
 
 /** Single source of truth for "can this user send a Folder transaction right now?". */
 export const useWalletGuard = (): WalletGuard => {
-  const address = useWalletStore((state) => state.address)
-  const network = useWalletStore((state) => state.network)
-  const status = useWalletStore((state) => state.status)
-  const isTestnet = useWalletStore(selectIsTestnet)
+  const address = useWalletAddress()
+  const network = useWalletNetwork()
+  const status = useWalletStatus()
+  const isTestnet = useIsTestnet()
 
   let blockedReason: string | null = null
   if (env.demoMode) {

@@ -30,6 +30,8 @@ export const useAsync = <T>(callback: () => Promise<T>, dependencies: React.Depe
         setState({ data: null, error: toApiError(error), loading: false })
       }
     }
+    // Callers own the dependency list, mirroring useEffect's contract.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies)
 
   useEffect(() => {

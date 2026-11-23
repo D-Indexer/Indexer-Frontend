@@ -2,20 +2,21 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useWalletStore } from '@/store'
-import { connectTestnetWallet, OWNER, TX_HASH } from '@/testing/fixtures'
+import { connectTestnetWallet, OWNER } from '@/testing/fixtures'
+import { mockDb } from '@/testing/msw/db'
 
-const invoke = vi.hoisted(() => vi.fn())
-vi.mock('@/services/stellar/stellarService', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/services/stellar/stellarService')>()
-  return { ...original, stellarService: { ...original.stellarService, invoke } }
+// Freighter is a browser extension, not an HTTP service; everything else goes through MSW.
+const signTransaction = vi.hoisted(() => vi.fn((xdr: string) => Promise.resolve(xdr)))
+vi.mock('@/services/stellar/freighterWallet', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/services/stellar/freighterWallet')>()
+  return { ...original, freighterWallet: { ...original.freighterWallet, signTransaction } }
 })
 
 const { ClaimFolderForm } = await import('./components/ClaimFolderForm')
-const { TransactionError } = await import('@/services/stellar/stellarService')
 
 describe('ClaimFolderForm', () => {
   beforeEach(() => {
-    invoke.mockReset()
+    signTransaction.mockClear()
     connectTestnetWallet()
   })
 
@@ -28,30 +29,36 @@ describe('ClaimFolderForm', () => {
     expect(input).toHaveAttribute('aria-invalid', 'true')
     expect(input).toHaveAccessibleDescription(expect.stringContaining('Use at least 3 characters before .folder.'))
     expect(input).toHaveFocus()
-    expect(invoke).not.toHaveBeenCalled()
+    expect(signTransaction).not.toHaveBeenCalled()
+    expect(mockDb.transactions.size).toBe(0)
   })
 
   it('claims <name>.folder and links the transaction on stellar.expert', async () => {
-    invoke.mockResolvedValue({ hash: TX_HASH, ledger: 1 })
     const onClaimed = vi.fn()
     render(<ClaimFolderForm owner={OWNER} onClaimed={onClaimed} />)
     await userEvent.type(screen.getByLabelText(/Folder name/), 'jane-doe')
     await userEvent.click(screen.getByRole('button', { name: 'Claim folder' }))
 
-    expect(invoke).toHaveBeenCalledWith(OWNER, { method: 'claim_folder', folderName: 'jane-doe.folder' }, expect.any(Function), expect.any(Function))
-    expect(onClaimed).toHaveBeenCalledWith(TX_HASH)
-    expect(await screen.findByRole('link', { name: /3f659a42/ })).toHaveAttribute(
+    const [hash] = await vi.waitFor(() => {
+      expect(onClaimed).toHaveBeenCalledOnce()
+      return onClaimed.mock.calls[0] as [string]
+    })
+    expect(signTransaction).toHaveBeenCalledWith(expect.any(String), OWNER, expect.any(String))
+    expect(mockDb.transactions.has(hash)).toBe(true)
+    expect(mockDb.folders.get(OWNER)).toMatchObject({ name: 'jane-doe.folder' })
+    expect(await screen.findByRole('link', { name: new RegExp(hash.slice(0, 8)) })).toHaveAttribute(
       'href',
-      `https://stellar.expert/explorer/testnet/tx/${TX_HASH}`,
+      `https://stellar.expert/explorer/testnet/tx/${hash}`,
     )
   })
 
   it('shows the mapped contract error', async () => {
-    invoke.mockRejectedValue(new TransactionError('That folder name is already taken. Try another one.', { contractErrorCode: 3 }))
+    mockDb.rpcErrors.set('claim_folder', 'HostError: Error(Contract, #3)')
     render(<ClaimFolderForm owner={OWNER} onClaimed={vi.fn()} />)
     await userEvent.type(screen.getByLabelText(/Folder name/), 'taken')
     await userEvent.click(screen.getByRole('button', { name: 'Claim folder' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('That folder name is already taken.')
+    expect(signTransaction).not.toHaveBeenCalled()
   })
 
   it('is disabled when the wallet is on the wrong network', () => {

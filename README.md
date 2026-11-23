@@ -75,8 +75,9 @@ and disables on-chain actions.
 
 ```bash
 npm run dev         # Vite dev server on :5173
+npm run dev:mock    # dev server with MSW mocking backend, IPFS and Soroban RPC
 npm run typecheck   # tsc --noEmit
-npm run lint        # ESLint
+npm run lint        # ESLint 9 flat config, type-aware rules, zero warnings
 npm test            # Vitest + Testing Library
 npm run build       # production build in dist/
 

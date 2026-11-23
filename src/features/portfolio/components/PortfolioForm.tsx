@@ -129,7 +129,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
       skills: parseDelimitedList(values.skills),
       links: parseDelimitedList(values.links),
       sections: Object.fromEntries(
-        sectionFields.map((field) => [field, (values.sections[field] ?? '').trim()]).filter(([, value]) => value),
+        sectionFields.map((field): [string, string] => [field, (values.sections[field] ?? '').trim()]).filter(([, value]) => value),
       ),
       updated_at: new Date().toISOString(),
     }

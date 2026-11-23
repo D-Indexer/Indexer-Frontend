@@ -19,5 +19,9 @@ export default defineConfig({
     setupFiles: ['./src/testing/setup.ts'],
     css: false,
     restoreMocks: true,
+    env: {
+      VITE_API_URL: 'http://indexer.test',
+      VITE_FOLDER_CONTRACT_ID: 'CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV',
+    },
   },
 })

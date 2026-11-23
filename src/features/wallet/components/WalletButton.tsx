@@ -2,11 +2,15 @@ import { useEffect } from 'react'
 import { Button } from '@/components/ui'
 import { env } from '@/config/env'
 import { explorerLinks, freighterWallet, shortenKey } from '@/services'
-import { selectIsTestnet, useWalletStore } from '@/store'
+import { useIsTestnet, useWalletActions, useWalletAddress, useWalletError, useWalletNetwork, useWalletStatus } from '@/store'
 
 export const WalletButton = () => {
-  const { address, connect, disconnect, error, network, restore, status, update } = useWalletStore()
-  const isTestnet = useWalletStore(selectIsTestnet)
+  const address = useWalletAddress()
+  const error = useWalletError()
+  const network = useWalletNetwork()
+  const status = useWalletStatus()
+  const isTestnet = useIsTestnet()
+  const { connect, disconnect, restore, update } = useWalletActions()
 
   useEffect(() => {
     if (!env.demoMode) void restore()
