@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { FormField } from '@/components/forms'
-import { Button, Card, LoadingState } from '@/components/ui'
+import { Button, Card, ExternalLink, LoadingState } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
 import { useTemplates } from '@/hooks'
 import { folderData, ipfsService } from '@/services'
+import { stellarService } from '@/services/stellar/stellarService'
 import type { Folder, Portfolio, PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
 import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
@@ -81,12 +82,21 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const [contentNotice, setContentNotice] = useState<string | null>(null)
   const [loadingContent, setLoadingContent] = useState(isUpdate)
   const [published, setPublished] = useState<PortfolioContent | null>(null)
+  const [baseCid, setBaseCid] = useState<string | null>(null)
   const [review, setReview] = useState<{ changes: FieldChange[]; content: PortfolioContent } | null>(null)
 
   useEffect(() => {
     if (!portfolio) return undefined
     let active = true
     setLoadingContent(true)
+    // Remember the CID this edit is based on, to detect a concurrent update before signing.
+    stellarService
+      .getOnChainPortfolio(owner)
+      .then((onChain) => onChain?.ipfsCid ?? portfolio.ipfsCid)
+      .catch(() => portfolio.ipfsCid)
+      .then((cid) => {
+        if (active) setBaseCid(cid)
+      })
     folderData
       .getPortfolioContent(portfolio.ipfsCid)
       .then((content) => {
@@ -106,7 +116,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     return () => {
       active = false
     }
-  }, [portfolio])
+  }, [owner, portfolio])
 
   const selectedTemplate = templates.data?.find((template) => String(template.id) === values.templateId)
   const sectionFields = (selectedTemplate?.metadata?.fields ?? []).filter((field) => !CORE_FIELDS.has(field))
@@ -114,13 +124,13 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const set = (key: Exclude<keyof FormValues, 'sections'>) => (event: { target: { value: string } }) =>
     setValues((current) => ({ ...current, [key]: event.target.value }))
 
-  const publish = async (content: PortfolioContent) => {
+  const publish = async (content: PortfolioContent, force = false) => {
     const templateId = content.template_id
     const result = await tx.run(owner, async (setUploading) => {
       setUploading()
       const ipfsCid = await ipfsService.uploadPortfolioContent(content)
       return isUpdate ? { method: 'update_portfolio', ipfsCid } : { method: 'mint_portfolio', templateId, ipfsCid }
-    })
+    }, isUpdate && !force ? { baseCid } : {})
     if (result) onPublished(result.hash)
   }
 
@@ -162,9 +172,45 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     return <LoadingState label="Loading your current portfolio content…" minHeight="24rem" />
   }
 
+  /** Merging = re-basing on the newer version and reviewing my edits against it in the diff view. */
+  const mergeWithNewer = async (newerCid: string) => {
+    try {
+      const newer = await folderData.getPortfolioContent(newerCid)
+      setPublished(newer)
+      setBaseCid(newerCid)
+      if (review) setReview({ changes: diffPortfolioContent(newer, review.content), content: review.content })
+      tx.reset()
+    } catch (error) {
+      setContentNotice(`The newer version could not be loaded from IPFS (${error instanceof Error ? error.message : 'unknown error'}).`)
+    }
+  }
+
+  const conflictNotice = tx.conflict ? (
+    <div className="notice notice--warning notice--stack" role="alert">
+      <p>
+        This portfolio was updated on-chain after you opened the editor (possibly from another device). Saving now would overwrite
+        those changes.
+      </p>
+      <p>
+        <ExternalLink className="mono" href={ipfsService.gatewayUrl(tx.conflict)}>View the newer version</ExternalLink>
+      </p>
+      <div>
+        <Button type="button" onClick={() => void mergeWithNewer(tx.conflict as string)}>Merge: review my changes against it</Button>{' '}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => (review ? void publish(review.content, true) : tx.reset())}
+        >
+          Overwrite anyway
+        </Button>
+      </div>
+    </div>
+  ) : null
+
   if (review && !tx.busy && tx.stage !== 'done') {
     return (
       <Card>
+        {conflictNotice}
         <DiffReview
           changes={review.changes}
           confirmLabel="Confirm and upload update"
@@ -180,6 +226,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     <Card>
       <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="portfolio-form-title">
         <h2 id="portfolio-form-title" className="form__title">{isUpdate ? 'Update your portfolio' : 'Mint your portfolio'}</h2>
+        {conflictNotice}
         {contentNotice ? (
           <div className="notice notice--warning" role="status">
             <p>{contentNotice}</p>
