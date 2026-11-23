@@ -99,4 +99,30 @@ describe('PublicPortfolioPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Jane Doe' })).toBeInTheDocument()
   })
+
+  it('renders indexed content as "Verifying…" before the chain answers, then uses it when CIDs match', async () => {
+    let resolveChain: (value: boolean) => void = () => undefined
+    chain.verifyPortfolio.mockReturnValue(new Promise<boolean>((resolve) => (resolveChain = resolve)))
+    chain.getOnChainPortfolio.mockResolvedValue({ ipfsCid: CID_V1, templateId: 3, mintedAt: 0 })
+    renderPage()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Jane Doe' })).toBeInTheDocument()
+    expect(screen.getByText('Verifying…')).toBeInTheDocument()
+    expect(screen.queryByText('Verified on Stellar')).not.toBeInTheDocument()
+    resolveChain(true)
+    expect(await screen.findByText('Verified on Stellar')).toBeInTheDocument()
+    expect(data.getPortfolioContent).toHaveBeenCalledTimes(1)
+  })
+
+  it('discards the speculative content and fetches the on-chain CID when they differ', async () => {
+    let resolveChain: (value: boolean) => void = () => undefined
+    chain.verifyPortfolio.mockReturnValue(new Promise<boolean>((resolve) => (resolveChain = resolve)))
+    data.getPortfolioContent.mockImplementation(async (cid: string) => ({ ...content, name: cid === CID_V1 ? 'Stale Name' : 'Jane Doe' }))
+    renderPage()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Stale Name' })).toBeInTheDocument()
+    expect(screen.queryByText('Verified on Stellar')).not.toBeInTheDocument()
+    resolveChain(true)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Jane Doe' })).toBeInTheDocument()
+    expect(screen.getByText('Verified on Stellar')).toBeInTheDocument()
+    expect(data.getPortfolioContent).toHaveBeenCalledWith(CID_V2)
+  })
 })
