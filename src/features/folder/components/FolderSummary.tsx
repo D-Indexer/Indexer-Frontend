@@ -35,7 +35,7 @@ export const FolderSummary = ({ folder, portfolio }: FolderSummaryProps) => (
           <div>
             <dt>Portfolio CID</dt>
             <dd className="mono">
-              <ExternalLink href={ipfsService.gatewayUrl(portfolio.ipfsCid)}>{portfolio.ipfsCid}</ExternalLink>
+              <ExternalLink href={ipfsService.gatewayBrowseUrl(portfolio.ipfsCid)}>{portfolio.ipfsCid}</ExternalLink>
             </dd>
           </div>
           <div>

@@ -12,7 +12,12 @@ export interface AppConfig {
   apiUrl: string
   demoMode: boolean
   folderContractId: string
+  /** Dev-only Kubo HTTP API base URL; always empty in production builds. */
+  ipfsDevKuboApi: string
   ipfsGatewayUrl: string
+  /** Origin of a subdomain gateway (e.g. https://dweb.link) used for user-navigable links; '' = unset. */
+  ipfsSubdomainGateway: string
+  ipfsTrustless: boolean
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
 }
@@ -95,12 +100,33 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
 
+  const ipfsSubdomainGateway = trimTrailingSlash(read(raw, 'VITE_IPFS_SUBDOMAIN_GATEWAY'))
+  if (ipfsSubdomainGateway && !isHttpUrl(ipfsSubdomainGateway)) {
+    errors.push({ variable: 'VITE_IPFS_SUBDOMAIN_GATEWAY', message: `"${ipfsSubdomainGateway}" is not an http(s) URL.` })
+  }
+
+  let ipfsDevKuboApi = trimTrailingSlash(read(raw, 'VITE_IPFS_DEV_KUBO_API'))
+  if (ipfsDevKuboApi) {
+    if (raw.PROD === true) {
+      errors.push({
+        variable: 'VITE_IPFS_DEV_KUBO_API',
+        message: 'Dev-only option: it must not be set in production builds. Remove it and upload through the backend.',
+      })
+      ipfsDevKuboApi = ''
+    } else if (!isHttpUrl(ipfsDevKuboApi)) {
+      errors.push({ variable: 'VITE_IPFS_DEV_KUBO_API', message: `"${ipfsDevKuboApi}" is not an http(s) URL.` })
+    }
+  }
+
   return {
     config: {
       apiUrl,
       demoMode,
       folderContractId,
+      ipfsDevKuboApi,
       ipfsGatewayUrl,
+      ipfsSubdomainGateway,
+      ipfsTrustless: read(raw, 'VITE_IPFS_TRUSTLESS') === 'true',
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
     },

@@ -40,7 +40,7 @@ export const TemplateCard = ({ action, headingLevel = 2, template }: TemplateCar
       ) : null}
       <div className="template-card__footer">
         {cid ? (
-          <ExternalLink href={ipfsService.gatewayUrl(cid)} className="muted mono small">
+          <ExternalLink href={ipfsService.gatewayBrowseUrl(cid)} className="muted mono small">
             {cid.slice(0, 12)}…
           </ExternalLink>
         ) : null}

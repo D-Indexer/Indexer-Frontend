@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { knownTemplateMetadata } from '@/data/knownTemplateMetadata'
-import { cidFromIpfsUri, computeRawCidV1, isValidContractCid } from './cid'
+import { cidFromIpfsUri, computeRawCidV1, isValidContractCid, toDnsSafeCid } from './cid'
 
 describe('isValidContractCid (mirrors Indexer-Contract validation.rs)', () => {
   it.each([
@@ -44,5 +44,18 @@ describe('cidFromIpfsUri', () => {
   it('extracts the CID from ipfs:// URIs', () => {
     expect(cidFromIpfsUri('ipfs://bafkreiabc/templates/1.json')).toBe('bafkreiabc')
     expect(cidFromIpfsUri('https://ipfs.io/ipfs/bafkreiabc')).toBeNull()
+  })
+})
+
+describe('toDnsSafeCid', () => {
+  it('converts CIDv0 to CIDv1 base32 (dag-pb)', () => {
+    expect(toDnsSafeCid('QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG')).toBe(
+      'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
+    )
+  })
+
+  it('leaves CIDv1 unchanged', () => {
+    const cid = 'bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhc4yeq'
+    expect(toDnsSafeCid(cid)).toBe(cid)
   })
 })

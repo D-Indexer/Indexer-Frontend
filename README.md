@@ -61,6 +61,32 @@ npm run dev             # http://localhost:5173
 Tip: set `VITE_IPFS_GATEWAY_URL=http://localhost:8080/ipfs` to read content from the backend's
 local Kubo node instead of a public gateway.
 
+#### End-to-end local minting checklist
+
+1. `docker compose up --build` in Indexer-Backend (API :3000, Kubo API :5001, gateway :8080).
+2. Frontend `.env`: `VITE_API_URL=http://localhost:3000`, `VITE_FOLDER_CONTRACT_ID=<testnet id>`,
+   `VITE_IPFS_GATEWAY_URL=http://localhost:8080/ipfs`.
+3. Freighter on **Testnet**, account funded via Friendbot.
+4. `npm run dev`, connect the wallet, claim a `<name>.folder`.
+5. Mint. Upload goes through the backend `/upload` (needs the backend change below) **or**, for
+   local development only, set `VITE_IPFS_DEV_KUBO_API=http://localhost:5001` to send the JSON
+   straight to Kubo (`/api/v0/add?cid-version=1&raw-leaves=true`). Kubo must allow the dev origin:
+   `ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://localhost:5173"]'`
+   (plus `Access-Control-Allow-Methods ["POST"]`). The option is refused in production builds.
+6. Sign the `mint_portfolio` transaction in Freighter, wait for confirmation.
+7. Open `/p/<name>.folder` and confirm the "Verified on Stellar" badge and content.
+
+#### Backend change required (pending, Indexer-Backend)
+
+`POST /upload` must accept portfolio JSON so minting works without the dev fallback:
+
+- allow `application/json` (multipart field `file`) up to a size limit (e.g. 256 KiB, one Kubo chunk);
+- validate the body parses as JSON (reject otherwise with 400);
+- pin it as a raw-leaves CIDv1 (`cid-version=1`, `raw-leaves=true`);
+- respond `{ "cid": "<raw CIDv1>" }`. The frontend recomputes the CID and rejects mismatches.
+
+Status: **pending in Indexer-Backend** (tracked from Indexer-Frontend#183).
+
 ### Option B: demo mode (no backend, no wallet)
 
 ```bash

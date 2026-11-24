@@ -3,7 +3,8 @@ import { knownTemplateMetadata } from '@/data/knownTemplateMetadata'
 import { apiClient } from '@/services/http/client'
 import { toApiError } from '@/services/http/errors'
 import type { PortfolioContent, Template, TemplateMetadata } from '@/types'
-import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid } from './cid'
+import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid, toDnsSafeCid } from './cid'
+import { fetchTrustless, TrustlessUnsupportedError } from './trustless'
 
 export class IpfsError extends Error {
   constructor(message: string) {
@@ -24,8 +25,32 @@ const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
   }
 }
 
+/** Dev-only fallback (VITE_IPFS_DEV_KUBO_API): add the JSON straight to a local Kubo node as raw CIDv1. */
+const uploadToDevKubo = async (api: string, form: FormData, bytes: Uint8Array): Promise<string> => {
+  let cid: string | undefined
+  try {
+    const response = await fetch(`${api}/api/v0/add?cid-version=1&raw-leaves=true`, { method: 'POST', body: form })
+    if (!response.ok) throw new Error(`Kubo returned ${response.status}`)
+    cid = ((await response.json()) as { Hash?: string }).Hash
+  } catch (error) {
+    throw new IpfsError(`Direct Kubo upload failed (${api}): ${error instanceof Error ? error.message : 'unknown error'}`)
+  }
+  if (!cid || !isValidContractCid(cid)) {
+    throw new IpfsError(`Kubo returned "${cid ?? ''}", which the Folder contract would reject as an invalid CID.`)
+  }
+  await verifyCid(cid, bytes, 'Kubo')
+  return cid
+}
+
 export const ipfsService = {
   gatewayUrl: (cid: string) => `${env.ipfsGatewayUrl}/${cid}`,
+
+  /** URL for links users open in the browser: subdomain gateway when configured, else the path gateway. */
+  gatewayBrowseUrl: (cid: string) => {
+    if (!env.ipfsSubdomainGateway) return `${env.ipfsGatewayUrl}/${cid}`
+    const base = new URL(env.ipfsSubdomainGateway)
+    return `${base.protocol}//${toDnsSafeCid(cid)}.ipfs.${base.host}/`
+  },
 
   /**
    * Uploads portfolio JSON through Indexer-Backend `POST /upload` (the backend pins it on its IPFS
@@ -37,6 +62,10 @@ export const ipfsService = {
     const bytes = new TextEncoder().encode(text)
     const form = new FormData()
     form.append('file', new Blob([bytes], { type: 'application/json' }), 'portfolio.json')
+
+    if (env.ipfsDevKuboApi) {
+      return uploadToDevKubo(env.ipfsDevKuboApi, form, bytes)
+    }
 
     let cid: string | undefined
     try {
@@ -62,6 +91,17 @@ export const ipfsService = {
 
   /** Fetches JSON from the gateway and checks it against its CID when the CID is recomputable. */
   fetchJson: async <T>(cid: string): Promise<T> => {
+    if (env.ipfsTrustless) {
+      try {
+        const verified = await fetchTrustless(env.ipfsGatewayUrl, cid)
+        return JSON.parse(new TextDecoder().decode(verified)) as T
+      } catch (error) {
+        if (!(error instanceof TrustlessUnsupportedError)) {
+          throw new IpfsError(error instanceof Error ? error.message : `Trustless fetch failed for ${cid}.`)
+        }
+        // Gateway has no CAR support: fall through to the plain fetch path.
+      }
+    }
     let response: Response
     try {
       response = await fetch(ipfsService.gatewayUrl(cid))
