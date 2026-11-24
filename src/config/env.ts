@@ -17,6 +17,7 @@ export interface AppConfig {
   ipfsGatewayUrl: string
   /** Origin of a subdomain gateway (e.g. https://dweb.link) used for user-navigable links; '' = unset. */
   ipfsSubdomainGateway: string
+  ipfsTrustless: boolean
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
 }
@@ -125,6 +126,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
       ipfsDevKuboApi,
       ipfsGatewayUrl,
       ipfsSubdomainGateway,
+      ipfsTrustless: read(raw, 'VITE_IPFS_TRUSTLESS') === 'true',
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
     },

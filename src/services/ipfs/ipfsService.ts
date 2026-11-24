@@ -4,6 +4,7 @@ import { apiClient } from '@/services/http/client'
 import { toApiError } from '@/services/http/errors'
 import type { PortfolioContent, Template, TemplateMetadata } from '@/types'
 import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid, toDnsSafeCid } from './cid'
+import { fetchTrustless, TrustlessUnsupportedError } from './trustless'
 
 export class IpfsError extends Error {
   constructor(message: string) {
@@ -90,6 +91,17 @@ export const ipfsService = {
 
   /** Fetches JSON from the gateway and checks it against its CID when the CID is recomputable. */
   fetchJson: async <T>(cid: string): Promise<T> => {
+    if (env.ipfsTrustless) {
+      try {
+        const verified = await fetchTrustless(env.ipfsGatewayUrl, cid)
+        return JSON.parse(new TextDecoder().decode(verified)) as T
+      } catch (error) {
+        if (!(error instanceof TrustlessUnsupportedError)) {
+          throw new IpfsError(error instanceof Error ? error.message : `Trustless fetch failed for ${cid}.`)
+        }
+        // Gateway has no CAR support: fall through to the plain fetch path.
+      }
+    }
     let response: Response
     try {
       response = await fetch(ipfsService.gatewayUrl(cid))

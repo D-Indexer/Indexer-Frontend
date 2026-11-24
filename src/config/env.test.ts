@@ -12,7 +12,9 @@ describe('parseEnv', () => {
       demoMode: false,
       folderContractId: CONTRACT,
       ipfsGatewayUrl: 'https://ipfs.io/ipfs',
+      ipfsDevKuboApi: '',
       ipfsSubdomainGateway: '',
+      ipfsTrustless: false,
       sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
       stellarNetwork: 'testnet',
     })
