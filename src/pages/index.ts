@@ -1,4 +1,5 @@
 export { DashboardPage } from './Dashboard'
+export { ExplorePage } from './Explore'
 export { HomePage } from './Home'
 export { TemplatesPage } from './Templates'
 export { PublicPortfolioPage } from './PublicPortfolio'

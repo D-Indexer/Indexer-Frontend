@@ -723,3 +723,31 @@
     display: none;
   }
 }
+
+.explore-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.explore-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.explore-card__meta {
+  margin: 0;
+  color: var(--color-muted, inherit);
+  font-size: 0.9rem;
+}
+
+.explore-more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}
