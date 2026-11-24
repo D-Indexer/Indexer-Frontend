@@ -21,9 +21,9 @@ export const folderData = {
   getFolderByOwner: async (address: string): Promise<Folder | null> =>
     env.demoMode ? { ...demoFolder, owner: address } : folderApi.getByOwner(address),
 
-  getFolderByName: async (name: string): Promise<Folder | null> => {
+  getFolderByName: async (name: string, signal?: AbortSignal): Promise<Folder | null> => {
     if (env.demoMode) return name === demoFolder.name ? demoFolder : null
-    return folderApi.getByName(name)
+    return folderApi.getByName(name, signal)
   },
 
   getPortfolio: async (owner: string): Promise<Portfolio | null> =>

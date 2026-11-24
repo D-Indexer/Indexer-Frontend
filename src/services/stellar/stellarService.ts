@@ -153,6 +153,12 @@ export const stellarService = {
     return simulation.result ? scValToNative(simulation.result.retval) === true : false
   },
 
+  /** Read-only `claim_folder` simulation; it never signs or submits a transaction. */
+  simulateClaimFolder: async (owner: string, folderName: string): Promise<void> => {
+    const account = await loadAccount(owner)
+    await simulate(account, 'claim_folder', toArgs(owner, { method: 'claim_folder', folderName }))
+  },
+
   /** Read-only `get_portfolio(owner)`: the CID and template currently anchored on-chain. */
   getOnChainPortfolio: async (owner: string): Promise<{ ipfsCid: string; templateId: number; mintedAt: number } | null> => {
     try {

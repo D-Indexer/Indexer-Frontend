@@ -198,6 +198,24 @@
   gap: var(--space-5);
 }
 
+.folder-availability {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.folder-availability--checking {
+  color: var(--color-muted);
+}
+
+.folder-availability--available {
+  color: var(--color-success);
+}
+
+.folder-availability--taken,
+.folder-availability--error {
+  color: var(--color-danger);
+}
+
 .field {
   display: grid;
   gap: var(--space-2);
