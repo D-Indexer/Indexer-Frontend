@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { FormField } from '@/components/forms'
+import { FormField, TagInput } from '@/components/forms'
 import { Button, Card, LoadingState } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
@@ -7,7 +7,7 @@ import { useTemplates } from '@/hooks'
 import { folderData, ipfsService } from '@/services'
 import type { Folder, Portfolio, PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
-import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
+import { getInvalidSkills, getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
 
 /** Fields every template shares; template-specific fields become free-text sections. */
 const CORE_FIELDS = new Set(['bio', 'skills'])
@@ -18,11 +18,11 @@ interface FormValues {
   links: string
   name: string
   sections: Record<string, string>
-  skills: string
+  skills: string[]
   templateId: string
 }
 
-type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'templateId', string>>
+type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'skills' | 'templateId', string>>
 
 const emptyValues = (templateId: string): FormValues => ({
   bio: '',
@@ -30,7 +30,7 @@ const emptyValues = (templateId: string): FormValues => ({
   links: '',
   name: '',
   sections: {},
-  skills: '',
+  skills: [],
   templateId,
 })
 
@@ -40,7 +40,7 @@ const fromContent = (content: PortfolioContent, templateId: string): FormValues 
   links: (content.links ?? []).join(', '),
   name: content.name ?? '',
   sections: content.sections ?? {},
-  skills: (content.skills ?? []).join(', '),
+  skills: content.skills ?? [],
   templateId,
 })
 
@@ -49,12 +49,13 @@ const validate = (values: FormValues): FormErrors => {
   if (!values.templateId) errors.templateId = 'Choose a template.'
   if (!isRequired(values.name)) errors.name = 'Enter the name to show on your portfolio.'
   if (!isRequired(values.bio)) errors.bio = 'Write a short bio.'
+  if (getInvalidSkills(values.skills)) errors.skills = 'Skills must be 50 characters or fewer, with no more than 20 skills.'
   const invalid = getInvalidUrls(parseDelimitedList(values.links))
   if (invalid.length > 0) errors.links = `These are not valid http(s) URLs: ${invalid.join(', ')}`
   return errors
 }
 
-const fieldOrder: Array<keyof FormErrors> = ['templateId', 'name', 'bio', 'links']
+const fieldOrder: Array<keyof FormErrors> = ['templateId', 'name', 'bio', 'skills', 'links']
 
 interface PortfolioFormProps {
   folder: Folder
@@ -126,7 +127,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
       name: values.name.trim(),
       headline: values.headline.trim(),
       bio: values.bio.trim(),
-      skills: parseDelimitedList(values.skills),
+      skills: values.skills,
       links: parseDelimitedList(values.links),
       sections: Object.fromEntries(
         sectionFields.map((field) => [field, (values.sections[field] ?? '').trim()]).filter(([, value]) => value),
@@ -188,7 +189,14 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
           onChange={set('headline')}
         />
         <FormField control="textarea" id="portfolio-bio" label="Bio" required error={errors.bio} value={values.bio} onChange={set('bio')} />
-        <FormField id="portfolio-skills" label="Skills" helpText="Separate skills with commas." value={values.skills} onChange={set('skills')} />
+        <TagInput
+          id="portfolio-skills"
+          label="Skills"
+          helpText={`Add up to 20 skills, each at most 50 characters. Press Enter or Tab to add; use Alt+Left/Right on a skill to reorder.`}
+          error={errors.skills}
+          value={values.skills}
+          onChange={(skills) => setValues((current) => ({ ...current, skills }))}
+        />
         <FormField
           id="portfolio-links"
           label="Links"

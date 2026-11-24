@@ -47,7 +47,8 @@ describe('PortfolioForm', () => {
     expect(screen.getByLabelText(/Template/)).toHaveValue('1')
     await userEvent.type(screen.getByLabelText(/^Name/), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/^Bio/), 'I build things.')
-    await userEvent.type(screen.getByLabelText(/Skills/), 'Rust, React')
+    const skills = screen.getByLabelText(/Skills/)
+    await userEvent.type(skills, 'Rust{Enter}React{Enter}')
     await userEvent.type(screen.getByLabelText('Projects'), 'Folder')
     await userEvent.click(screen.getByRole('button', { name: 'Upload and mint portfolio' }))
 

@@ -7,6 +7,15 @@ export const parseDelimitedList = (value: string) => {
     .filter(Boolean)
 }
 
+export const MAX_SKILLS = 20
+export const MAX_SKILL_LENGTH = 50
+
+export const normalizeSkill = (skill: string) => skill.trim().replace(/\s+/g, ' ')
+
+export const getInvalidSkills = (skills: string[]) =>
+  skills.filter((skill) => normalizeSkill(skill).length > MAX_SKILL_LENGTH).length > 0 ||
+  skills.length > MAX_SKILLS
+
 export const isHttpUrl = (value: string) => {
   try {
     const url = new URL(value)
