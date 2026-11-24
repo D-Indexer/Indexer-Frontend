@@ -5,9 +5,11 @@ import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
 import { useTemplates } from '@/hooks'
 import { folderData, ipfsService } from '@/services'
-import type { Folder, Portfolio, PortfolioContent } from '@/types'
+import type { Folder, Portfolio, PortfolioContent, PortfolioLink } from '@/types'
 import { humanizeField } from '@/utils/format'
-import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
+import { getPortfolioLinks, getPortfolioLinkError, serializePortfolioLinks } from '@/utils/portfolioLinks'
+import { isRequired, parseDelimitedList } from '@/utils/validation'
+import { LinksEditor } from './LinksEditor'
 
 /** Fields every template shares; template-specific fields become free-text sections. */
 const CORE_FIELDS = new Set(['bio', 'skills'])
@@ -15,7 +17,7 @@ const CORE_FIELDS = new Set(['bio', 'skills'])
 interface FormValues {
   bio: string
   headline: string
-  links: string
+  links: PortfolioLink[]
   name: string
   sections: Record<string, string>
   skills: string
@@ -27,7 +29,7 @@ type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'templateId', string
 const emptyValues = (templateId: string): FormValues => ({
   bio: '',
   headline: '',
-  links: '',
+  links: [],
   name: '',
   sections: {},
   skills: '',
@@ -37,7 +39,7 @@ const emptyValues = (templateId: string): FormValues => ({
 const fromContent = (content: PortfolioContent, templateId: string): FormValues => ({
   bio: content.bio ?? '',
   headline: content.headline ?? '',
-  links: (content.links ?? []).join(', '),
+  links: getPortfolioLinks(content),
   name: content.name ?? '',
   sections: content.sections ?? {},
   skills: (content.skills ?? []).join(', '),
@@ -49,8 +51,7 @@ const validate = (values: FormValues): FormErrors => {
   if (!values.templateId) errors.templateId = 'Choose a template.'
   if (!isRequired(values.name)) errors.name = 'Enter the name to show on your portfolio.'
   if (!isRequired(values.bio)) errors.bio = 'Write a short bio.'
-  const invalid = getInvalidUrls(parseDelimitedList(values.links))
-  if (invalid.length > 0) errors.links = `These are not valid http(s) URLs: ${invalid.join(', ')}`
+  if (values.links.some((link) => getPortfolioLinkError(link))) errors.links = 'Fix the highlighted links before publishing.'
   return errors
 }
 
@@ -105,7 +106,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const selectedTemplate = templates.data?.find((template) => String(template.id) === values.templateId)
   const sectionFields = (selectedTemplate?.metadata?.fields ?? []).filter((field) => !CORE_FIELDS.has(field))
 
-  const set = (key: Exclude<keyof FormValues, 'sections'>) => (event: { target: { value: string } }) =>
+  const set = (key: Exclude<keyof FormValues, 'sections' | 'links'>) => (event: { target: { value: string } }) =>
     setValues((current) => ({ ...current, [key]: event.target.value }))
 
   const handleSubmit = async (event: FormEvent) => {
@@ -114,11 +115,14 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     setErrors(nextErrors)
     const firstInvalid = fieldOrder.find((key) => nextErrors[key])
     if (firstInvalid) {
-      document.getElementById(`portfolio-${firstInvalid}`)?.focus()
+      const firstInvalidLink = values.links.findIndex((link) => getPortfolioLinkError(link))
+      const targetId = firstInvalid === 'links' ? `portfolio-links-${firstInvalidLink}-url` : `portfolio-${firstInvalid}`
+      document.getElementById(targetId)?.focus()
       return
     }
 
     const templateId = Number(values.templateId)
+    const serializedLinks = serializePortfolioLinks(values.links)
     const content: PortfolioContent = {
       schema_version: 1,
       folder: folder.name,
@@ -127,7 +131,8 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
       headline: values.headline.trim(),
       bio: values.bio.trim(),
       skills: parseDelimitedList(values.skills),
-      links: parseDelimitedList(values.links),
+      links: serializedLinks.map((link) => link.url),
+      link_meta: serializedLinks,
       sections: Object.fromEntries(
         sectionFields.map((field) => [field, (values.sections[field] ?? '').trim()]).filter(([, value]) => value),
       ),
@@ -189,14 +194,11 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
         />
         <FormField control="textarea" id="portfolio-bio" label="Bio" required error={errors.bio} value={values.bio} onChange={set('bio')} />
         <FormField id="portfolio-skills" label="Skills" helpText="Separate skills with commas." value={values.skills} onChange={set('skills')} />
-        <FormField
+        <LinksEditor
           id="portfolio-links"
-          label="Links"
-          helpText="Separate links with commas. Each must start with http:// or https://."
-          error={errors.links}
           value={values.links}
-          onChange={set('links')}
-          inputMode="url"
+          error={errors.links}
+          onChange={(links) => setValues((current) => ({ ...current, links }))}
         />
 
         {sectionFields.map((field) => (

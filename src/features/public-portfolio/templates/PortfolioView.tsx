@@ -1,21 +1,28 @@
 import { ExternalLink } from '@/components/ui'
 import type { PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
+import { getPortfolioLinks, portfolioLinkKindLabel } from '@/utils/portfolioLinks'
 
 interface ViewProps {
   content: PortfolioContent
 }
 
-const Links = ({ links }: { links: string[] }) =>
-  links.length > 0 ? (
+const Links = ({ content }: ViewProps) => {
+  const links = getPortfolioLinks(content)
+  const hasMetadata = Boolean(content.link_meta?.length)
+  return links.length > 0 ? (
     <ul className="portfolio__links" aria-label="Links">
-      {links.map((link) => (
-        <li key={link}>
-          <ExternalLink href={link}>{link.replace(/^https?:\/\//, '')}</ExternalLink>
+      {links.map((link, index) => (
+        <li key={`${link.url}-${index}`}>
+          {hasMetadata ? <span className="portfolio__link-kind" aria-hidden="true">{portfolioLinkKindLabel(link.kind)}</span> : null}
+          <ExternalLink href={link.url} target={link.kind === 'email' ? '_self' : '_blank'}>
+            {hasMetadata ? link.label || portfolioLinkKindLabel(link.kind) : link.label}
+          </ExternalLink>
         </li>
       ))}
     </ul>
   ) : null
+}
 
 const Skills = ({ label = 'Skills', skills }: { label?: string; skills: string[] }) =>
   skills.length > 0 ? (
@@ -57,7 +64,7 @@ const DeveloperView = ({ content }: ViewProps) => (
     <p className="portfolio__prose">{content.bio}</p>
     <Skills skills={content.skills} />
     <Sections sections={content.sections} />
-    <Links links={content.links} />
+    <Links content={content} />
   </article>
 )
 
@@ -70,7 +77,7 @@ const DesignerView = ({ content }: ViewProps) => (
       <Sections sections={content.sections} />
     </div>
     <Skills label="Tools and skills" skills={content.skills} />
-    <Links links={content.links} />
+    <Links content={content} />
   </article>
 )
 
@@ -86,7 +93,7 @@ const OperationsView = ({ content }: ViewProps) => (
       <div>
         <Skills skills={content.skills} />
         <Sections sections={content.sections} only={['certifications']} />
-        <Links links={content.links} />
+        <Links content={content} />
       </div>
     </div>
   </article>
