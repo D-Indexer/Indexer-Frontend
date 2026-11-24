@@ -16,6 +16,7 @@ listing each problem instead of starting.
 | `VITE_SOROBAN_RPC_URL` | No | `https://soroban-testnet.stellar.org` | http(s) URL | Soroban RPC used to simulate, submit and poll transactions and to call `verify_portfolio`. |
 | `VITE_IPFS_GATEWAY_URL` | No | `https://ipfs.io/ipfs` | http(s) URL | Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node. |
 | `VITE_IPFS_SUBDOMAIN_GATEWAY` | No | _(empty)_ | http(s) origin | Subdomain gateway for links users open in the browser, e.g. `https://dweb.link` gives `https://<cidv1>.ipfs.dweb.link/`. CIDv0 is converted to CIDv1 base32 so the label is DNS-safe. Empty falls back to the path gateway. Fetches always use `VITE_IPFS_GATEWAY_URL`. |
+| `VITE_IPFS_DEV_KUBO_API` | No | _(unset)_ | http(s) URL | **Dev only.** Kubo API base URL (e.g. `http://localhost:5001`). When set, portfolio JSON is uploaded straight to `<api>/api/v0/add?cid-version=1&raw-leaves=true` instead of the backend `/upload`. Setting it in a production build (`import.meta.env.PROD`) is a configuration error and the value is ignored. Kubo needs CORS for the dev origin. |
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
 
 ## Demo mode
