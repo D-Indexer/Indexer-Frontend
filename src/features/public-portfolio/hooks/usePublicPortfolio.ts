@@ -5,10 +5,23 @@ import { stellarService } from '@/services/stellar/stellarService'
 import type { Folder, PortfolioContent } from '@/types'
 
 export type Verification =
-  | { status: 'verified'; onChainCid: string }
+  | { status: 'verified'; onChainCid: string; mintedAt: number }
   | { status: 'not_minted' }
   | { status: 'unavailable'; reason: string }
   | { status: 'demo' }
+
+/** Everything the "How this was verified" panel shows, so a viewer can repeat the checks without this site. */
+export interface VerificationFacts {
+  contractId: string
+  network: string
+  owner: string
+  onChainCid: string | null
+  templateId: number | null
+  /** Unix timestamp (seconds) recorded by the contract at mint time, when known. */
+  mintedAt: number | null
+  /** Whether the displayed content was fetched from IPFS by the on-chain CID. */
+  contentLoaded: boolean
+}
 
 export interface PublicPortfolio {
   /** CID the content was loaded from: the on-chain one when the chain could be read. */
@@ -18,6 +31,7 @@ export interface PublicPortfolio {
   folder: Folder
   templateId: number | null
   verification: Verification
+  facts: VerificationFacts
 }
 
 /**
@@ -48,7 +62,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
   } else {
     const [isVerified, onChain] = chain
     if (isVerified && onChain) {
-      verification = { status: 'verified', onChainCid: onChain.ipfsCid }
+      verification = { status: 'verified', onChainCid: onChain.ipfsCid, mintedAt: onChain.mintedAt }
       cid = onChain.ipfsCid
       templateId = onChain.templateId
     } else {
@@ -66,7 +80,17 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
     }
   }
 
-  return { cid, content, contentError, folder, templateId, verification }
+  const facts: VerificationFacts = {
+    contractId: env.folderContractId,
+    network: env.stellarNetwork,
+    owner: folder.owner,
+    onChainCid: verification.status === 'verified' ? verification.onChainCid : null,
+    templateId: verification.status === 'verified' ? templateId : null,
+    mintedAt: verification.status === 'verified' ? verification.mintedAt : null,
+    contentLoaded: verification.status === 'verified' && content !== null,
+  }
+
+  return { cid, content, contentError, folder, templateId, verification, facts }
 }
 
 export const usePublicPortfolio = (folderName: string) => useAsync(() => loadPublicPortfolio(folderName), [folderName])
