@@ -30,6 +30,10 @@ Browser (this repo)
   on-chain CID wins.
 - **IPFS content** is hashed and compared with its CID whenever the CID is a raw CIDv1 (what the
   backend produces for single-block files).
+- **Browsable IPFS links** use a subdomain gateway (`VITE_IPFS_SUBDOMAIN_GATEWAY`) when configured, so
+  each CID is served from its own browser origin. Path gateways put all content on one origin, where
+  user-published HTML/JS could read other content's storage or cookies. Path gateways are kept for
+  `fetch` of JSON only.
 - The browser holds no secrets; uploads go through the backend.
 
 ## Decisions

@@ -15,6 +15,7 @@ listing each problem instead of starting.
 | `VITE_STELLAR_NETWORK` | No | `testnet` | must be `testnet` | Network the app expects the wallet to be on. The contract is not deployed on mainnet. |
 | `VITE_SOROBAN_RPC_URL` | No | `https://soroban-testnet.stellar.org` | http(s) URL | Soroban RPC used to simulate, submit and poll transactions and to call `verify_portfolio`. |
 | `VITE_IPFS_GATEWAY_URL` | No | `https://ipfs.io/ipfs` | http(s) URL | Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node. |
+| `VITE_IPFS_SUBDOMAIN_GATEWAY` | No | _(empty)_ | http(s) origin | Subdomain gateway for links users open in the browser, e.g. `https://dweb.link` gives `https://<cidv1>.ipfs.dweb.link/`. CIDv0 is converted to CIDv1 base32 so the label is DNS-safe. Empty falls back to the path gateway. Fetches always use `VITE_IPFS_GATEWAY_URL`. |
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
 
 ## Demo mode

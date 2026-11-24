@@ -13,6 +13,8 @@ export interface AppConfig {
   demoMode: boolean
   folderContractId: string
   ipfsGatewayUrl: string
+  /** Origin of a subdomain gateway (e.g. https://dweb.link) used for user-navigable links; '' = unset. */
+  ipfsSubdomainGateway: string
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
 }
@@ -95,12 +97,18 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
 
+  const ipfsSubdomainGateway = trimTrailingSlash(read(raw, 'VITE_IPFS_SUBDOMAIN_GATEWAY'))
+  if (ipfsSubdomainGateway && !isHttpUrl(ipfsSubdomainGateway)) {
+    errors.push({ variable: 'VITE_IPFS_SUBDOMAIN_GATEWAY', message: `"${ipfsSubdomainGateway}" is not an http(s) URL.` })
+  }
+
   return {
     config: {
       apiUrl,
       demoMode,
       folderContractId,
       ipfsGatewayUrl,
+      ipfsSubdomainGateway,
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
     },

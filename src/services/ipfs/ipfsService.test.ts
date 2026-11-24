@@ -4,7 +4,9 @@ import { computeRawCidV1 } from './cid'
 
 const post = vi.hoisted(() => vi.fn())
 vi.mock('@/services/http/client', () => ({ apiClient: { post } }))
-vi.mock('@/config/env', () => ({ env: { apiUrl: 'http://localhost:3000', ipfsGatewayUrl: 'https://gw.test/ipfs' } }))
+vi.mock('@/config/env', () => ({
+  env: { apiUrl: 'http://localhost:3000', ipfsGatewayUrl: 'https://gw.test/ipfs', ipfsSubdomainGateway: '' },
+}))
 
 const { ipfsService, serializePortfolioContent } = await import('./ipfsService')
 
@@ -74,5 +76,24 @@ describe('ipfsService.fetchJson', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"tampered":true}')))
     await expect(ipfsService.fetchJson(cid)).rejects.toThrow('does not match CID')
     vi.unstubAllGlobals()
+  })
+})
+
+describe('gatewayBrowseUrl', () => {
+  const v0 = 'QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG'
+
+  it('falls back to the path gateway when no subdomain gateway is set', async () => {
+    const { env } = await import('@/config/env')
+    env.ipfsSubdomainGateway = ''
+    expect(ipfsService.gatewayBrowseUrl(v0)).toBe(`https://gw.test/ipfs/${v0}`)
+  })
+
+  it('builds a DNS-safe subdomain URL, converting CIDv0 to CIDv1', async () => {
+    const { env } = await import('@/config/env')
+    env.ipfsSubdomainGateway = 'https://dweb.link'
+    expect(ipfsService.gatewayBrowseUrl(v0)).toBe(
+      'https://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi.ipfs.dweb.link/',
+    )
+    env.ipfsSubdomainGateway = ''
   })
 })

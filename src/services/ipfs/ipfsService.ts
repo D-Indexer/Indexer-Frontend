@@ -3,7 +3,7 @@ import { knownTemplateMetadata } from '@/data/knownTemplateMetadata'
 import { apiClient } from '@/services/http/client'
 import { toApiError } from '@/services/http/errors'
 import type { PortfolioContent, Template, TemplateMetadata } from '@/types'
-import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid } from './cid'
+import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid, toDnsSafeCid } from './cid'
 
 export class IpfsError extends Error {
   constructor(message: string) {
@@ -26,6 +26,13 @@ const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
 
 export const ipfsService = {
   gatewayUrl: (cid: string) => `${env.ipfsGatewayUrl}/${cid}`,
+
+  /** URL for links users open in the browser: subdomain gateway when configured, else the path gateway. */
+  gatewayBrowseUrl: (cid: string) => {
+    if (!env.ipfsSubdomainGateway) return `${env.ipfsGatewayUrl}/${cid}`
+    const base = new URL(env.ipfsSubdomainGateway)
+    return `${base.protocol}//${toDnsSafeCid(cid)}.ipfs.${base.host}/`
+  },
 
   /**
    * Uploads portfolio JSON through Indexer-Backend `POST /upload` (the backend pins it on its IPFS

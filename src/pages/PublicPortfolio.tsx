@@ -35,7 +35,7 @@ export const PublicPortfolioPage = () => {
               <div className="notice notice--warning notice--stack" role="status">
                 <p>The portfolio content could not be loaded from IPFS: {portfolio.contentError}</p>
                 <p>
-                  CID: <ExternalLink className="mono" href={ipfsService.gatewayUrl(portfolio.cid)}>{portfolio.cid}</ExternalLink>
+                  CID: <ExternalLink className="mono" href={ipfsService.gatewayBrowseUrl(portfolio.cid)}>{portfolio.cid}</ExternalLink>
                 </p>
               </div>
             ) : (

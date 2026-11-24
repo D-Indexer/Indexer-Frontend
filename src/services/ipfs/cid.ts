@@ -60,6 +60,39 @@ export const computeRawCidV1 = async (content: Uint8Array | string): Promise<str
   return `b${toBase32Lower(cidBytes)}`
 }
 
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
+const decodeBase58 = (input: string): Uint8Array => {
+  const bytes: number[] = []
+  for (const char of input) {
+    let carry = BASE58_ALPHABET.indexOf(char)
+    if (carry < 0) throw new Error(`Invalid base58 character "${char}".`)
+    for (let i = 0; i < bytes.length; i++) {
+      carry += bytes[i] * 58
+      bytes[i] = carry & 0xff
+      carry >>= 8
+    }
+    while (carry > 0) {
+      bytes.push(carry & 0xff)
+      carry >>= 8
+    }
+  }
+  for (const char of input) {
+    if (char !== '1') break
+    bytes.push(0)
+  }
+  return new Uint8Array(bytes.reverse())
+}
+
+/**
+ * Subdomain gateways need a case-insensitive, DNS-safe label, so a CIDv0 (`Qm…`, base58) is
+ * re-encoded as CIDv1 (dag-pb, base32). CIDv1 base32 input is returned unchanged.
+ */
+export const toDnsSafeCid = (cid: string): string => {
+  if (!cid.startsWith('Qm') || cid.length !== CID_RULES.cidV0Length) return cid
+  return `b${toBase32Lower(new Uint8Array([0x01, 0x70, ...decodeBase58(cid)]))}`
+}
+
 /** True when `cid` is a raw CIDv1 we can recompute locally (single-block content). */
 export const isRawCidV1 = (cid: string) => cid.startsWith('bafkrei')
 
