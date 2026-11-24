@@ -10,12 +10,20 @@ export type Verification =
   | { status: 'unavailable'; reason: string }
   | { status: 'demo' }
 
+export interface Divergence {
+  field: 'ipfsCid' | 'templateId'
+  indexed: string | number | null
+  onChain: string | number
+}
+
 export interface PublicPortfolio {
   /** CID the content was loaded from: the on-chain one when the chain could be read. */
   cid: string | null
   content: PortfolioContent | null
   contentError: string | null
   folder: Folder
+  /** Fields where the indexer disagrees with the chain; rendering uses the on-chain values. */
+  divergence: Divergence[]
   templateId: number | null
   verification: Verification
 }
@@ -39,6 +47,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
   ])
 
   let verification: Verification
+  const divergence: Divergence[] = []
   let cid = indexed?.ipfsCid ?? null
   let templateId = indexed?.templateId ?? folder.templateId
   if (env.demoMode) {
@@ -49,8 +58,13 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
     const [isVerified, onChain] = chain
     if (isVerified && onChain) {
       verification = { status: 'verified', onChainCid: onChain.ipfsCid }
+      if (cid !== onChain.ipfsCid) divergence.push({ field: 'ipfsCid', indexed: cid, onChain: onChain.ipfsCid })
+      if (templateId !== onChain.templateId) {
+        divergence.push({ field: 'templateId', indexed: templateId, onChain: onChain.templateId })
+      }
       cid = onChain.ipfsCid
       templateId = onChain.templateId
+      if (divergence.length > 0) console.warn(`Indexer diverges from chain for ${folderName}`, divergence)
     } else {
       verification = { status: 'not_minted' }
     }
@@ -66,7 +80,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
     }
   }
 
-  return { cid, content, contentError, folder, templateId, verification }
+  return { cid, content, contentError, divergence, folder, templateId, verification }
 }
 
 export const usePublicPortfolio = (folderName: string) => useAsync(() => loadPublicPortfolio(folderName), [folderName])
