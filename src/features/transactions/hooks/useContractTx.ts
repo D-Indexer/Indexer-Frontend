@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { freighterWallet, toApiError } from '@/services'
-import { stellarService, TransactionError, type FolderWrite, type TxResult, type TxStage } from '@/services/stellar/stellarService'
+import { stellarService, TransactionError, type FolderWrite, type PreparedTransactionDetails, type TxResult, type TxStage } from '@/services/stellar/stellarService'
 
 export type FlowStage = 'idle' | 'uploading' | TxStage | 'done' | 'failed'
 
@@ -9,9 +9,10 @@ export interface ContractTxState {
   /** Hash of a submitted transaction, also set when it failed or is still pending. */
   hash: string | null
   stage: FlowStage
+  prepared: PreparedTransactionDetails | null
 }
 
-const initialState: ContractTxState = { error: null, hash: null, stage: 'idle' }
+const initialState: ContractTxState = { error: null, hash: null, stage: 'idle', prepared: null }
 
 /**
  * Runs one Folder contract write with Freighter as signer. `prepare` can do async work first
@@ -29,6 +30,7 @@ export const useContractTx = () => {
       const write = await prepare(() => setState((current) => ({ ...current, stage: 'uploading' })))
       const result = await stellarService.invoke(owner, write, freighterWallet.signTransaction, (stage) =>
         setState((current) => ({ ...current, stage })),
+        (prepared) => setState((current) => ({ ...current, prepared })),
       )
       setState({ error: null, hash: result.hash, stage: 'done' })
       return result

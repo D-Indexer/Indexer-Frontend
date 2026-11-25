@@ -13,6 +13,7 @@ import {
 import { env } from '@/config/env'
 import { describeContractError, extractContractErrorCode } from './contractErrors'
 import { getNetworkPassphrase } from './network'
+import { WalletError } from './freighterWallet'
 
 /** Stages reported while a write is in flight, so the UI can say what is happening. */
 export type TxStage = 'preparing' | 'signing' | 'submitting' | 'confirming'
@@ -28,6 +29,7 @@ export interface TxResult {
   hash: string
   ledger: number
 }
+export interface PreparedTransactionDetails { xdr: string; hash: string; method: FolderWrite['method'] }
 
 export class TransactionError extends Error {
   constructor(
@@ -123,18 +125,23 @@ export const stellarService = {
    * Builds, simulates and prepares a Folder contract call, has `sign` sign it (Freighter in the
    * app), submits it, and polls until it is final. Contract errors are mapped to readable messages.
    */
-  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void): Promise<TxResult> => {
+  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void, onPrepared?: (details: PreparedTransactionDetails) => void): Promise<TxResult> => {
     const networkPassphrase = getNetworkPassphrase()
     onStage?.('preparing')
     const account = await loadAccount(owner)
     const { simulation, tx } = await simulate(account, write.method, toArgs(owner, write))
     const prepared = rpc.assembleTransaction(tx, simulation).build()
+    const preparedHash = prepared.hash().toString('hex')
+    onPrepared?.({ xdr: prepared.toXDR(), hash: preparedHash, method: write.method })
 
     onStage?.('signing')
     const signedXdr = await sign(prepared.toXDR(), owner, networkPassphrase)
 
     onStage?.('submitting')
     const signed = TransactionBuilder.fromXDR(signedXdr, networkPassphrase)
+    if (signed.hash().toString('hex') !== preparedHash || signed.constructor.name === 'FeeBumpTransaction') {
+      throw new WalletError('The wallet returned a transaction different from the one the app prepared. Nothing was submitted.', 'tampered')
+    }
     const sent = await getServer().sendTransaction(signed)
     if (sent.status === 'ERROR' || sent.status === 'TRY_AGAIN_LATER') {
       const detail = sent.errorResult ? sent.errorResult.result().switch().name : sent.status
