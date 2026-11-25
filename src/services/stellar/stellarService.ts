@@ -28,6 +28,7 @@ export interface TxResult {
   hash: string
   ledger: number
 }
+export interface PreparedTransactionDetails { xdr: string; hash: string; method: FolderWrite['method'] }
 
 export class TransactionError extends Error {
   constructor(
@@ -123,12 +124,13 @@ export const stellarService = {
    * Builds, simulates and prepares a Folder contract call, has `sign` sign it (Freighter in the
    * app), submits it, and polls until it is final. Contract errors are mapped to readable messages.
    */
-  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void): Promise<TxResult> => {
+  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void, onPrepared?: (details: PreparedTransactionDetails) => void): Promise<TxResult> => {
     const networkPassphrase = getNetworkPassphrase()
     onStage?.('preparing')
     const account = await loadAccount(owner)
     const { simulation, tx } = await simulate(account, write.method, toArgs(owner, write))
     const prepared = rpc.assembleTransaction(tx, simulation).build()
+    onPrepared?.({ xdr: prepared.toXDR(), hash: prepared.hash().toString('hex'), method: write.method })
 
     onStage?.('signing')
     const signedXdr = await sign(prepared.toXDR(), owner, networkPassphrase)

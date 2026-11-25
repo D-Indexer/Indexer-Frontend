@@ -15,7 +15,7 @@ interface TxStatusProps extends ContractTxState {
 }
 
 /** Live region describing an in-flight, successful or failed transaction, with a stellar.expert link. */
-export const TxStatus = ({ error, hash, stage, successMessage }: TxStatusProps) => {
+export const TxStatus = ({ error, hash, stage, successMessage, prepared }: TxStatusProps) => {
   const hashLink = hash ? (
     <p>
       Transaction:{' '}
@@ -46,6 +46,7 @@ export const TxStatus = ({ error, hash, stage, successMessage }: TxStatusProps) 
           {hashLink}
         </div>
       ) : null}
+      {prepared ? <details><summary>Show technical details</summary><p><strong>Method:</strong> {prepared.method}</p><p><strong>Transaction hash:</strong> <code>{prepared.hash}</code></p><label>Prepared XDR<textarea readOnly value={prepared.xdr} aria-label="Prepared transaction XDR" /></label><p><ExternalLink href="https://laboratory.stellar.org/#xdr-viewer">Open Stellar Laboratory XDR viewer</ExternalLink></p></details> : null}
     </div>
   )
 }
