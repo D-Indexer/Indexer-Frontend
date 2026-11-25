@@ -13,6 +13,7 @@ import {
 import { env } from '@/config/env'
 import { describeContractError, extractContractErrorCode } from './contractErrors'
 import { getNetworkPassphrase } from './network'
+import type { FolderEvent, OnChainPortfolioState } from './contractState'
 
 /** Stages reported while a write is in flight, so the UI can say what is happening. */
 export type TxStage = 'preparing' | 'signing' | 'submitting' | 'confirming'
@@ -27,6 +28,7 @@ export type FolderWrite =
 export interface TxResult {
   hash: string
   ledger: number
+  events?: FolderEvent[]
 }
 
 export class TransactionError extends Error {
@@ -170,7 +172,7 @@ export const stellarService = {
   },
 
   /** Read-only `get_portfolio(owner)`: the CID and template currently anchored on-chain. */
-  getOnChainPortfolio: async (owner: string): Promise<{ ipfsCid: string; templateId: number; mintedAt: number } | null> => {
+  getOnChainPortfolio: async (owner: string): Promise<OnChainPortfolioState | null> => {
     try {
       const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'get_portfolio', [new Address(owner).toScVal()])
       if (!simulation.result) return null
