@@ -9,6 +9,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:mutation": "stryker run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -25,6 +26,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.9",
+    "@stryker-mutator/core": "^8.7.1",
+    "@stryker-mutator/vitest-runner": "^8.7.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",

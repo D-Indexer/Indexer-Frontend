@@ -27,6 +27,23 @@ export class WalletError extends Error {
   }
 }
 
+/**
+ * The wallet surface the app depends on. `freighterWallet` is the real implementation;
+ * `fakeWallet` (dev/test only) implements the same interface so flows can run without Freighter.
+ */
+export interface WalletProvider {
+  isInstalled: () => Promise<boolean>
+  /** True when the user previously allowed this site, so the address can be read without a prompt. */
+  isAllowed: () => Promise<boolean>
+  connect: () => Promise<WalletSnapshot>
+  /** Reads the current address without prompting; returns null when not allowed or locked. */
+  restore: () => Promise<WalletSnapshot | null>
+  getNetwork: () => Promise<WalletNetwork>
+  signTransaction: (xdr: string, address: string, networkPassphrase: string) => Promise<string>
+  /** Polls the wallet for account/network switches. Returns a stop function. */
+  watch: (onChange: (snapshot: WalletSnapshot) => void, intervalMs?: number) => () => void
+}
+
 const unwrap = <T extends { error?: { message: string } }>(result: T, fallback: string): T => {
   if (result.error) {
     const rejected = /declin|reject|denied/i.test(result.error.message)
@@ -36,7 +53,7 @@ const unwrap = <T extends { error?: { message: string } }>(result: T, fallback: 
 }
 
 /** Thin wrapper around @stellar/freighter-api that throws typed errors instead of returning `{ error }`. */
-export const freighterWallet = {
+export const freighterWallet: WalletProvider = {
   isInstalled: async () => {
     const result = await isConnected()
     return !result.error && result.isConnected
@@ -95,3 +112,6 @@ export const freighterWallet = {
     return () => watcher.stop()
   },
 }
+
+/** The real Freighter wallet, typed as the shared provider interface. */
+export const freighterProvider: WalletProvider = freighterWallet
