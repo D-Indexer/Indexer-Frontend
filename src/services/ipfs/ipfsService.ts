@@ -4,6 +4,7 @@ import { apiClient } from '@/services/http/client'
 import { toApiError } from '@/services/http/errors'
 import type { PortfolioContent, Template, TemplateMetadata } from '@/types'
 import { canonicalizeJson } from './canonicalJson'
+import { cidCache } from './cidCache'
 import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid } from './cid'
 
 export class IpfsError extends Error {
@@ -67,6 +68,25 @@ export const ipfsService = {
 
   /** Fetches JSON from the gateway and checks it against its CID when the CID is recomputable. */
   fetchJson: async <T>(cid: string): Promise<T> => {
+    const parse = (bytes: Uint8Array): T => {
+      try {
+        return JSON.parse(new TextDecoder().decode(bytes)) as T
+      } catch {
+        throw new IpfsError(`Content at ${cid} is not valid JSON.`)
+      }
+    }
+
+    // Cached bytes are only ever stored after verification; re-verify raw CIDv1 on read (cheap).
+    const cached = await cidCache.get(cid)
+    if (cached) {
+      try {
+        await verifyCid(cid, cached, 'The local cache')
+        return parse(cached)
+      } catch {
+        /* corrupt entry: fall through to the network */
+      }
+    }
+
     let response: Response
     try {
       response = await fetch(ipfsService.gatewayUrl(cid))
@@ -78,11 +98,10 @@ export const ipfsService = {
     }
     const bytes = new Uint8Array(await response.arrayBuffer())
     await verifyCid(cid, bytes, 'The IPFS gateway')
-    try {
-      return JSON.parse(new TextDecoder().decode(bytes)) as T
-    } catch {
-      throw new IpfsError(`Content at ${cid} is not valid JSON.`)
-    }
+    const parsed = parse(bytes)
+    // Non-recomputable CIDs cannot be verified in the browser, so they are never cached.
+    if (isRawCidV1(cid)) await cidCache.put(cid, bytes)
+    return parsed
   },
 
   /**
