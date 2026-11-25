@@ -32,7 +32,7 @@ export interface TxResult {
 export class TransactionError extends Error {
   constructor(
     message: string,
-    readonly options: { contractErrorCode?: number; hash?: string; pending?: boolean } = {},
+    readonly options: { code?: 'account_not_found' | 'unexpected_auth'; contractErrorCode?: number; hash?: string; pending?: boolean } = {},
   ) {
     super(message)
     this.name = 'TransactionError'
@@ -84,7 +84,7 @@ const loadAccount = async (address: string) => {
   } catch (error) {
     if (error instanceof Error && /not found/i.test(error.message)) {
       throw new TransactionError(
-        'This account does not exist on testnet yet. Fund it with Friendbot (https://friendbot.stellar.org/?addr=<your address>) and try again.',
+        'This account does not exist on testnet yet. Fund it with Friendbot and try again.', { code: 'account_not_found' },
       )
     }
     throw new TransactionError(`Could not load your account from Soroban RPC: ${error instanceof Error ? error.message : String(error)}`)
@@ -129,6 +129,10 @@ export const stellarService = {
     const account = await loadAccount(owner)
     const { simulation, tx } = await simulate(account, write.method, toArgs(owner, write))
     const prepared = rpc.assembleTransaction(tx, simulation).build()
+    const operation = prepared.operations[0] as any
+    if (prepared.operations.length !== 1 || operation?.type !== 'invokeHostFunction') {
+      throw new TransactionError('The RPC returned an unexpected transaction operation. Nothing was signed.', { code: 'unexpected_auth' })
+    }
 
     onStage?.('signing')
     const signedXdr = await sign(prepared.toXDR(), owner, networkPassphrase)

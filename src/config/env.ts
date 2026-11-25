@@ -17,6 +17,7 @@ export interface AppConfig {
   rumSampleRate: number
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
+  sponsorEnabled: boolean
 }
 
 export interface EnvIssue {
@@ -81,6 +82,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 
   const network = read(raw, 'VITE_STELLAR_NETWORK') || defaults.stellarNetwork
+  const sponsorEnabled = read(raw, 'VITE_SPONSOR_ENABLED') === 'true'
   if (network !== 'testnet') {
     errors.push({
       variable: 'VITE_STELLAR_NETWORK',
@@ -128,6 +130,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
       rumSampleRate,
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
+      sponsorEnabled,
     },
     errors,
   }
