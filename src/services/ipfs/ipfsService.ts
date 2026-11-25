@@ -18,10 +18,12 @@ const UNSUPPORTED_TYPE_HINT =
 /** Serialises portfolio content deterministically so the same content always gets the same CID. */
 export const serializePortfolioContent = (content: PortfolioContent) => `${JSON.stringify(content, null, 2)}\n`
 
-const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
+export type ContentVerification = 'hash-verified' | 'unverified'
+const verifyCid = async (cid: string, bytes: Uint8Array, source: string): Promise<ContentVerification> => {
   if (isRawCidV1(cid) && (await computeRawCidV1(bytes)) !== cid) {
     throw new IpfsError(`${source} returned content that does not match CID ${cid}.`)
   }
+  return isRawCidV1(cid) ? 'hash-verified' : 'unverified'
 }
 
 export const ipfsService = {

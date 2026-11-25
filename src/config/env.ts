@@ -15,6 +15,8 @@ export interface AppConfig {
   ipfsGatewayUrl: string
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
+  webAuthEndpoint: string
+  webAuthSigningKey: string
 }
 
 export interface EnvIssue {
@@ -94,6 +96,9 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   if (!isHttpUrl(ipfsGatewayUrl)) {
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
+  const webAuthEndpoint = trimTrailingSlash(read(raw, 'VITE_WEB_AUTH_ENDPOINT'))
+  const webAuthSigningKey = read(raw, 'VITE_WEB_AUTH_SIGNING_KEY')
+  if (webAuthEndpoint && !isHttpUrl(webAuthEndpoint)) errors.push({ variable: 'VITE_WEB_AUTH_ENDPOINT', message: 'Must be an http(s) URL.' })
 
   return {
     config: {
@@ -103,6 +108,8 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
       ipfsGatewayUrl,
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
+      webAuthEndpoint,
+      webAuthSigningKey,
     },
     errors,
   }

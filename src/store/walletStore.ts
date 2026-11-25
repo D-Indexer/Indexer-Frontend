@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { freighterWallet, type WalletSnapshot } from '@/services/stellar/freighterWallet'
 import { isTestnetPassphrase } from '@/services/stellar/network'
+import { sep10Client } from '@/services/stellar/sep10Client'
 
 const REMEMBER_KEY = 'folder.wallet.connected'
 
@@ -55,6 +56,7 @@ export const useWalletStore = create<WalletState>((set) => ({
 
   /** Freighter has no revoke API, so this forgets the address in-app and stops auto-reconnecting. */
   disconnect: () => {
+    sep10Client.clear()
     remember(false)
     set({ ...emptyWallet, status: 'idle', error: null })
   },
@@ -69,7 +71,7 @@ export const useWalletStore = create<WalletState>((set) => ({
     }
   },
 
-  update: (snapshot) => set({ ...snapshot }),
+  update: (snapshot) => set((state) => { if (state.address && state.address !== snapshot.address) sep10Client.clear(); return { ...snapshot } }),
 }))
 
 export const selectIsTestnet = (state: Pick<WalletState, 'networkPassphrase'>) =>
