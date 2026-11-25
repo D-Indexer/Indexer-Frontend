@@ -5,3 +5,4 @@ export type { Divergence, PublicPortfolio, Verification } from './hooks/usePubli
 export { PortfolioView } from './templates/PortfolioView'
 export { OwnerToolbar } from './components/OwnerToolbar'
 export { PublicActions } from './components/PublicActions'
+export { PrintFooter } from './components/PrintFooter'
