@@ -4,3 +4,4 @@ export { loadPublicPortfolio, usePublicPortfolio } from './hooks/usePublicPortfo
 export type { Divergence, PublicPortfolio, Verification } from './hooks/usePublicPortfolio'
 export { PortfolioView } from './templates/PortfolioView'
 export { OwnerToolbar } from './components/OwnerToolbar'
+export { PublicActions } from './components/PublicActions'
