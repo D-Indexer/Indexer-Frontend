@@ -18,10 +18,12 @@ const UNSUPPORTED_TYPE_HINT =
 /** Serialises portfolio content deterministically so the same content always gets the same CID. */
 export const serializePortfolioContent = (content: PortfolioContent) => `${JSON.stringify(content, null, 2)}\n`
 
-const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
+export type ContentVerification = 'hash-verified' | 'unverified'
+const verifyCid = async (cid: string, bytes: Uint8Array, source: string): Promise<ContentVerification> => {
   if (isRawCidV1(cid) && (await computeRawCidV1(bytes)) !== cid) {
     throw new IpfsError(`${source} returned content that does not match CID ${cid}.`)
   }
+  return isRawCidV1(cid) ? 'hash-verified' : 'unverified'
 }
 
 export const ipfsService = {
@@ -61,7 +63,7 @@ export const ipfsService = {
   },
 
   /** Fetches JSON from the gateway and checks it against its CID when the CID is recomputable. */
-  fetchJson: async <T>(cid: string): Promise<T> => {
+  fetchJsonWithVerification: async <T>(cid: string): Promise<{ value: T; verification: ContentVerification }> => {
     let response: Response
     try {
       response = await fetch(ipfsService.gatewayUrl(cid))
@@ -72,13 +74,16 @@ export const ipfsService = {
       throw new IpfsError(`The IPFS gateway returned ${response.status} for ${cid}. The content may not be pinned or propagated yet.`)
     }
     const bytes = new Uint8Array(await response.arrayBuffer())
-    await verifyCid(cid, bytes, 'The IPFS gateway')
+    const verification = await verifyCid(cid, bytes, 'The IPFS gateway')
     try {
-      return JSON.parse(new TextDecoder().decode(bytes)) as T
+      return { value: JSON.parse(new TextDecoder().decode(bytes)) as T, verification }
     } catch {
       throw new IpfsError(`Content at ${cid} is not valid JSON.`)
     }
   },
+
+  /** Backwards-compatible JSON reader; callers needing UI disclosure use fetchJsonWithVerification. */
+  fetchJson: async <T>(cid: string): Promise<T> => (await ipfsService.fetchJsonWithVerification<T>(cid)).value,
 
   /**
    * Resolves a template's metadata: first from the bundled copies of the registered template files
