@@ -30,6 +30,9 @@ const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
   }
 }
 
+/** Raw CIDv1 the backend would return for this content; lets callers detect "unchanged" before uploading. */
+export const computePortfolioCid = (content: PortfolioContent) => computeRawCidV1(serializePortfolioContent(content))
+
 export const ipfsService = {
   gatewayUrl: (cid: string) => `${env.ipfsGatewayUrl}/${cid}`,
 

@@ -6,7 +6,7 @@ const post = vi.hoisted(() => vi.fn())
 vi.mock('@/services/http/client', () => ({ apiClient: { post } }))
 vi.mock('@/config/env', () => ({ env: { apiUrl: 'http://localhost:3000', ipfsGatewayUrl: 'https://gw.test/ipfs' } }))
 
-const { ipfsService, serializePortfolioContent } = await import('./ipfsService')
+const { ipfsService, serializePortfolioContent, computePortfolioCid } = await import('./ipfsService')
 
 const content: PortfolioContent = {
   schema_version: 1,
@@ -74,5 +74,13 @@ describe('ipfsService.fetchJson', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"tampered":true}')))
     await expect(ipfsService.fetchJson(cid)).rejects.toThrow('does not match CID')
     vi.unstubAllGlobals()
+  })
+})
+
+describe('computePortfolioCid', () => {
+  it('is equal for identical content in any key order and differs when content changes', async () => {
+    const reordered = Object.fromEntries(Object.entries(content).reverse()) as unknown as PortfolioContent
+    expect(await computePortfolioCid(reordered)).toBe(await computePortfolioCid(content))
+    expect(await computePortfolioCid({ ...content, bio: 'Changed' })).not.toBe(await computePortfolioCid(content))
   })
 })
