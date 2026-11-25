@@ -32,7 +32,7 @@ export interface TxResult {
 export class TransactionError extends Error {
   constructor(
     message: string,
-    readonly options: { contractErrorCode?: number; hash?: string; pending?: boolean } = {},
+    readonly options: { code?: 'unexpected_auth'; contractErrorCode?: number; hash?: string; pending?: boolean } = {},
   ) {
     super(message)
     this.name = 'TransactionError'
@@ -129,6 +129,10 @@ export const stellarService = {
     const account = await loadAccount(owner)
     const { simulation, tx } = await simulate(account, write.method, toArgs(owner, write))
     const prepared = rpc.assembleTransaction(tx, simulation).build()
+    const operation = prepared.operations[0] as any
+    if (prepared.operations.length !== 1 || operation?.type !== 'invokeHostFunction') {
+      throw new TransactionError('The RPC returned an unexpected transaction operation. Nothing was signed.', { code: 'unexpected_auth' })
+    }
 
     onStage?.('signing')
     const signedXdr = await sign(prepared.toXDR(), owner, networkPassphrase)
