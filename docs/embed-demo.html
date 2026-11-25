@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>folder-verify demo</title>
+    <style>
+      /* Global CSS on the host page must not affect the widget. */
+      p, div, a { color: hotpink !important; font-size: 30px !important; }
+    </style>
+    <script type="module" src="../dist-embed/folder-verify.js"></script>
+  </head>
+  <body>
+    <h1>folder-verify demo</h1>
+    <p>Verified (use a real minted folder):</p>
+    <folder-verify name="jane.folder" site-url="https://folder.example"></folder-verify>
+    <p>Not minted:</p>
+    <folder-verify name="unclaimed-name.folder"></folder-verify>
+    <p>Error (missing name):</p>
+    <folder-verify></folder-verify>
+  </body>
+</html>
