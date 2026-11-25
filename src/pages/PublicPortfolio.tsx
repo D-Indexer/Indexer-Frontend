@@ -36,7 +36,10 @@ export const PublicPortfolioPage = () => {
         {(portfolio) => (
           <div className="public-portfolio">
             <OwnerToolbar owner={portfolio.folder.owner} />
-            <PublicActions folderName={folderName} />
+            <PublicActions
+              folderName={folderName}
+              proof={portfolio.cid ? { cid: portfolio.cid, owner: portfolio.folder.owner, verification: portfolio.verification } : undefined}
+            />
             <VerificationBadge owner={portfolio.folder.owner} verification={portfolio.verification} />
             <DivergenceNotice divergence={portfolio.divergence} />
             {portfolio.content ? (
