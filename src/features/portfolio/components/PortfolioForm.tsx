@@ -7,6 +7,7 @@ import { useTemplates } from '@/hooks'
 import { folderData, ipfsService } from '@/services'
 import type { Folder, Portfolio, PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
+import { fromJsonResume, parseJsonResume, type JsonResumeMappedValues } from '../jsonResume'
 import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
 
 /** Fields every template shares; template-specific fields become free-text sections. */
@@ -78,6 +79,8 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const [errors, setErrors] = useState<FormErrors>({})
   const [contentNotice, setContentNotice] = useState<string | null>(null)
   const [loadingContent, setLoadingContent] = useState(isUpdate)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importPreview, setImportPreview] = useState<JsonResumeMappedValues | null>(null)
 
   useEffect(() => {
     if (!portfolio) return undefined
@@ -107,6 +110,46 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
 
   const set = (key: Exclude<keyof FormValues, 'sections'>) => (event: { target: { value: string } }) =>
     setValues((current) => ({ ...current, [key]: event.target.value }))
+
+  const handleJsonResume = async (event: { target: { files: FileList | null } }) => {
+    setImportError(null)
+    setImportPreview(null)
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      setImportError('Choose a .json resume file.')
+      return
+    }
+
+    try {
+      const text = typeof file.text === 'function'
+        ? await file.text()
+        : await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+            reader.onerror = () => reject(reader.error ?? new Error('Could not read resume.json.'))
+            reader.readAsText(file)
+          })
+      const doc = parseJsonResume(text)
+      setImportPreview(fromJsonResume(doc, selectedTemplate ?? null))
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'Could not read resume.json.')
+    }
+  }
+
+  const confirmImport = () => {
+    if (!importPreview) return
+    setValues((current) => ({
+      ...current,
+      name: importPreview.name,
+      headline: importPreview.headline,
+      bio: importPreview.bio,
+      skills: importPreview.skills,
+      links: importPreview.links,
+      sections: { ...current.sections, ...importPreview.sections },
+    }))
+    setImportPreview(null)
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -153,6 +196,37 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
         {contentNotice ? (
           <div className="notice notice--warning" role="status">
             <p>{contentNotice}</p>
+          </div>
+        ) : null}
+
+        <div className="field">
+          <label htmlFor="portfolio-resume-import">Import JSON Resume</label>
+          <input
+            id="portfolio-resume-import"
+            type="file"
+            accept="application/json,.json"
+            onChange={(event) => void handleJsonResume(event)}
+            aria-describedby="portfolio-resume-import-help"
+          />
+          <p className="field__help" id="portfolio-resume-import-help">
+            Choose a local resume.json file. It is not uploaded until you confirm and publish.
+          </p>
+        </div>
+        {importError ? <div className="notice notice--warning" role="alert"><p>{importError}</p></div> : null}
+        {importPreview ? (
+          <div className="notice" role="region" aria-label="JSON Resume import preview">
+            <div>
+              <strong>Preview mapped values</strong>
+              <p>Name: {importPreview.name || '(empty)'}</p>
+              <p>Headline: {importPreview.headline || '(empty)'}</p>
+              <p>Bio: {importPreview.bio || '(empty)'}</p>
+              <p>Skills: {importPreview.skills || '(empty)'}</p>
+              <p>Links: {importPreview.links || '(empty)'}</p>
+            </div>
+            <div>
+              <Button type="button" onClick={confirmImport}>Use imported values</Button>
+              <Button type="button" variant="secondary" onClick={() => setImportPreview(null)}>Cancel</Button>
+            </div>
           </div>
         ) : null}
 
