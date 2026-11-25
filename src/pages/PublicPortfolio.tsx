@@ -1,7 +1,13 @@
 import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { AsyncContent, Card, ExternalLink } from '@/components/ui'
-import { PortfolioView, usePublicPortfolio, VerificationBadge } from '@/features/public-portfolio'
+import {
+  DivergenceNotice,
+  OwnerToolbar,
+  PortfolioView,
+  usePublicPortfolio,
+  VerificationBadge,
+} from '@/features/public-portfolio'
 import { PageContainer } from '@/layouts'
 import { ipfsService } from '@/services'
 
@@ -26,7 +32,9 @@ export const PublicPortfolioPage = () => {
       >
         {(portfolio) => (
           <div className="public-portfolio">
+            <OwnerToolbar owner={portfolio.folder.owner} />
             <VerificationBadge owner={portfolio.folder.owner} verification={portfolio.verification} />
+            <DivergenceNotice divergence={portfolio.divergence} />
             {portfolio.content ? (
               <Card>
                 <PortfolioView content={portfolio.content} templateId={portfolio.templateId} />
