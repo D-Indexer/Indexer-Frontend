@@ -3,6 +3,7 @@ import { knownTemplateMetadata } from '@/data/knownTemplateMetadata'
 import { apiClient } from '@/services/http/client'
 import { toApiError } from '@/services/http/errors'
 import type { PortfolioContent, Template, TemplateMetadata } from '@/types'
+import { canonicalizeJson } from './canonicalJson'
 import { cidFromIpfsUri, computeRawCidV1, isRawCidV1, isValidContractCid } from './cid'
 
 export class IpfsError extends Error {
@@ -15,8 +16,12 @@ export class IpfsError extends Error {
 const UNSUPPORTED_TYPE_HINT =
   'The backend /upload endpoint rejected the portfolio JSON ("Unsupported file type"). Indexer-Backend currently only accepts images and PDFs; it needs to allow application/json before portfolios can be published.'
 
-/** Serialises portfolio content deterministically so the same content always gets the same CID. */
-export const serializePortfolioContent = (content: PortfolioContent) => `${JSON.stringify(content, null, 2)}\n`
+/**
+ * Serialises portfolio content with RFC 8785 JCS so the same content always gets the same CID,
+ * regardless of key insertion order. Readers just JSON.parse, so older pretty-printed documents
+ * still render; only writers changed (see docs/adr/0002-canonical-json-portfolio-documents.md).
+ */
+export const serializePortfolioContent = (content: PortfolioContent) => canonicalizeJson(content)
 
 const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
   if (isRawCidV1(cid) && (await computeRawCidV1(bytes)) !== cid) {
