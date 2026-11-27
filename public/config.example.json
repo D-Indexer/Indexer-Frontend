@@ -1,0 +1,8 @@
+{
+  "VITE_API_URL": "http://localhost:3000",
+  "VITE_FOLDER_CONTRACT_ID": "CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV",
+  "VITE_STELLAR_NETWORK": "testnet",
+  "VITE_SOROBAN_RPC_URL": "https://soroban-testnet.stellar.org",
+  "VITE_IPFS_GATEWAY_URL": "https://ipfs.io/ipfs",
+  "VITE_DEMO_MODE": "false"
+}

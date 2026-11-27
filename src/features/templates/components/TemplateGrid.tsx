@@ -1,6 +1,7 @@
 import { AsyncContent, LinkButton, LoadingState } from '@/components/ui'
 import { appRoutes } from '@/config/routes'
-import { useProgressiveTemplateList } from '@/hooks'
+import { useTemplates } from '@/hooks'
+import { sanitizeDisplayText } from '@/utils/format'
 import { TemplateCard } from './TemplateCard'
 
 interface TemplateGridProps {
@@ -23,23 +24,21 @@ export const TemplateGrid = ({ headingLevel = 2 }: TemplateGridProps) => {
       }}
     >
       {(templates) => (
-        <>
-          <div className="grid grid--3">
-            {templates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                headingLevel={headingLevel}
-                action={
-                  <LinkButton to={`${appRoutes.dashboard}?template=${template.id}`} variant="secondary">
-                    Use template<span className="sr-only"> {template.metadata?.name ?? template.id}</span>
-                  </LinkButton>
-                }
-              />
-            ))}
-          </div>
-          {loading ? <LoadingState label="Loading remaining templates…" minHeight="4rem" /> : null}
-        </>
+        <div className="grid grid--3">
+          {templates.map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              headingLevel={headingLevel}
+              action={
+                <LinkButton to={`${appRoutes.dashboard}?template=${template.id}`} variant="secondary">
+                  Use template
+                  <span className="sr-only"> {sanitizeDisplayText(template.metadata?.name ?? String(template.id), 120)}</span>
+                </LinkButton>
+              }
+            />
+          ))}
+        </div>
       )}
     </AsyncContent>
   )

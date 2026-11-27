@@ -1,0 +1,16 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Indexer Frontend API",
+  "entryPoints": ["src/services/index.ts", "src/hooks/index.ts", "src/types/index.ts"],
+  "entryPointStrategy": "expand",
+  "tsconfig": "tsconfig.json",
+  "out": "docs/api",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "categorizeByGroup": true,
+  "navigationLinks": {
+    "Repository": "https://github.com/D-Indexer/Indexer-Frontend"
+  }
+}

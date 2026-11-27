@@ -5,7 +5,7 @@ interface LoadingStateProps {
 
 export const LoadingState = ({ label = 'Loading…', minHeight }: LoadingStateProps) => {
   return (
-    <div className="loading-state" role="status" aria-live="polite" style={minHeight ? { minHeight } : undefined}>
+    <div className="loading-state" role="status" aria-live="polite" aria-atomic="true" style={minHeight ? { minHeight } : undefined}>
       <span className="loading-state__spinner" aria-hidden="true" />
       {label}
     </div>

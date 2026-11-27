@@ -1,8 +1,12 @@
+import { useCallback } from 'react'
 import { folderData } from '@/services'
-import { useAsync, useProgressiveTemplates } from './useAsync'
+import { useDomainEvent } from '@/features/transactions'
+import { useAsync } from './useAsync'
 
 /** Registered templates with their IPFS metadata. No fallback: failures surface as `error`. */
-export const useTemplates = () => useAsync(() => folderData.listTemplates(), [])
-
-/** Same as `useTemplates`, but appends each template as soon as its metadata resolves. */
-export const useProgressiveTemplateList = () => useProgressiveTemplates()
+export const useTemplates = () => {
+  const { refetch, ...state } = useAsync(() => folderData.listTemplates(), [])
+  const refresh = useCallback(() => void refetch(), [refetch])
+  useDomainEvent('portfolio.minted', refresh)
+  return { ...state, refetch }
+}

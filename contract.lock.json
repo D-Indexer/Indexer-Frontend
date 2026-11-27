@@ -1,0 +1,5 @@
+{
+  "repository": "D-Indexer/Indexer-Contract",
+  "ref": "PIN_THIS_TO_A_RELEASE_COMMIT",
+  "source": "src/errors.rs"
+}
