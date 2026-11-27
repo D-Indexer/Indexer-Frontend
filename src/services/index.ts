@@ -1,3 +1,5 @@
+export { ServicesProvider, useServices, defaultServices } from './context/ServicesContext'
+export type { ServicesRegistry } from './context/ServicesContext'
 export { folderData } from './data/folderData'
 export { folderApi } from './folders/folderApi'
 export { apiClient } from './http/client'

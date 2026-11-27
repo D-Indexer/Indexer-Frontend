@@ -1047,7 +1047,17 @@
 }
 .portfolio {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--tpl-spacing-unit, var(--space-6));
+  color: var(--tpl-color-text, var(--color-text));
+  font-family: var(--tpl-font-family, inherit);
+}
+
+.portfolio a {
+  color: var(--tpl-color-primary, var(--color-primary));
+}
+
+.portfolio .muted {
+  color: var(--tpl-color-muted, var(--color-muted));
 }
 
 .portfolio__header h1 {

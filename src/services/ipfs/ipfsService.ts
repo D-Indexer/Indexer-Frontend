@@ -255,13 +255,14 @@ export const ipfsService = {
   fetchJson: async <T>(cid: string): Promise<T> => (await ipfsService.fetchJsonWithVerification<T>(cid)).value,
 
   /**
-   * Resolves a template's metadata: first from the bundled copies of the registered template files
-   * (accepted only if their hash equals the on-chain CID), then from the gateway. Returns null if
-   * neither works, so the UI can say so instead of inventing data.
+   * Resolves a template's metadata along with its integrity status:
+   * 'verified' | 'unverified' | 'missing' | 'mismatch' | 'error'
    */
-  resolveTemplateMetadata: async (template: Template): Promise<TemplateMetadata | null> => {
+  resolveTemplateMetadataWithStatus: async (
+    template: Template,
+  ): Promise<{ metadata: TemplateMetadata | null; metadataStatus: TemplateMetadataStatus }> => {
     const cid = cidFromIpfsUri(template.metadataUri)
-    if (!cid) return null
+    if (!cid) return { metadata: null, metadataStatus: 'missing' }
 
     const bundled = knownTemplateMetadata[cid]
     if (bundled && (await computeRawCidV1(bundled)) === cid) {
@@ -277,5 +278,15 @@ export const ipfsService = {
     } catch {
       return null
     }
+  },
+
+  /**
+   * Resolves a template's metadata: first from the bundled copies of the registered template files
+   * (accepted only if their hash equals the on-chain CID), then from the gateway. Returns null if
+   * neither works, so the UI can say so instead of inventing data.
+   */
+  resolveTemplateMetadata: async (template: Template): Promise<TemplateMetadata | null> => {
+    const res = await ipfsService.resolveTemplateMetadataWithStatus(template)
+    return res.metadata
   },
 }

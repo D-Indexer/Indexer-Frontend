@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { DemoBanner, ToastContainer } from '@/components/ui'
 import { env } from '@/config/env'
+import { ServicesProvider } from '@/services'
 import { Footer } from './Footer'
 import { Header } from './Header'
 
