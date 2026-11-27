@@ -1,0 +1,21 @@
+[
+  { "input": "abc", "expectedValid": true, "reason": "3-character minimum label" },
+  { "input": "abc.folder", "expectedValid": true, "reason": "Explicit .folder suffix" },
+  { "input": "a-b-c", "expectedValid": true, "reason": "Hyphen in the middle is allowed" },
+  { "input": "0123456789", "expectedValid": true, "reason": "Numeric characters allowed" },
+  { "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "expectedValid": true, "reason": "57 characters + .folder (7 bytes) = 64 bytes exactly" },
+  { "input": "", "expectedValid": false, "reason": "Empty string rejected" },
+  { "input": ".folder", "expectedValid": false, "reason": "Missing label" },
+  { "input": "ab", "expectedValid": false, "reason": "2-character label below minimum of 3" },
+  { "input": "-abc", "expectedValid": false, "reason": "Leading hyphen disallowed" },
+  { "input": "abc-", "expectedValid": false, "reason": "Trailing hyphen disallowed" },
+  { "input": "-abc-", "expectedValid": false, "reason": "Leading and trailing hyphen disallowed" },
+  { "input": "a_bc", "expectedValid": false, "reason": "Underscore disallowed in label" },
+  { "input": "a.b", "expectedValid": false, "reason": "Dot disallowed in label" },
+  { "input": "Alice", "expectedValid": false, "reason": "Uppercase letters disallowed" },
+  { "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "expectedValid": false, "reason": "58 characters + .folder = 65 bytes exceeds 64 bytes limit" },
+  { "input": "café", "expectedValid": false, "reason": "Non-ASCII unicode character rejected" },
+  { "input": "🚀folder", "expectedValid": false, "reason": "Emoji characters rejected" },
+  { "input": "   abc   ", "expectedValid": true, "reason": "Trimmed whitespace around valid label" },
+  { "input": "---", "expectedValid": false, "reason": "All hyphens invalid due to leading/trailing rules" }
+]

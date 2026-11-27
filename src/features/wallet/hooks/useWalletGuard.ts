@@ -1,4 +1,4 @@
-import { env } from '@/config/env'
+import { isDemoMode } from '@/services/data/dataSourceFactory'
 import { selectIsTestnet, useWalletStore } from '@/store'
 
 export interface WalletGuard {
@@ -14,10 +14,13 @@ export const useWalletGuard = (): WalletGuard => {
   const network = useWalletStore((state) => state.network)
   const status = useWalletStore((state) => state.status)
   const isTestnet = useWalletStore(selectIsTestnet)
+  const { online } = useNetworkStatus()
 
   let blockedReason: string | null = null
-  if (env.demoMode) {
+  if (isDemoMode()) {
     blockedReason = 'Demo mode is on, so on-chain actions are disabled. Unset VITE_DEMO_MODE to use testnet.'
+  } else if (!online) {
+    blockedReason = 'You are offline. Reconnect to the internet to send on-chain actions.'
   } else if (status !== 'connected' || !address) {
     blockedReason = 'Connect your Freighter wallet to continue.'
   } else if (!isTestnet) {

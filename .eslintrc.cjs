@@ -13,7 +13,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'jsdoc'],
   rules: {
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-unused-vars': [
@@ -24,4 +24,12 @@ module.exports = {
       },
     ],
   },
+  overrides: [
+    {
+      files: ['src/services/**/*.ts', 'src/services/**/*.tsx'],
+      rules: {
+        '@typescript-eslint/no-non-null-assertion': 'error',
+      },
+    },
+  ],
 }
