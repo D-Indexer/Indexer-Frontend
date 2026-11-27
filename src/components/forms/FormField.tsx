@@ -57,7 +57,7 @@ export const FormField = (props: InputFieldProps | TextareaFieldProps | SelectFi
         control
       )}
       {error ? (
-        <p className="field__error" id={errorId}>
+        <p className="field__error" id={errorId} role="alert">
           {error}
         </p>
       ) : null}

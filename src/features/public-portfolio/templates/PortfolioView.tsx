@@ -1,23 +1,21 @@
-import { ExternalLink } from '@/components/ui'
+import { Component, Suspense, type ErrorInfo, type ReactNode } from 'react'
+import { LoadingState } from '@/components/ui'
 import type { PortfolioContent } from '@/types'
-import { humanizeField } from '@/utils/format'
-import { getPortfolioLinks, portfolioLinkKindLabel } from '@/utils/portfolioLinks'
+import { humanizeField, sanitizeDisplayText } from '@/utils/format'
 
 interface ViewProps {
   content: PortfolioContent
 }
 
-const Links = ({ content }: ViewProps) => {
-  const links = getPortfolioLinks(content)
-  const hasMetadata = Boolean(content.link_meta?.length)
-  return links.length > 0 ? (
+/** IPFS-sourced text, isolated from surrounding bidi context and stripped of invisible characters. */
+const Text = ({ value }: { value: string }) => <bdi>{sanitizeDisplayText(value)}</bdi>
+
+const Links = ({ links }: { links: string[] }) =>
+  links.length > 0 ? (
     <ul className="portfolio__links" aria-label="Links">
-      {links.map((link, index) => (
-        <li key={`${link.url}-${index}`}>
-          {hasMetadata ? <span className="portfolio__link-kind" aria-hidden="true">{portfolioLinkKindLabel(link.kind)}</span> : null}
-          <ExternalLink href={link.url} target={link.kind === 'email' ? '_self' : '_blank'}>
-            {hasMetadata ? link.label || portfolioLinkKindLabel(link.kind) : link.label}
-          </ExternalLink>
+      {links.map((link) => (
+        <li key={link}>
+          <ExternalLink href={link}>{sanitizeDisplayText(link.replace(/^https?:\/\//, ''))}</ExternalLink>
         </li>
       ))}
     </ul>
@@ -30,7 +28,9 @@ const Skills = ({ label = 'Skills', skills }: { label?: string; skills: string[]
       <h2>{label}</h2>
       <ul className="tag-list">
         {skills.map((skill) => (
-          <li key={skill}>{skill}</li>
+          <li key={skill}>
+            <Text value={skill} />
+          </li>
         ))}
       </ul>
     </section>
@@ -43,7 +43,9 @@ const Sections = ({ sections, only }: { only?: string[]; sections: Record<string
       .map(([key, value]) => (
         <section key={key} className="portfolio__section">
           <h2>{humanizeField(key)}</h2>
-          <p className="portfolio__prose">{value}</p>
+          <p className="portfolio__prose">
+            <Text value={value} />
+          </p>
         </section>
       ))}
   </>
@@ -51,9 +53,17 @@ const Sections = ({ sections, only }: { only?: string[]; sections: Record<string
 
 const Header = ({ content }: ViewProps) => (
   <header className="portfolio__header">
-    <h1>{content.name}</h1>
-    {content.headline ? <p className="portfolio__headline">{content.headline}</p> : null}
-    <p className="muted mono">{content.folder}</p>
+    <h1>
+      <Text value={content.name} />
+    </h1>
+    {content.headline ? (
+      <p className="portfolio__headline">
+        <Text value={content.headline} />
+      </p>
+    ) : null}
+    <p className="muted mono">
+      <Text value={content.folder} />
+    </p>
   </header>
 )
 
@@ -61,7 +71,9 @@ const Header = ({ content }: ViewProps) => (
 const DeveloperView = ({ content }: ViewProps) => (
   <article className="portfolio portfolio--developer">
     <Header content={content} />
-    <p className="portfolio__prose">{content.bio}</p>
+    <p className="portfolio__prose">
+      <Text value={content.bio} />
+    </p>
     <Skills skills={content.skills} />
     <Sections sections={content.sections} />
     <Links content={content} />
@@ -72,7 +84,9 @@ const DeveloperView = ({ content }: ViewProps) => (
 const DesignerView = ({ content }: ViewProps) => (
   <article className="portfolio portfolio--designer">
     <Header content={content} />
-    <p className="portfolio__prose portfolio__lead">{content.bio}</p>
+    <p className="portfolio__prose portfolio__lead">
+      <Text value={content.bio} />
+    </p>
     <div className="portfolio__grid">
       <Sections sections={content.sections} />
     </div>
@@ -87,7 +101,9 @@ const OperationsView = ({ content }: ViewProps) => (
     <Header content={content} />
     <div className="portfolio__resume">
       <div>
-        <p className="portfolio__prose">{content.bio}</p>
+        <p className="portfolio__prose">
+          <Text value={content.bio} />
+        </p>
         <Sections sections={content.sections} only={['experience', 'references']} />
       </div>
       <div>
@@ -99,18 +115,27 @@ const OperationsView = ({ content }: ViewProps) => (
   </article>
 )
 
-const views: Record<number, (props: ViewProps) => JSX.Element> = {
-  1: DeveloperView,
-  2: DesignerView,
-  3: OperationsView,
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('TemplateRenderer error, falling back to GenericLayout:', error, errorInfo)
+  }
+
+  override render() {
+    if (this.state.hasError) {
+      return <GenericLayout content={this.props.fallbackContent} />
+    }
+    return this.props.children
+  }
 }
 
-interface PortfolioViewProps extends ViewProps {
-  templateId: number | null
-}
-
-/** Renders portfolio content with its template's layout; unknown templates use the developer layout. */
+/** Renders portfolio content using the lazy template registry, with fallback to generic layout. */
 export const PortfolioView = ({ content, templateId }: PortfolioViewProps) => {
-  const View = (templateId !== null && views[templateId]) || DeveloperView
-  return <View content={content} />
+  const Renderer = getTemplateRenderer(templateId)
+
+  return (
+    <TemplateErrorBoundary fallbackContent={content}>
+      <Suspense fallback={<LoadingState label="Loading template layout…" />}>
+        <Renderer content={content} />
+      </Suspense>
+    </TemplateErrorBoundary>
+  )
 }

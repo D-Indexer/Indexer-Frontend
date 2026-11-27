@@ -96,6 +96,33 @@ describe('PortfolioForm', () => {
     expect(invoke).toHaveBeenCalledWith(OWNER, { method: 'update_portfolio', ipfsCid: CID_V2 }, expect.any(Function), expect.any(Function))
   })
 
+  it('previews a JSON Resume and applies it only after confirmation', async () => {
+    render(<PortfolioForm owner={OWNER} folder={buildFolder()} portfolio={null} initialTemplateId="1" onPublished={vi.fn()} />)
+    await screen.findByRole('option', { name: 'Developer (#1)' })
+
+    const resume = new File([JSON.stringify({ basics: { name: 'Richard Hendriks', label: 'Programmer', summary: 'Richard hails from Tulsa.', url: 'https://richardhendricks.com' }, skills: [{ name: 'Web Development', keywords: ['HTML', 'CSS'] }] })], 'resume.json', { type: 'application/json' })
+    await userEvent.upload(screen.getByLabelText('Import JSON Resume'), resume)
+
+    expect(await screen.findByRole('region', { name: 'JSON Resume import preview' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Name/)).toHaveValue('')
+    await userEvent.click(screen.getByRole('button', { name: 'Use imported values' }))
+    expect(screen.getByLabelText(/^Name/)).toHaveValue('Richard Hendriks')
+    expect(screen.getByLabelText(/^Headline/)).toHaveValue('Programmer')
+    expect(screen.getByLabelText(/Skills/)).toHaveValue('Web Development, HTML, CSS')
+  })
+
+  it('shows a precise error for invalid JSON without changing fields', async () => {
+    render(<PortfolioForm owner={OWNER} folder={buildFolder()} portfolio={null} initialTemplateId="1" onPublished={vi.fn()} />)
+    await screen.findByRole('option', { name: 'Developer (#1)' })
+    await userEvent.type(screen.getByLabelText(/^Name/), 'Existing Name')
+
+    const resume = new File(['{"basics":{"name":42}}'], 'resume.json', { type: 'application/json' })
+    await userEvent.upload(screen.getByLabelText('Import JSON Resume'), resume)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('basics.name must be a string')
+    expect(screen.getByLabelText(/^Name/)).toHaveValue('Existing Name')
+  })
+
   it('surfaces upload failures without sending a transaction', async () => {
     upload.mockRejectedValue(new Error('Indexer-Backend currently only accepts images and PDFs'))
     render(<PortfolioForm owner={OWNER} folder={buildFolder()} portfolio={null} initialTemplateId="1" onPublished={vi.fn()} />)
