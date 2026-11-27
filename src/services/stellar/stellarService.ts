@@ -8,7 +8,7 @@ import {
   scValToNative,
   StrKey,
   TransactionBuilder,
-  type xdr,
+  xdr,
 } from '@stellar/stellar-sdk'
 import { env } from '@/config/env'
 import { describeContractError, extractContractErrorCode } from './contractErrors'
@@ -167,6 +167,20 @@ export const stellarService = {
   verifyPortfolio: async (owner: string): Promise<boolean> => {
     const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'verify_portfolio', [new Address(owner).toScVal()])
     return simulation.result ? scValToNative(simulation.result.retval) === true : false
+  },
+
+  /** Ledger data for proof bundles: the latest ledger and when the contract instance expires (null if unreadable). */
+  getLedgerSnapshot: async (): Promise<{ latestLedger: number; liveUntilLedger: number | null }> => {
+    const rpcServer = getServer()
+    const latest = await rpcServer.getLatestLedger()
+    let liveUntilLedger: number | null = null
+    try {
+      const entry = await rpcServer.getContractData(env.folderContractId, xdr.ScVal.scvLedgerKeyContractInstance())
+      liveUntilLedger = entry.liveUntilLedgerSeq ?? null
+    } catch {
+      liveUntilLedger = null
+    }
+    return { latestLedger: latest.sequence, liveUntilLedger }
   },
 
   /** Read-only `get_portfolio(owner)`: the CID and template currently anchored on-chain. */

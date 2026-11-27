@@ -5,7 +5,7 @@ import { stellarService } from '@/services/stellar/stellarService'
 import type { Folder, PortfolioContent } from '@/types'
 
 export type Verification =
-  | { status: 'verified'; onChainCid: string }
+  | { status: 'verified'; onChainCid: string; onChain: { ipfsCid: string; templateId: number; mintedAt: number } }
   | { status: 'not_minted' }
   | { status: 'unavailable'; reason: string }
   | { status: 'demo' }
@@ -57,7 +57,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
   } else {
     const [isVerified, onChain] = chain
     if (isVerified && onChain) {
-      verification = { status: 'verified', onChainCid: onChain.ipfsCid }
+      verification = { status: 'verified', onChainCid: onChain.ipfsCid, onChain }
       if (cid !== onChain.ipfsCid) divergence.push({ field: 'ipfsCid', indexed: cid, onChain: onChain.ipfsCid })
       if (templateId !== onChain.templateId) {
         divergence.push({ field: 'templateId', indexed: templateId, onChain: onChain.templateId })
