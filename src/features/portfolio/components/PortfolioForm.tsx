@@ -8,6 +8,7 @@ import { folderData, ipfsService } from '@/services'
 import { computePortfolioCid } from '@/services/ipfs/ipfsService'
 import type { Folder, Portfolio, PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
+import { fromJsonResume, parseJsonResume, type JsonResumeMappedValues } from '../jsonResume'
 import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
 
 /** Fields every template shares; template-specific fields become free-text sections. */
@@ -180,6 +181,37 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
         {contentNotice ? (
           <div className="notice notice--warning" role="status">
             <p>{contentNotice}</p>
+          </div>
+        ) : null}
+
+        <div className="field">
+          <label htmlFor="portfolio-resume-import">Import JSON Resume</label>
+          <input
+            id="portfolio-resume-import"
+            type="file"
+            accept="application/json,.json"
+            onChange={(event) => void handleJsonResume(event)}
+            aria-describedby="portfolio-resume-import-help"
+          />
+          <p className="field__help" id="portfolio-resume-import-help">
+            Choose a local resume.json file. It is not uploaded until you confirm and publish.
+          </p>
+        </div>
+        {importError ? <div className="notice notice--warning" role="alert"><p>{importError}</p></div> : null}
+        {importPreview ? (
+          <div className="notice" role="region" aria-label="JSON Resume import preview">
+            <div>
+              <strong>Preview mapped values</strong>
+              <p>Name: {importPreview.name || '(empty)'}</p>
+              <p>Headline: {importPreview.headline || '(empty)'}</p>
+              <p>Bio: {importPreview.bio || '(empty)'}</p>
+              <p>Skills: {importPreview.skills || '(empty)'}</p>
+              <p>Links: {importPreview.links || '(empty)'}</p>
+            </div>
+            <div>
+              <Button type="button" onClick={confirmImport}>Use imported values</Button>
+              <Button type="button" variant="secondary" onClick={() => setImportPreview(null)}>Cancel</Button>
+            </div>
           </div>
         ) : null}
 
