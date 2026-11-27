@@ -13,6 +13,7 @@ import {
 import { env } from '@/config/env'
 import { describeContractError, extractContractErrorCode } from './contractErrors'
 import { getNetworkPassphrase } from './network'
+import { WalletError } from './freighterWallet'
 
 /** Stages reported while a write is in flight, so the UI can say what is happening. */
 export type TxStage = 'preparing' | 'signing' | 'submitting' | 'confirming'
@@ -146,6 +147,9 @@ export const stellarService = {
     assertNotAborted(signal)
     onStage?.('submitting')
     const signed = TransactionBuilder.fromXDR(signedXdr, networkPassphrase)
+    if (signed.hash().toString('hex') !== preparedHash || signed.constructor.name === 'FeeBumpTransaction') {
+      throw new WalletError('The wallet returned a transaction different from the one the app prepared. Nothing was submitted.', 'tampered')
+    }
     const sent = await getServer().sendTransaction(signed)
     if (sent.status === 'ERROR' || sent.status === 'TRY_AGAIN_LATER') {
       const detail = sent.errorResult ? sent.errorResult.result().switch().name : sent.status
