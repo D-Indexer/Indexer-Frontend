@@ -1,4 +1,5 @@
-import { ExternalLink } from '@/components/ui'
+import { Component, Suspense, type ErrorInfo, type ReactNode } from 'react'
+import { LoadingState } from '@/components/ui'
 import type { PortfolioContent } from '@/types'
 import { humanizeField, sanitizeDisplayText } from '@/utils/format'
 
@@ -113,18 +114,27 @@ const OperationsView = ({ content }: ViewProps) => (
   </article>
 )
 
-const views: Record<number, (props: ViewProps) => JSX.Element> = {
-  1: DeveloperView,
-  2: DesignerView,
-  3: OperationsView,
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('TemplateRenderer error, falling back to GenericLayout:', error, errorInfo)
+  }
+
+  override render() {
+    if (this.state.hasError) {
+      return <GenericLayout content={this.props.fallbackContent} />
+    }
+    return this.props.children
+  }
 }
 
-interface PortfolioViewProps extends ViewProps {
-  templateId: number | null
-}
-
-/** Renders portfolio content with its template's layout; unknown templates use the developer layout. */
+/** Renders portfolio content using the lazy template registry, with fallback to generic layout. */
 export const PortfolioView = ({ content, templateId }: PortfolioViewProps) => {
-  const View = (templateId !== null && views[templateId]) || DeveloperView
-  return <View content={content} />
+  const Renderer = getTemplateRenderer(templateId)
+
+  return (
+    <TemplateErrorBoundary fallbackContent={content}>
+      <Suspense fallback={<LoadingState label="Loading template layout…" />}>
+        <Renderer content={content} />
+      </Suspense>
+    </TemplateErrorBoundary>
+  )
 }

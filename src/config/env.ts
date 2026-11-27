@@ -14,6 +14,7 @@
 declare const __BUILD_COMMIT__: string
 
 export type StellarNetwork = 'testnet'
+export type ExplorerType = 'stellar.expert' | 'stellarchain' | 'none'
 
 export interface AppConfig {
   apiUrl: string
@@ -58,6 +59,7 @@ const isHttpUrl = (value: string) => {
 export const isContractId = (value: string) => /^C[A-Z2-7]{55}$/.test(value)
 
 export const defaults = {
+  explorer: 'stellar.expert' as ExplorerType,
   ipfsGatewayUrl: 'https://ipfs.io/ipfs',
   rumSampleRate: 1,
   sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
@@ -247,6 +249,10 @@ export const envVarNames = Object.fromEntries(
       message: `"${errorReportingDsn}" is not an http(s) URL. Leave it empty to disable error reporting.`,
     })
   }
+
+  const rawExplorer = read(raw, 'VITE_EXPLORER') || defaults.explorer
+  const explorer: ExplorerType =
+    rawExplorer === 'stellarchain' || rawExplorer === 'none' ? rawExplorer : 'stellar.expert'
 
   return {
     config: {
