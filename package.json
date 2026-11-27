@@ -41,6 +41,7 @@
     "@vitest/coverage-v8": "^3.2.7",
     "axe-core": "^4.14.0",
     "eslint": "^8.55.0",
+    "eslint-plugin-jsdoc": "^46.9.0",
     "jsdom": "^26.1.0",
     "lint-staged": "^15.2.0",
     "prettier": "^3.2.0",

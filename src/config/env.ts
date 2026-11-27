@@ -64,33 +64,29 @@ export const defaults = {
   stellarNetwork: 'testnet',
 } as const
 
-export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] } => {
-  const errors: EnvIssue[] = []
-  const demoMode = read(raw, 'VITE_DEMO_MODE') === 'true'
-
-  const apiUrl = trimTrailingSlash(read(raw, 'VITE_API_URL'))
-  if (!apiUrl) {
-    if (!demoMode) {
-      errors.push({ variable: 'VITE_API_URL', message: 'Required. Set it to the Indexer-Backend URL, e.g. http://localhost:3000.' })
-    }
-  } else if (!isHttpUrl(apiUrl)) {
-    errors.push({ variable: 'VITE_API_URL', message: `"${apiUrl}" is not an http(s) URL.` })
-  }
-
-  const folderContractId = read(raw, 'VITE_FOLDER_CONTRACT_ID')
-  if (!folderContractId) {
-    if (!demoMode) {
-      errors.push({
-        variable: 'VITE_FOLDER_CONTRACT_ID',
-        message: 'Required. Use the testnet contract ID from Indexer-Contract deployments/testnet.json.',
-      })
-    }
-  } else if (!isContractId(folderContractId)) {
-    errors.push({
-      variable: 'VITE_FOLDER_CONTRACT_ID',
-      message: 'Must be a Soroban contract ID: "C" followed by 55 uppercase base32 characters.',
-    })
-  }
+/**
+ * Single source of truth for configuration. `parseEnv` iterates this list and
+ * `scripts/gen-env-docs.mjs` generates `.env.example` and `docs/configuration.md`
+ * from it, so the docs cannot drift from the parser.
+ */
+export interface EnvVarSchema {
+  /** `VITE_*` variable name. */
+  name: string
+  /** Key on `AppConfig` the parsed value is assigned to. */
+  key: keyof AppConfig
+  /** One-line purpose, used in the docs table and `.env.example`. */
+  description: string
+  /** Value used when the variable is unset or empty. */
+  default?: string
+  /** Value written to `.env.example`. */
+  example: string
+  /** Human-readable validation rule, used in the docs table. */
+  validation: string
+  /** Required unless demo mode is enabled. */
+  requiredUnlessDemo?: boolean
+  /** Parses and validates a raw value; returns the config value and any issue. */
+  parse: (value: string) => { value: unknown; error?: string }
+}
 
   const network = read(raw, 'VITE_STELLAR_NETWORK') || defaults.stellarNetwork
   const sponsorEnabled = read(raw, 'VITE_SPONSOR_ENABLED') === 'true'
@@ -101,10 +97,100 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     })
   }
 
-  const sorobanRpcUrl = trimTrailingSlash(read(raw, 'VITE_SOROBAN_RPC_URL') || defaults.sorobanRpcUrl)
-  if (!isHttpUrl(sorobanRpcUrl)) {
-    errors.push({ variable: 'VITE_SOROBAN_RPC_URL', message: `"${sorobanRpcUrl}" is not an http(s) URL.` })
-  }
+export const envSchema: EnvVarSchema[] = [
+  {
+    name: 'VITE_API_URL',
+    key: 'apiUrl',
+    description: 'Indexer-Backend base URL (`/folders`, `/portfolios`, `/templates`, `/upload`).',
+    example: 'http://localhost:3000',
+    validation: 'http(s) URL',
+    requiredUnlessDemo: true,
+    parse: (value) => {
+      if (!value) {
+        return {
+          value: '',
+          error: 'Required. Set it to the Indexer-Backend URL, e.g. http://localhost:3000.',
+        }
+      }
+      return parseHttpUrl(value)
+    },
+  },
+  {
+    name: 'VITE_FOLDER_CONTRACT_ID',
+    key: 'folderContractId',
+    description:
+      'Folder contract that transactions are built against. Testnet: `CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV`.',
+    example: 'CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV',
+    validation: '`C` + 55 base32 chars',
+    requiredUnlessDemo: true,
+    parse: (value) => {
+      if (!value) {
+        return {
+          value: '',
+          error: 'Required. Use the testnet contract ID from Indexer-Contract deployments/testnet.json.',
+        }
+      }
+      return isContractId(value)
+        ? { value }
+        : {
+            value,
+            error: 'Must be a Soroban contract ID: "C" followed by 55 uppercase base32 characters.',
+          }
+    },
+  },
+  {
+    name: 'VITE_STELLAR_NETWORK',
+    key: 'stellarNetwork',
+    description:
+      'Network the app expects the wallet to be on. The contract is not deployed on mainnet.',
+    default: defaults.stellarNetwork,
+    example: defaults.stellarNetwork,
+    validation: 'must be `testnet`',
+    parse: (value) => {
+      const network = value || defaults.stellarNetwork
+      return network === 'testnet'
+        ? { value: network }
+        : {
+            value: network,
+            error: `"${network}" is not supported. The Folder contract is only deployed on testnet.`,
+          }
+    },
+  },
+  {
+    name: 'VITE_SOROBAN_RPC_URL',
+    key: 'sorobanRpcUrl',
+    description:
+      'Soroban RPC used to simulate, submit and poll transactions and to call `verify_portfolio`.',
+    default: defaults.sorobanRpcUrl,
+    example: defaults.sorobanRpcUrl,
+    validation: 'http(s) URL',
+    parse: (value) => parseHttpUrl(value || defaults.sorobanRpcUrl),
+  },
+  {
+    name: 'VITE_IPFS_GATEWAY_URL',
+    key: 'ipfsGatewayUrl',
+    description:
+      "Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node.",
+    default: defaults.ipfsGatewayUrl,
+    example: defaults.ipfsGatewayUrl,
+    validation: 'http(s) URL',
+    parse: (value) => parseHttpUrl(value || defaults.ipfsGatewayUrl),
+  },
+  {
+    name: 'VITE_DEMO_MODE',
+    key: 'demoMode',
+    description:
+      'Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions.',
+    default: 'false',
+    example: 'false',
+    validation: '`true` enables it',
+    parse: (value) => ({ value: value === 'true' }),
+  },
+]
+/** `AppConfig` key → `VITE_*` variable name, derived from `envSchema`. */
+export const envVarNames = Object.fromEntries(
+  envSchema.map((variable) => [variable.key, variable.name]),
+) as Record<keyof AppConfig, string>
 
   // `VITE_SOROBAN_RPC_URLS` is a comma-separated, ordered list. The single-URL variable stays
   // supported: it is used when the list is empty, and appended as a last-resort provider otherwise.

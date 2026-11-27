@@ -168,6 +168,9 @@ export const ipfsService = {
    * Uploads portfolio JSON through Indexer-Backend `POST /upload` (the backend pins it on its IPFS
    * node; no IPFS credentials live in the browser). The returned CID must pass the contract's CID
    * rules and, for raw CIDv1, must equal the hash of the bytes we sent.
+   *
+   * Sequence diagrams (mint, update, public verification) with trust boundaries:
+   * `docs/architecture.md#flows`.
    */
   uploadPortfolioContent: async (content: PortfolioContent): Promise<string> => {
     const text = serializePortfolioContent(content)

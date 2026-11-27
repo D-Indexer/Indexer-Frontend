@@ -10,6 +10,9 @@ import type { Folder, Portfolio, PortfolioPage, PortfolioContent, TemplateWithMe
 /**
  * The single read path for Folder data. Uses Indexer-Backend + IPFS, or the demo fixtures when
  * (and only when) VITE_DEMO_MODE=true. Errors are never swallowed or replaced with fixtures.
+ *
+ * Sequence diagrams (claim, mint, update, public verification) with trust boundaries:
+ * `docs/architecture.md#flows`.
  */
 export const folderData = {
   listTemplates: async (): Promise<TemplateWithMetadata[]> => {

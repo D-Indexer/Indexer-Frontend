@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Identifier } from '@/components/ui'
 import { explorerLinks } from '@/services'
 import type { ContractTxState, FlowStage } from '../hooks/useContractTx'
+import { TxStepper, txSteps } from './TxStepper'
 
 const stageLabels: Partial<Record<FlowStage, string>> = {
   preparing: 'Building and simulating the transaction…',
@@ -9,6 +10,12 @@ const stageLabels: Partial<Record<FlowStage, string>> = {
   signing: 'Waiting for your signature in Freighter…',
   submitting: 'Submitting to Stellar testnet…',
   confirming: 'Waiting for the transaction to be confirmed…',
+}
+
+const stepLabelForStage = (stage: FlowStage): string | null => {
+  if (stage === 'done') return 'Transaction confirmed'
+  if (stage === 'failed') return 'Transaction failed'
+  return txSteps.find((step) => step.stages.includes(stage))?.label ?? null
 }
 
 interface TxStatusProps extends ContractTxState {
