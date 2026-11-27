@@ -1,8 +1,7 @@
-import React from 'react'
-import { Badge, Card, ExternalLink } from '@/components/ui'
+import { Badge, Card, Identifier } from '@/components/ui'
 import { cidFromIpfsUri, ipfsService } from '@/services'
-import type { TemplateMetadataStatus, TemplateWithMetadata } from '@/types'
-import { humanizeField } from '@/utils/format'
+import type { TemplateWithMetadata } from '@/types'
+import { humanizeField, sanitizeDisplayText } from '@/utils/format'
 
 interface TemplateCardProps {
   action?: React.ReactNode
@@ -30,34 +29,39 @@ export const TemplateCard = ({ action, headingLevel = 2, template }: TemplateCar
     <Card className={`template-card ${isMismatch ? 'template-card--disabled opacity-75' : ''}`} aria-labelledby={headingId} role="article">
       <div className="cluster">
         <Badge>Template #{template.id}</Badge>
-        {metadata ? <Badge tone="success">{metadata.target_industry}</Badge> : null}
-        <span title={statusInfo.tooltip}>
-          <Badge tone={statusInfo.tone}>{statusInfo.label}</Badge>
-        </span>
+        {metadata ? (
+          <Badge tone="success">
+            <bdi>{sanitizeDisplayText(metadata.target_industry, 64)}</bdi>
+          </Badge>
+        ) : (
+          <Badge tone="warning">Metadata unavailable</Badge>
+        )}
       </div>
       <div>
         <Heading id={headingId} className="template-card__title">
-          {metadata?.name ?? `Template ${template.id}`}
+          <bdi>{sanitizeDisplayText(metadata?.name ?? `Template ${template.id}`, 120)}</bdi>
         </Heading>
         <p className="muted">
-          {metadata?.description ??
-            (isMismatch
-              ? 'Warning: This template metadata failed CID integrity verification. Selection is disabled.'
-              : 'The metadata for this template could not be loaded from IPFS. It is registered on-chain and can still be used.')}
+          <bdi>
+            {sanitizeDisplayText(
+              metadata?.description ??
+                'The metadata for this template could not be loaded from IPFS. It is registered on-chain and can still be used.',
+            )}
+          </bdi>
         </p>
       </div>
       {metadata ? (
         <ul className="tag-list" aria-label="Fields">
           {metadata.fields.map((field) => (
-            <li key={field}>{humanizeField(field)}</li>
+            <li key={field}>
+              <bdi>{humanizeField(sanitizeDisplayText(field, 64))}</bdi>
+            </li>
           ))}
         </ul>
       ) : null}
       <div className="template-card__footer">
         {cid ? (
-          <ExternalLink href={ipfsService.gatewayUrl(cid)} className="muted mono small">
-            {cid.slice(0, 12)}…
-          </ExternalLink>
+          <Identifier className="muted small" label="Metadata CID" value={cid} href={ipfsService.gatewayUrl(cid)} visible={6} />
         ) : null}
         {isMismatch ? (
           <button type="button" disabled className="btn btn--secondary opacity-50 cursor-not-allowed text-xs">

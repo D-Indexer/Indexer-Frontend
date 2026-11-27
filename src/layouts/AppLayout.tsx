@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { DemoBanner } from '@/components/ui'
+import { DemoBanner, ToastContainer } from '@/components/ui'
 import { env } from '@/config/env'
 import { ServicesProvider } from '@/services'
 import { Footer } from './Footer'
@@ -22,18 +22,17 @@ export const AppLayout = () => {
   }, [pathname])
 
   return (
-    <ServicesProvider>
-      <div className="app-shell">
-        <a className="skip-link" href="#main-content">
-          Skip to content
-        </a>
-        {env.demoMode ? <DemoBanner /> : null}
-        <Header />
-        <main className="app-main" id="main-content" tabIndex={-1} ref={mainRef}>
-          <Outlet />
-        </main>
-        <Footer />
-      </div>
-    </ServicesProvider>
+    <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      {isDemoMode() ? <DemoBanner /> : null}
+      <Header />
+      <main className="app-main" id="main-content" tabIndex={-1} ref={mainRef}>
+        <Outlet />
+      </main>
+      <Footer />
+      <ToastContainer />
+    </div>
   )
 }

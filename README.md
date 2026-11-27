@@ -26,8 +26,9 @@ portfolio pages.
 | Public page `/p/:folderName` + "Verified on Stellar" | 🟡 | Uses `verify_portfolio` / `get_portfolio` on-chain and loads the content from IPFS by the on-chain CID. The contract reads are exercised against testnet by the integration test, and the page has component tests. It has not been run end to end against a live Indexer-Backend yet. |
 | Loading / empty / error states, demo mode | ✅ | No silent fixture fallback. Fixtures only with `VITE_DEMO_MODE=true`, behind a visible banner. |
 | Config validation | ✅ | Missing or invalid `VITE_*` variables render an error screen. |
+| Soroban RPC failover | ✅ | `VITE_SOROBAN_RPC_URLS` lists ordered providers; reads and `getTransaction` polling fail over on outage, unhealthy or lagging providers. Writes go to one provider and are never resubmitted. |
 | Accessibility of the main flow | ✅ | Labels, inline errors, focus management, axe checks in tests. Not yet audited with a screen reader. |
-| CI (typecheck, lint, test, build) | ✅ | `.github/workflows/ci.yml` |
+| CI (typecheck, lint, test, build) | ✅ | `.github/workflows/ci.yml` runs the four checks as parallel jobs, tests on Node 20 and 22, caches Vitest/TS build info, and exposes a single required check, `ci-required`. |
 | More templates, other wallets, i18n, edit history, OG images, mobile layout, Playwright E2E | ⬜ | Tracked as [issues](https://github.com/D-Indexer/Indexer-Frontend/issues). |
 
 ## Testnet deployment
@@ -78,13 +79,23 @@ npm run dev         # Vite dev server on :5173
 npm run typecheck   # tsc --noEmit
 npm run lint        # ESLint
 npm test            # Vitest + Testing Library
+npm run test:coverage # Vitest with V8 coverage and per-directory thresholds
 npm run build       # production build in dist/
+npm run format      # Prettier (npm run format:check to verify)
 
 # Optional: run claim → mint → update → verify against the testnet contract
 FOLDER_TESTNET_SMOKE=1 npx vitest run src/services/stellar/testnet
 ```
 
 Every `VITE_*` variable is documented in [docs/configuration.md](docs/configuration.md).
+
+### Coverage
+
+`npm run test:coverage` runs Vitest with the V8 provider. Thresholds are enforced per directory in
+`vite.config.ts`: `src/services/**` needs ≥ 90% lines and branches, `src/features/**` needs ≥ 70%.
+Tests, type declarations, `src/testing/**` and `src/data/fixtures/**` are excluded. CI runs the same
+command, so a threshold drop fails the build, and on pull requests it reports coverage for the
+changed files in the job summary.
 
 ## How it works
 
@@ -98,6 +109,25 @@ Every `VITE_*` variable is documented in [docs/configuration.md](docs/configurat
    and `get_portfolio` on-chain, and renders the IPFS content with its template.
 
 See [docs/architecture.md](docs/architecture.md) for the module layout.
+
+## JSON Resume import
+
+Portfolio forms can import a local `resume.json` file (JSON Resume schema). The file is read only in the browser and is never uploaded by itself. After parsing, the preview shows the mapped values and requires confirmation before form fields are overwritten.
+
+Field mapping:
+
+- `basics.name` → Name
+- `basics.label` → Headline
+- `basics.summary` → Bio
+- `skills[].name` and `skills[].keywords` → Skills
+- `basics.url` and `basics.profiles[].url` → Links
+- `work` → `work_history` and `experience`
+- `projects` → `projects` and `case_studies`
+- `education` → `education`
+- `certificates` → `certifications`
+- `volunteer`, `awards`, `publications`, and `references` map to matching template fields
+
+Only fields declared by the selected template are inserted into template-specific sections. Invalid JSON, missing `basics`, and wrong field types show a precise error and leave existing form values unchanged.
 
 ## Related repositories
 
