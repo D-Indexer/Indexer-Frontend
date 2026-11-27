@@ -80,6 +80,7 @@ npm run lint        # ESLint
 npm test            # Vitest + Testing Library
 npm run test:coverage # Vitest with V8 coverage and per-directory thresholds
 npm run build       # production build in dist/
+npm run format      # Prettier (npm run format:check to verify)
 
 # Optional: run claim → mint → update → verify against the testnet contract
 FOLDER_TESTNET_SMOKE=1 npx vitest run src/services/stellar/testnet

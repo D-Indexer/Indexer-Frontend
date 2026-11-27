@@ -5,6 +5,7 @@ import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
 import { useTemplates } from '@/hooks'
 import { folderData, ipfsService } from '@/services'
+import { computePortfolioCid } from '@/services/ipfs/ipfsService'
 import type { Folder, Portfolio, PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
 import { fromJsonResume, parseJsonResume, type JsonResumeMappedValues } from '../jsonResume'
@@ -79,8 +80,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const [errors, setErrors] = useState<FormErrors>({})
   const [contentNotice, setContentNotice] = useState<string | null>(null)
   const [loadingContent, setLoadingContent] = useState(isUpdate)
-  const [importError, setImportError] = useState<string | null>(null)
-  const [importPreview, setImportPreview] = useState<JsonResumeMappedValues | null>(null)
+  const [publishedUpdatedAt, setPublishedUpdatedAt] = useState<string | null>(null)
 
   useEffect(() => {
     if (!portfolio) return undefined
@@ -89,7 +89,10 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     folderData
       .getPortfolioContent(portfolio.ipfsCid)
       .then((content) => {
-        if (active) setValues(fromContent(content, String(portfolio.templateId)))
+        if (active) {
+          setValues(fromContent(content, String(portfolio.templateId)))
+          setPublishedUpdatedAt(content.updated_at)
+        }
       })
       .catch((error: unknown) => {
         if (active)
@@ -111,45 +114,37 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const set = (key: Exclude<keyof FormValues, 'sections'>) => (event: { target: { value: string } }) =>
     setValues((current) => ({ ...current, [key]: event.target.value }))
 
-  const handleJsonResume = async (event: { target: { files: FileList | null } }) => {
-    setImportError(null)
-    setImportPreview(null)
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (!file.name.toLowerCase().endsWith('.json')) {
-      setImportError('Choose a .json resume file.')
-      return
-    }
+  const buildContent = (updatedAt: string): PortfolioContent => ({
+    schema_version: 1,
+    folder: folder.name,
+    template_id: Number(values.templateId),
+    name: values.name.trim(),
+    headline: values.headline.trim(),
+    bio: values.bio.trim(),
+    skills: parseDelimitedList(values.skills),
+    links: parseDelimitedList(values.links),
+    sections: Object.fromEntries(
+      sectionFields.map((field) => [field, (values.sections[field] ?? '').trim()]).filter(([, value]) => value),
+    ),
+    updated_at: updatedAt,
+  })
 
-    try {
-      const text = typeof file.text === 'function'
-        ? await file.text()
-        : await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
-            reader.onerror = () => reject(reader.error ?? new Error('Could not read resume.json.'))
-            reader.readAsText(file)
-          })
-      const doc = parseJsonResume(text)
-      setImportPreview(fromJsonResume(doc, selectedTemplate ?? null))
-    } catch (error) {
-      setImportError(error instanceof Error ? error.message : 'Could not read resume.json.')
+  // Pristine relative to the published content: nothing to upload or pay for.
+  const [pristine, setPristine] = useState(false)
+  useEffect(() => {
+    if (!isUpdate || publishedUpdatedAt === null) {
+      setPristine(false)
+      return undefined
     }
-  }
-
-  const confirmImport = () => {
-    if (!importPreview) return
-    setValues((current) => ({
-      ...current,
-      name: importPreview.name,
-      headline: importPreview.headline,
-      bio: importPreview.bio,
-      skills: importPreview.skills,
-      links: importPreview.links,
-      sections: { ...current.sections, ...importPreview.sections },
-    }))
-    setImportPreview(null)
-  }
+    let active = true
+    void computePortfolioCid(buildContent(publishedUpdatedAt)).then((cid) => {
+      if (active) setPristine(cid === portfolio.ipfsCid)
+    })
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, publishedUpdatedAt, isUpdate, portfolio])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -162,20 +157,10 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     }
 
     const templateId = Number(values.templateId)
-    const content: PortfolioContent = {
-      schema_version: 1,
-      folder: folder.name,
-      template_id: templateId,
-      name: values.name.trim(),
-      headline: values.headline.trim(),
-      bio: values.bio.trim(),
-      skills: parseDelimitedList(values.skills),
-      links: parseDelimitedList(values.links),
-      sections: Object.fromEntries(
-        sectionFields.map((field) => [field, (values.sections[field] ?? '').trim()]).filter(([, value]) => value),
-      ),
-      updated_at: new Date().toISOString(),
-    }
+    // Reuse the published timestamp when nothing else changed, so identical content keeps its CID.
+    const sameAsPublished = isUpdate && publishedUpdatedAt !== null && (await computePortfolioCid(buildContent(publishedUpdatedAt))) === portfolio.ipfsCid
+    if (sameAsPublished) return
+    const content = buildContent(new Date().toISOString())
 
     const result = await tx.run(owner, async (setUploading) => {
       setUploading()
@@ -293,7 +278,12 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
               : 'Portfolio minted on-chain. The public page is available once the indexer catches up.'
           }
         />
-        <Button type="submit" disabled={tx.busy || Boolean(blockedReason)}>
+        {pristine ? (
+          <p className="form__hint" role="status">
+            No changes to publish.
+          </p>
+        ) : null}
+        <Button type="submit" disabled={tx.busy || Boolean(blockedReason) || pristine}>
           {tx.busy ? 'Publishing…' : isUpdate ? 'Upload and update portfolio' : 'Upload and mint portfolio'}
         </Button>
       </form>
