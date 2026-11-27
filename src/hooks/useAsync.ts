@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { toApiError } from '@/services'
-import type { ApiError } from '@/types'
+import { folderData, toApiError } from '@/services'
+import type { ApiError, TemplateWithMetadata } from '@/types'
 
 interface AsyncState<T> {
   data: T | null
@@ -31,6 +31,47 @@ export const useAsync = <T>(callback: () => Promise<T>, dependencies: React.Depe
       }
     }
   }, dependencies)
+
+  useEffect(() => {
+    void execute()
+    return () => {
+      requestIdRef.current += 1
+    }
+  }, [execute])
+
+  return { ...state, refetch: execute }
+}
+
+/**
+ * Like `useAsync`, but appends each item as soon as it resolves so lists render progressively.
+ * `data` is null until the first item arrives; `loading` stays true until the stream completes.
+ */
+export const useProgressiveTemplates = () => {
+  const requestIdRef = useRef(0)
+  const [state, setState] = useState<AsyncState<TemplateWithMetadata[]>>({
+    data: null,
+    error: null,
+    loading: true,
+  })
+
+  const execute = useCallback(async () => {
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+    setState({ data: null, error: null, loading: true })
+    try {
+      await folderData.streamTemplates((template) => {
+        if (requestIdRef.current !== requestId) return
+        setState((current) => ({ data: [...(current.data ?? []), template], error: null, loading: true }))
+      })
+      if (requestIdRef.current === requestId) {
+        setState((current) => ({ ...current, loading: false }))
+      }
+    } catch (error) {
+      if (requestIdRef.current === requestId) {
+        setState({ data: null, error: toApiError(error), loading: false })
+      }
+    }
+  }, [])
 
   useEffect(() => {
     void execute()

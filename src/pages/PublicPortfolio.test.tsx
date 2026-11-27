@@ -57,9 +57,26 @@ describe('PublicPortfolioPage', () => {
       'href',
       `https://stellar.expert/explorer/testnet/account/${OWNER}`,
     )
+    expect(screen.getByRole('link', { name: /example.com/ })).toHaveAttribute('href', 'https://example.com')
+    expect(screen.queryByText('Website')).not.toBeInTheDocument()
     // The on-chain CID wins over a possibly stale indexer CID.
     expect(data.getPortfolioContent).toHaveBeenCalledWith(CID_V2)
     expect(chain.verifyPortfolio).toHaveBeenCalledWith(OWNER)
+  })
+
+  it('renders structured link labels and kinds, including email links', async () => {
+    data.getPortfolioContent.mockResolvedValue({
+      ...content,
+      links: ['mailto:jane@example.com'],
+      link_meta: [{ kind: 'email', url: 'mailto:jane@example.com', label: 'Contact Jane' }],
+    })
+    renderPage()
+
+    const emailLink = await screen.findByRole('link', { name: /Contact Jane/ })
+    expect(emailLink).toHaveAttribute('href', 'mailto:jane@example.com')
+    expect(emailLink).toHaveAttribute('target', '_self')
+    expect(emailLink).not.toHaveAccessibleName(/opens in a new tab/)
+    expect(screen.getByText('Email')).toBeInTheDocument()
   })
 
   it('shows "not found" for an unknown folder', async () => {
@@ -90,6 +107,15 @@ describe('PublicPortfolioPage', () => {
     renderPage()
     expect(await screen.findByText(/could not be loaded from IPFS: The IPFS gateway returned 504/)).toBeInTheDocument()
     expect(screen.getByText('Verified on Stellar')).toBeInTheDocument()
+  })
+
+  it('renders a malformed-content state when the document fails validation', async () => {
+    data.getPortfolioContent.mockRejectedValue(
+      Object.assign(new Error('Content at bafy is not a valid portfolio document.'), { name: 'IpfsError', code: 'invalid_shape' }),
+    )
+    renderPage()
+    expect(await screen.findByRole('alert')).toHaveTextContent(/malformed and cannot be displayed/)
+    expect(screen.queryByRole('heading', { level: 1, name: 'Jane Doe' })).not.toBeInTheDocument()
   })
 
   it('shows backend errors with a retry button', async () => {

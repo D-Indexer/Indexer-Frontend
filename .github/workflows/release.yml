@@ -1,0 +1,26 @@
+name: Release
+
+# release-please opens/updates a release PR from Conventional Commits on main.
+# Merging that PR bumps package.json, updates CHANGELOG.md, creates the tag and
+# publishes the GitHub release.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

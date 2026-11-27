@@ -21,6 +21,17 @@ export interface Portfolio {
   updatedAt: string
 }
 
+/** One row of `GET /portfolios` (ordered by ledger desc): a portfolio plus its owner's Folder name. */
+export interface ExplorePortfolio extends Portfolio {
+  folderName: string
+}
+
+/** Cursor page returned by `GET /portfolios?cursor=&limit=`; `nextCursor` is null on the last page. */
+export interface PortfolioPage {
+  items: ExplorePortfolio[]
+  nextCursor: string | null
+}
+
 /** A registered template (`tmpl_reg`). */
 export interface Template {
   id: number
@@ -44,6 +55,14 @@ export interface TemplateWithMetadata extends Template {
   metadata: TemplateMetadata | null
 }
 
+export type PortfolioLinkKind = 'github' | 'linkedin' | 'website' | 'email' | 'other'
+
+export interface PortfolioLink {
+  kind: PortfolioLinkKind
+  url: string
+  label: string
+}
+
 /** Portfolio document uploaded to IPFS; its CID is what `mint_portfolio` / `update_portfolio` anchor. */
 export interface PortfolioContent {
   schema_version: 1
@@ -54,13 +73,17 @@ export interface PortfolioContent {
   bio: string
   skills: string[]
   links: string[]
+  /** Structured link metadata; absent in legacy documents. */
+  link_meta?: PortfolioLink[]
   /** Free-text content for template-specific fields (e.g. `projects`, `case_studies`). */
   sections: Record<string, string>
   updated_at: string
 }
 
 export interface ApiError {
+  code?: string
+  docsAnchor?: string
   message: string
-  status?: number
   requestId?: string
+  status?: number
 }

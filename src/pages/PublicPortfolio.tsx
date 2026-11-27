@@ -1,16 +1,34 @@
 import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLoaderData, useParams } from 'react-router-dom'
 import { AsyncContent, Card, ExternalLink } from '@/components/ui'
-import { PortfolioView, usePublicPortfolio, VerificationBadge } from '@/features/public-portfolio'
+import {
+  DivergenceNotice,
+  OwnerToolbar,
+  PortfolioView,
+  PrintFooter,
+  PublicActions,
+  usePublicPortfolio,
+  VerificationBadge,
+} from '@/features/public-portfolio'
+import { appRoutes } from '@/config/routes'
 import { PageContainer } from '@/layouts'
 import { ipfsService } from '@/services'
+import { sanitizeDisplayText } from '@/utils/format'
 
 export const PublicPortfolioPage = () => {
   const { folderName = '' } = useParams<{ folderName: string }>()
-  const { data, error, loading, refetch } = usePublicPortfolio(folderName)
+  const loaderData = useLoaderData() as PublicPortfolio | null | undefined
+  const hookResult = usePublicPortfolio(folderName)
+
+  // Use pre-fetched data from route loader if available, otherwise fallback to hook
+  const data = loaderData !== undefined ? loaderData : hookResult.data
+  const error = loaderData !== undefined ? null : hookResult.error
+  const loading = loaderData !== undefined ? false : hookResult.loading
+  const refetch = hookResult.refetch
 
   useEffect(() => {
-    document.title = data?.content ? `${data.content.name} · ${folderName}` : `${folderName} · Folder`
+    const name = data?.content ? sanitizeDisplayText(data.content.name, 120) : sanitizeDisplayText(folderName, 120)
+    document.title = data?.content ? `${name} · ${folderName}` : `${name} · Folder`
   }, [data, folderName])
 
   return (
@@ -26,13 +44,29 @@ export const PublicPortfolioPage = () => {
       >
         {(portfolio) => (
           <div className="public-portfolio">
+            <OwnerToolbar owner={portfolio.folder.owner} />
+            <PublicActions
+              folderName={folderName}
+              proof={portfolio.cid ? { cid: portfolio.cid, owner: portfolio.folder.owner, verification: portfolio.verification } : undefined}
+            />
             <VerificationBadge owner={portfolio.folder.owner} verification={portfolio.verification} />
+            <DivergenceNotice divergence={portfolio.divergence} />
             {portfolio.content ? (
-              <Card>
-                <PortfolioView content={portfolio.content} templateId={portfolio.templateId} />
-              </Card>
+              <>
+                <Card>
+                  <PortfolioView content={portfolio.content} templateId={portfolio.templateId} />
+                </Card>
+                {portfolio.cid ? (
+                  <PrintFooter
+                    checkedAt={new Date()}
+                    cid={portfolio.cid}
+                    url={`${window.location.origin}${appRoutes.publicPortfolioFor(folderName)}`}
+                    verified={portfolio.verification.status === 'verified'}
+                  />
+                ) : null}
+              </>
             ) : portfolio.cid ? (
-              <div className="notice notice--warning notice--stack" role="status">
+              <div className="notice notice--warning notice--stack" aria-atomic="true">
                 <p>The portfolio content could not be loaded from IPFS: {portfolio.contentError}</p>
                 <p>
                   CID: <ExternalLink className="mono" href={ipfsService.gatewayUrl(portfolio.cid)}>{portfolio.cid}</ExternalLink>
@@ -40,7 +74,9 @@ export const PublicPortfolioPage = () => {
               </div>
             ) : (
               <div className="empty-state" role="status">
-                <h1 className="page-title">{portfolio.folder.name}</h1>
+                <h1 className="page-title">
+                  <bdi>{sanitizeDisplayText(portfolio.folder.name, 120)}</bdi>
+                </h1>
                 <p>This folder is claimed, but its owner has not minted a portfolio yet.</p>
               </div>
             )}
