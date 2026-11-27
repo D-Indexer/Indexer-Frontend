@@ -1,24 +1,33 @@
 import { useState } from 'react'
 import { env } from '@/config/env'
-import { useAsync } from '@/hooks'
 import { folderData, toApiError } from '@/services'
 import { stellarService } from '@/services/stellar/stellarService'
 import type { Folder, PortfolioContent } from '@/types'
 
 export type Verification =
-  | { status: 'verified'; onChainCid: string }
+  | { status: 'verified'; onChainCid: string; onChain: { ipfsCid: string; templateId: number; mintedAt: number } }
   | { status: 'not_minted' }
   | { status: 'unavailable'; reason: string }
   | { status: 'demo' }
   /** Content from the indexed CID is shown while the chain reads are still in flight. */
   | { status: 'verifying' }
 
+export interface Divergence {
+  field: 'ipfsCid' | 'templateId'
+  indexed: string | number | null
+  onChain: string | number
+}
+
 export interface PublicPortfolio {
   /** CID the content was loaded from: the on-chain one when the chain could be read. */
   cid: string | null
   content: PortfolioContent | null
   contentError: string | null
+  /** True when the document was fetched but is not a valid portfolio (malformed content). */
+  contentInvalid: boolean
   folder: Folder
+  /** Fields where the indexer disagrees with the chain; rendering uses the on-chain values. */
+  divergence: Divergence[]
   templateId: number | null
   verification: Verification
 }
@@ -41,67 +50,57 @@ const fetchContent = (cid: string): Promise<ContentResult> =>
  * only reused when the on-chain CID matches. `onProgress` receives a provisional result (marked
  * `verifying`, never `verified`) as soon as the indexed content has loaded.
  * Returns null when the folder does not exist.
+ *
+ * Framework-free so the public page and `scripts/verify.ts` share one verdict.
  */
-export const loadPublicPortfolio = async (
-  folderName: string,
-  onProgress?: (provisional: PublicPortfolio) => void,
-): Promise<PublicPortfolio | null> => {
-  const folder = await folderData.getFolderByName(folderName)
+export const loadPublicPortfolio = async (folderName: string): Promise<PublicPortfolio | null> => {
+  const source = getDataSource()
+  const folder = await source.getFolderByName(folderName)
   if (!folder) return null
 
-  const chainRead = env.demoMode
-    ? Promise.resolve(null)
-    : Promise.all([stellarService.verifyPortfolio(folder.owner), stellarService.getOnChainPortfolio(folder.owner)]).catch(
-        (error: unknown) => error as Error,
-      )
-
-  const indexed = await folderData.getPortfolio(folder.owner)
-  const indexedCid = indexed?.ipfsCid ?? null
-  const speculative = indexedCid ? fetchContent(indexedCid) : null
-  if (speculative && onProgress && !env.demoMode) {
-    void speculative.then((result) => {
-      if (!result.content) return
-      onProgress({
-        cid: indexedCid,
-        ...result,
-        folder,
-        templateId: indexed?.templateId ?? folder.templateId,
-        verification: { status: 'verifying' },
-      })
-    })
-  }
-  const chain = await chainRead
+  const [indexed, chainResult] = await Promise.all([
+    source.getPortfolio(folder.owner),
+    source.isDemo
+      ? Promise.resolve(null)
+      : source.verifyPortfolio(folder.owner).catch((error: unknown) => error as Error),
+  ])
 
   let verification: Verification
-  let cid = indexedCid
+  const divergence: Divergence[] = []
+  let cid = indexed?.ipfsCid ?? null
   let templateId = indexed?.templateId ?? folder.templateId
-  if (env.demoMode) {
+
+  if (source.isDemo) {
     verification = { status: 'demo' }
-  } else if (chain instanceof Error || chain === null) {
-    verification = { status: 'unavailable', reason: chain ? toApiError(chain).message : 'Unknown error' }
+  } else if (chainResult instanceof Error || chainResult === null) {
+    verification = { status: 'unavailable', reason: chainResult ? toApiError(chainResult).message : 'Unknown error' }
   } else {
-    const [isVerified, onChain] = chain
+    const [isVerified, onChain] = chainResult
     if (isVerified && onChain) {
-      verification = { status: 'verified', onChainCid: onChain.ipfsCid }
+      verification = { status: 'verified', onChainCid: onChain.ipfsCid, onChain }
+      if (cid !== onChain.ipfsCid) divergence.push({ field: 'ipfsCid', indexed: cid, onChain: onChain.ipfsCid })
+      if (templateId !== onChain.templateId) {
+        divergence.push({ field: 'templateId', indexed: templateId, onChain: onChain.templateId })
+      }
       cid = onChain.ipfsCid
       templateId = onChain.templateId
+      if (divergence.length > 0) console.warn(`Indexer diverges from chain for ${folderName}`, divergence)
     } else {
       verification = { status: 'not_minted' }
     }
   }
 
-  // Reuse the speculative fetch only when it was for the CID we ended up with; otherwise discard it.
-  const result: ContentResult = !cid ? { content: null, contentError: null } : cid === indexedCid && speculative ? await speculative : await fetchContent(cid)
+  let content: PortfolioContent | null = null
+  let contentError: string | null = null
+  let contentInvalid = false
+  if (cid) {
+    try {
+      content = await source.getPortfolioContent(cid)
+    } catch (error) {
+      contentError = toApiError(error).message
+      contentInvalid = error instanceof IpfsError && error.code === 'invalid_shape'
+    }
+  }
 
-  return { cid, ...result, folder, templateId, verification }
-}
-
-export const usePublicPortfolio = (folderName: string) => {
-  const [provisional, setProvisional] = useState<PublicPortfolio | null>(null)
-  const state = useAsync(() => {
-    setProvisional(null)
-    return loadPublicPortfolio(folderName, (value) => setProvisional(value))
-  }, [folderName])
-  const showProvisional = state.loading && provisional !== null && provisional.folder.name === folderName
-  return showProvisional ? { ...state, data: provisional, loading: false } : state
+  return { cid, content, contentError, divergence, folder, templateId, verification }
 }

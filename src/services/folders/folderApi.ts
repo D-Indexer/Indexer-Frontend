@@ -4,5 +4,6 @@ import type { Folder } from '@/types'
 
 export const folderApi = {
   getByOwner: (address: string) => nullIfNotFound(apiClient.get<Folder>(`/folders/${encodeURIComponent(address)}`)),
-  getByName: (name: string) => nullIfNotFound(apiClient.get<Folder>(`/folders/name/${encodeURIComponent(name)}`)),
+  getByName: (name: string, signal?: AbortSignal) =>
+    nullIfNotFound(apiClient.get<Folder>(`/folders/name/${encodeURIComponent(name)}`, { signal })),
 }

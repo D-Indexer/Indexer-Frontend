@@ -32,13 +32,15 @@ describe('PortfolioForm', () => {
   it('validates required fields and URLs next to each field', async () => {
     render(<PortfolioForm owner={OWNER} folder={buildFolder()} portfolio={null} initialTemplateId="1" onPublished={vi.fn()} />)
     await screen.findByRole('option', { name: 'Developer (#1)' })
-    await userEvent.type(screen.getByLabelText(/Links/), 'not-a-url')
+    await userEvent.click(screen.getByRole('button', { name: 'Add link' }))
+    await userEvent.type(screen.getByLabelText('Link 1 URL'), 'not-a-url')
     await userEvent.click(screen.getByRole('button', { name: 'Upload and mint portfolio' }))
 
     expect(screen.getByLabelText(/^Name/)).toHaveAccessibleDescription('Enter the name to show on your portfolio.')
     expect(screen.getByLabelText(/^Name/)).toHaveFocus()
     expect(screen.getByLabelText(/^Bio/)).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByLabelText(/Links/)).toHaveAccessibleDescription(expect.stringContaining('not-a-url'))
+    expect(screen.getByLabelText('Link 1 URL')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Link 1 URL')).toHaveAccessibleDescription(expect.stringContaining('valid http(s) URL'))
     expect(upload).not.toHaveBeenCalled()
   })
 
@@ -50,6 +52,10 @@ describe('PortfolioForm', () => {
     await userEvent.type(screen.getByLabelText(/^Name/), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/^Bio/), 'I build things.')
     await userEvent.type(screen.getByLabelText(/Skills/), 'Rust, React')
+    await userEvent.click(screen.getByRole('button', { name: 'Add link' }))
+    await userEvent.selectOptions(screen.getByLabelText('Link 1 type'), 'github')
+    await userEvent.type(screen.getByLabelText('Link 1 URL'), 'https://github.com/janedoe')
+    await userEvent.type(screen.getByLabelText('Link 1 label'), 'GitHub')
     await userEvent.type(screen.getByLabelText('Projects'), 'Folder')
     await userEvent.click(screen.getByRole('button', { name: 'Upload and mint portfolio' }))
 
@@ -60,6 +66,8 @@ describe('PortfolioForm', () => {
         template_id: 1,
         name: 'Jane Doe',
         skills: ['Rust', 'React'],
+        links: ['https://github.com/janedoe'],
+        link_meta: [{ kind: 'github', url: 'https://github.com/janedoe', label: 'GitHub' }],
         sections: { projects: 'Folder' },
       }),
     )
@@ -92,6 +100,33 @@ describe('PortfolioForm', () => {
     expect(screen.getByText(/No changes compared/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Confirm and upload update' }))
     expect(invoke).toHaveBeenCalledWith(OWNER, { method: 'update_portfolio', ipfsCid: CID_V2 }, expect.any(Function), expect.any(Function))
+  })
+
+  it('previews a JSON Resume and applies it only after confirmation', async () => {
+    render(<PortfolioForm owner={OWNER} folder={buildFolder()} portfolio={null} initialTemplateId="1" onPublished={vi.fn()} />)
+    await screen.findByRole('option', { name: 'Developer (#1)' })
+
+    const resume = new File([JSON.stringify({ basics: { name: 'Richard Hendriks', label: 'Programmer', summary: 'Richard hails from Tulsa.', url: 'https://richardhendricks.com' }, skills: [{ name: 'Web Development', keywords: ['HTML', 'CSS'] }] })], 'resume.json', { type: 'application/json' })
+    await userEvent.upload(screen.getByLabelText('Import JSON Resume'), resume)
+
+    expect(await screen.findByRole('region', { name: 'JSON Resume import preview' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Name/)).toHaveValue('')
+    await userEvent.click(screen.getByRole('button', { name: 'Use imported values' }))
+    expect(screen.getByLabelText(/^Name/)).toHaveValue('Richard Hendriks')
+    expect(screen.getByLabelText(/^Headline/)).toHaveValue('Programmer')
+    expect(screen.getByLabelText(/Skills/)).toHaveValue('Web Development, HTML, CSS')
+  })
+
+  it('shows a precise error for invalid JSON without changing fields', async () => {
+    render(<PortfolioForm owner={OWNER} folder={buildFolder()} portfolio={null} initialTemplateId="1" onPublished={vi.fn()} />)
+    await screen.findByRole('option', { name: 'Developer (#1)' })
+    await userEvent.type(screen.getByLabelText(/^Name/), 'Existing Name')
+
+    const resume = new File(['{"basics":{"name":42}}'], 'resume.json', { type: 'application/json' })
+    await userEvent.upload(screen.getByLabelText('Import JSON Resume'), resume)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('basics.name must be a string')
+    expect(screen.getByLabelText(/^Name/)).toHaveValue('Existing Name')
   })
 
   it('surfaces upload failures without sending a transaction', async () => {

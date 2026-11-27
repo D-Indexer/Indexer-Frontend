@@ -1,36 +1,59 @@
 import { env } from '@/config/env'
+import { demoExplorePortfolios } from '@/data/fixtures/explore'
 import { demoFolder, demoPortfolio, demoPortfolioContent, demoTemplates } from '@/data/fixtures'
 import { folderApi } from '@/services/folders/folderApi'
-import { ipfsService } from '@/services/ipfs/ipfsService'
+import { ipfsService, isPortfolioContent } from '@/services/ipfs/ipfsService'
 import { portfolioApi } from '@/services/portfolio/portfolioApi'
 import { templateApi } from '@/services/templates/templateApi'
-import type { Folder, Portfolio, PortfolioContent, TemplateWithMetadata } from '@/types'
+import type { Folder, Portfolio, PortfolioPage, PortfolioContent, TemplateWithMetadata } from '@/types'
 
 /**
  * The single read path for Folder data. Uses Indexer-Backend + IPFS, or the demo fixtures when
  * (and only when) VITE_DEMO_MODE=true. Errors are never swallowed or replaced with fixtures.
+ *
+ * Sequence diagrams (claim, mint, update, public verification) with trust boundaries:
+ * `docs/architecture.md#flows`.
  */
 export const folderData = {
   listTemplates: async (): Promise<TemplateWithMetadata[]> => {
     const templates = env.demoMode ? demoTemplates : await templateApi.list()
-    return Promise.all(
-      templates.map(async (template) => ({ ...template, metadata: await ipfsService.resolveTemplateMetadata(template) })),
-    )
+    return mapWithConcurrency(templates, env.ipfsMaxConcurrency, async (template) => ({
+      ...template,
+      metadata: await ipfsService.resolveTemplateMetadata(template),
+    }))
+  },
+
+  /**
+   * Lists templates and reports each one as soon as its metadata resolves, so cards can render
+   * progressively. `onTemplate` is called once per template, in resolution order.
+   */
+  streamTemplates: async (onTemplate: (template: TemplateWithMetadata) => void): Promise<void> => {
+    const templates: Template[] = env.demoMode ? demoTemplates : await templateApi.list()
+    await mapWithConcurrency(templates, env.ipfsMaxConcurrency, async (template) => {
+      onTemplate({ ...template, metadata: await ipfsService.resolveTemplateMetadata(template) })
+    })
   },
 
   getFolderByOwner: async (address: string): Promise<Folder | null> =>
     env.demoMode ? { ...demoFolder, owner: address } : folderApi.getByOwner(address),
 
-  getFolderByName: async (name: string): Promise<Folder | null> => {
+  getFolderByName: async (name: string, signal?: AbortSignal): Promise<Folder | null> => {
     if (env.demoMode) return name === demoFolder.name ? demoFolder : null
-    return folderApi.getByName(name)
+    return folderApi.getByName(name, signal)
   },
 
   getPortfolio: async (owner: string): Promise<Portfolio | null> =>
     env.demoMode ? { ...demoPortfolio, owner } : portfolioApi.getByOwner(owner),
 
+  listPortfolios: async (cursor: string | null, limit: number): Promise<PortfolioPage> => {
+    if (!env.demoMode) return portfolioApi.list(cursor, limit)
+    const start = Math.max(Number(cursor) || 0, 0)
+    const end = start + limit
+    return { items: demoExplorePortfolios.slice(start, end), nextCursor: end < demoExplorePortfolios.length ? String(end) : null }
+  },
+
   getPortfolioContent: async (cid: string): Promise<PortfolioContent> => {
     if (env.demoMode && cid === demoPortfolio.ipfsCid) return demoPortfolioContent
-    return ipfsService.fetchJson<PortfolioContent>(cid)
+    return ipfsService.fetchJson<PortfolioContent>(cid, isPortfolioContent)
   },
 }
