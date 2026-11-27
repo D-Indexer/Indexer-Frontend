@@ -5,27 +5,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:embed": "vite build --config vite.embed.config.ts && node scripts/embed-size.mjs",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "prepare": "simple-git-hooks"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "npx lint-staged",
-    "pre-push": "npm run typecheck && npx vitest related --run"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,cjs,mjs}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,css,md,yml,yaml,html}": [
-      "prettier --write"
-    ]
+    "test:mutation": "stryker run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@stellar/freighter-api": "^6.0.1",
@@ -41,11 +28,14 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.9",
+    "@stryker-mutator/core": "^8.7.1",
+    "@stryker-mutator/vitest-runner": "^8.7.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "@vitest/coverage-v8": "^3.2.7",
     "axe-core": "^4.14.0",
     "eslint": "^8.55.0",
     "jsdom": "^26.1.0",

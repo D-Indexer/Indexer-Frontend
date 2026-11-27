@@ -78,6 +78,7 @@ npm run dev         # Vite dev server on :5173
 npm run typecheck   # tsc --noEmit
 npm run lint        # ESLint
 npm test            # Vitest + Testing Library
+npm run test:coverage # Vitest with V8 coverage and per-directory thresholds
 npm run build       # production build in dist/
 npm run format      # Prettier (npm run format:check to verify)
 
@@ -87,8 +88,13 @@ FOLDER_TESTNET_SMOKE=1 npx vitest run src/services/stellar/testnet
 
 Every `VITE_*` variable is documented in [docs/configuration.md](docs/configuration.md).
 
-`npm ci` also installs git hooks (lint-staged on commit, typecheck + related tests on push). See
-[CONTRIBUTING.md](CONTRIBUTING.md#git-hooks) for details and how to skip them.
+### Coverage
+
+`npm run test:coverage` runs Vitest with the V8 provider. Thresholds are enforced per directory in
+`vite.config.ts`: `src/services/**` needs ≥ 90% lines and branches, `src/features/**` needs ≥ 70%.
+Tests, type declarations, `src/testing/**` and `src/data/fixtures/**` are excluded. CI runs the same
+command, so a threshold drop fails the build, and on pull requests it reports coverage for the
+changed files in the job summary.
 
 ## How it works
 

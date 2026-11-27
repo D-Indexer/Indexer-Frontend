@@ -6,7 +6,7 @@ const post = vi.hoisted(() => vi.fn())
 vi.mock('@/services/http/client', () => ({ apiClient: { post } }))
 vi.mock('@/config/env', () => ({ env: { apiUrl: 'http://localhost:3000', ipfsGatewayUrl: 'https://gw.test/ipfs' } }))
 
-const { ipfsService, serializePortfolioContent } = await import('./ipfsService')
+const { ipfsService, serializePortfolioContent, computePortfolioCid } = await import('./ipfsService')
 
 const content: PortfolioContent = {
   schema_version: 1,
@@ -73,6 +73,50 @@ describe('ipfsService.fetchJson', () => {
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"tampered":true}')))
     await expect(ipfsService.fetchJson(cid)).rejects.toThrow('does not match CID')
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('computePortfolioCid', () => {
+  it('is equal for identical content in any key order and differs when content changes', async () => {
+    const reordered = Object.fromEntries(Object.entries(content).reverse()) as unknown as PortfolioContent
+    expect(await computePortfolioCid(reordered)).toBe(await computePortfolioCid(content))
+    expect(await computePortfolioCid({ ...content, bio: 'Changed' })).not.toBe(await computePortfolioCid(content))
+  })
+})
+
+describe('ipfsService.fetchJson limits', () => {
+  const stream = (chunks: Uint8Array[], onPull?: () => void) =>
+    new ReadableStream<Uint8Array>({
+      pull(controller) {
+        onPull?.()
+        const next = chunks.shift()
+        if (next) controller.enqueue(next)
+        else controller.close()
+      },
+    })
+
+  it('aborts early once the byte limit is exceeded without reading the whole stream', async () => {
+    let pulls = 0
+    const chunks = Array.from({ length: 50 }, () => new Uint8Array(1024))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(stream(chunks, () => (pulls += 1)))))
+    await expect(ipfsService.fetchJson('bafkreiabc', { maxBytes: 4096 })).rejects.toMatchObject({ code: 'too_large' })
+    expect(pulls).toBeLessThan(10)
+    vi.unstubAllGlobals()
+  })
+
+  it('rejects early when Content-Length exceeds the limit', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { headers: { 'content-length': '999999' } })))
+    await expect(ipfsService.fetchJson('bafkreiabc', { maxBytes: 1000 })).rejects.toMatchObject({ code: 'too_large' })
+    vi.unstubAllGlobals()
+  })
+
+  it('maps a hanging gateway to a timeout error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => init.signal?.addEventListener('abort', () => reject(new Error('aborted'))))),
+    )
+    await expect(ipfsService.fetchJson('bafkreiabc', { timeoutMs: 10 })).rejects.toMatchObject({ code: 'timeout' })
     vi.unstubAllGlobals()
   })
 })
