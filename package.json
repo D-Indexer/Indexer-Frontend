@@ -1,6 +1,6 @@
 {
   "name": "folder-frontend",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -8,6 +8,7 @@
     "build:embed": "vite build --config vite.embed.config.ts && node scripts/embed-size.mjs",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
+    "commitlint": "commitlint --edit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -24,6 +25,8 @@
     "zustand": "^4.4.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",

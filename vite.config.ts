@@ -3,6 +3,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execFileSync } from 'node:child_process'
 import path from 'path'
+import { readFileSync } from 'fs'
+
+// The app version shown in the footer comes from package.json, which release-please bumps.
+const { version } = JSON.parse(readFileSync(path.resolve(__dirname, './package.json'), 'utf8')) as { version: string }
 
 /**
  * Reproducible builds (issue #243).
@@ -25,6 +29,8 @@ const readCommit = () => {
 const buildCommit = readCommit()
 
 export default defineConfig({
+  // Relative asset paths so the bundle works from any gateway path (`/ipfs/<cid>/`).
+  base: './',
   plugins: [react()],
   build: {
     // Hidden source maps are uploaded to the error reporter at release and are

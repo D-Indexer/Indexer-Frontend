@@ -1,0 +1,134 @@
+name: PR preview (demo mode)
+
+# Builds every PR with VITE_DEMO_MODE=true and publishes it to Cloudflare Pages.
+# Fork PRs never receive deployment secrets: the deploy job only runs for PRs whose
+# head repository is this repository, and secrets are not exposed to `pull_request`
+# runs from forks anyway. Fork PRs still get a build-only check.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  # Public build-time values only. Never put secrets here.
+  VITE_DEMO_MODE: 'true'
+
+jobs:
+  build:
+    name: Build demo bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Add SPA fallback
+        run: cp dist/index.html dist/404.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-dist
+          path: dist
+          retention-days: 7
+
+  deploy:
+    name: Deploy preview
+    needs: build
+    # Same-repo PRs only, and never on close (close is handled by cleanup).
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: demo-dist
+          path: dist
+      - name: Publish to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+            --branch=pr-${{ github.event.pull_request.number }}
+      - name: Comment preview URL
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.deployment-url }}
+        with:
+          script: |
+            const marker = '<!-- preview-deployment -->'
+            const url = process.env.PREVIEW_URL
+            const body = [
+              marker,
+              `### Preview deployment (demo mode)`,
+              '',
+              `🔗 ${url}`,
+              '',
+              `Built from ${context.sha.slice(0, 7)} with \`VITE_DEMO_MODE=true\`. Updated on every push.`,
+            ].join('\n')
+            const { owner, repo } = context.repo
+            const issue_number = context.payload.pull_request.number
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number,
+            })
+            const existing = comments.find((c) => c.body?.includes(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body })
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body })
+            }
+
+  cleanup:
+    name: Remove preview
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete preview deployment
+        uses: actions/github-script@v7
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+        with:
+          script: |
+            const branch = `pr-${context.payload.pull_request.number}`
+            const base = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${process.env.PROJECT}`
+            const headers = {
+              Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+            }
+            const res = await fetch(`${base}/deployments?env=preview`, { headers })
+            if (!res.ok) {
+              core.warning(`Could not list deployments: ${res.status}`)
+              return
+            }
+            const { result = [] } = await res.json()
+            const stale = result.filter((d) => d.deployment_trigger?.metadata?.branch === branch)
+            for (const d of stale) {
+              const del = await fetch(`${base}/deployments/${d.id}?force=true`, {
+                method: 'DELETE',
+                headers,
+              })
+              if (!del.ok) core.warning(`Could not delete ${d.id}: ${del.status}`)
+            }
+            core.info(`Removed ${stale.length} preview deployment(s) for ${branch}`)
