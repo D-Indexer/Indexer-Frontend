@@ -30,6 +30,9 @@ export const toApiError = (error: unknown): ApiError => {
 
 export const isNotFound = (error: unknown) => axios.isAxiosError(error) && error.response?.status === 404
 
+/** Stable catalog code for an HTTP failure, e.g. `http.404`. */
+export const httpErrorCode = (status: number) => `http.${status}`
+
 /** Turns a 404 into `null` so "not claimed yet" is an empty state, not an error. */
 export const nullIfNotFound = async <T>(request: Promise<{ data: T }>): Promise<T | null> => {
   try {

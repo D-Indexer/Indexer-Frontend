@@ -26,19 +26,10 @@ const buildCommit = readCommit()
 
 export default defineConfig({
   plugins: [react()],
-  define: {
-    __BUILD_COMMIT__: JSON.stringify(buildCommit),
-    __BUILD_SOURCE_DATE_EPOCH__: JSON.stringify(sourceDateEpoch),
-  },
   build: {
-    // Deterministic asset names: no content hash, no per-build salt.
-    rollupOptions: {
-      output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
-      },
-    },
+    // Hidden source maps are uploaded to the error reporter at release and are
+    // not referenced from the shipped bundles.
+    sourcemap: 'hidden',
   },
   resolve: {
     alias: {
@@ -54,8 +45,29 @@ export default defineConfig({
     setupFiles: ['./src/testing/setup.ts'],
     css: false,
     restoreMocks: true,
-    define: {
-      __BUILD_COMMIT__: JSON.stringify('test-commit'),
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'json-summary', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.d.ts',
+        'src/testing/**',
+        'src/data/fixtures/**',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+      ],
+      thresholds: {
+        'src/services/**': {
+          lines: 90,
+          branches: 90,
+        },
+        'src/features/**': {
+          lines: 70,
+          branches: 70,
+        },
+      },
     },
   },
 })

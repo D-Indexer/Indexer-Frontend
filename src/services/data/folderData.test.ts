@@ -3,11 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const api = vi.hoisted(() => ({
   templateList: vi.fn(),
   folderByOwner: vi.fn(),
+  folderByName: vi.fn(),
   portfolioByOwner: vi.fn(),
 }))
 
 vi.mock('@/services/templates/templateApi', () => ({ templateApi: { list: api.templateList } }))
-vi.mock('@/services/folders/folderApi', () => ({ folderApi: { getByOwner: api.folderByOwner, getByName: vi.fn() } }))
+vi.mock('@/services/folders/folderApi', () => ({ folderApi: { getByOwner: api.folderByOwner, getByName: api.folderByName } }))
 vi.mock('@/services/portfolio/portfolioApi', () => ({ portfolioApi: { getByOwner: api.portfolioByOwner } }))
 
 const loadWithEnv = async (demoMode: boolean) => {
@@ -32,6 +33,15 @@ describe('folderData', () => {
     ])
     const [template] = await folderData.listTemplates()
     expect(template.metadata?.name).toBe('Developer')
+  })
+
+  it('passes cancellation signals through folder name lookups', async () => {
+    const folderData = await loadWithEnv(false)
+    const signal = new AbortController().signal
+    api.folderByName.mockResolvedValue(null)
+
+    await expect(folderData.getFolderByName('jane.folder', signal)).resolves.toBeNull()
+    expect(api.folderByName).toHaveBeenCalledWith('jane.folder', signal)
   })
 
   it('serves fixtures only in demo mode, without calling the backend', async () => {
