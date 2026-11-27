@@ -1,3 +1,5 @@
 export { TxStatus } from './components/TxStatus'
+export { clearDomainEvents, emit, listenerCount, off, on, useDomainEvent } from './events'
+export type { DomainEventListener, DomainEventMap, DomainEventName } from './events'
 export { useContractTx } from './hooks/useContractTx'
 export type { ContractTxState, FlowStage } from './hooks/useContractTx'

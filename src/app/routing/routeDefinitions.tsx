@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react'
 import type { LoaderFunctionArgs, RouteObject } from 'react-router-dom'
 import { appRoutes } from '@/config/routes'
-import { loadPublicPortfolio } from '@/features/public-portfolio'
-import { RouteErrorBoundary } from '@/components/ui'
-import { DashboardPage, HomePage, PublicPortfolioPage, TemplatesPage } from '@/pages'
+import {
+  DashboardPage,
+  ExplorePage,
+  HomePage,
+  PublicByAddressPage,
+  PublicPortfolioPage,
+  TemplatesPage,
+} from '@/pages'
 
 export interface RouteDefinition {
   element: ReactNode
@@ -32,5 +37,7 @@ export const routeDefinitions: RouteDefinition[] = [
   { path: appRoutes.home, element: <HomePage /> },
   { path: appRoutes.dashboard, element: <DashboardPage /> },
   { path: appRoutes.templates, element: <TemplatesPage /> },
+  { path: appRoutes.explore, element: <ExplorePage /> },
   { path: appRoutes.publicPortfolio, element: <PublicPortfolioPage /> },
+  { path: appRoutes.publicByAddress, element: <PublicByAddressPage /> },
 ]

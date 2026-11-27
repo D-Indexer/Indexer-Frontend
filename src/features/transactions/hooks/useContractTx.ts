@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { freighterWallet, toApiError } from '@/services'
 import { stellarService, TransactionError, type FolderWrite, type TxResult, type TxStage } from '@/services/stellar/stellarService'
+import { useWalletStore } from '@/store'
 
 export type FlowStage = 'idle' | 'uploading' | TxStage | 'done' | 'failed'
 
@@ -9,9 +10,26 @@ export interface ContractTxState {
   /** Hash of a submitted transaction, also set when it failed or is still pending. */
   hash: string | null
   stage: FlowStage
+  prepared: PreparedTransactionDetails | null
 }
 
-const initialState: ContractTxState = { error: null, hash: null, stage: 'idle' }
+const initialState: ContractTxState = { error: null, hash: null, stage: 'idle', prepared: null }
+
+/** Maps a confirmed contract write to its typed domain event. */
+const emitConfirmedWrite = (owner: string, write: FolderWrite, result: TxResult) => {
+  const base = { hash: result.hash, ledger: result.ledger, owner }
+  switch (write.method) {
+    case 'claim_folder':
+      emit('folder.claimed', { ...base, folderName: write.folderName })
+      break
+    case 'mint_portfolio':
+      emit('portfolio.minted', { ...base, templateId: write.templateId, ipfsCid: write.ipfsCid })
+      break
+    case 'update_portfolio':
+      emit('portfolio.updated', { ...base, ipfsCid: write.ipfsCid })
+      break
+  }
+}
 
 /**
  * Runs one Folder contract write with Freighter as signer. `prepare` can do async work first
@@ -25,46 +43,28 @@ export const useContractTx = () => {
   const run = useCallback(async (owner: string, prepare: (setUploading: () => void) => Promise<FolderWrite>): Promise<TxResult | null> => {
     if (running.current) return null
     running.current = true
-
-    const execute = async (): Promise<TxResult | null> => {
-      setState({ ...initialState, stage: 'preparing' })
-      try {
-        const write = await prepare(() => setState((current) => ({ ...current, stage: 'uploading' })))
-        const result = await stellarService.invoke(owner, write, freighterWallet.signTransaction, (stage) =>
-          setState((current) => ({ ...current, stage })),
-        )
-        setState({ error: null, hash: result.hash, stage: 'done' })
-        return result
-      } catch (error) {
-        const hash = error instanceof TransactionError ? (error.options.hash ?? null) : null
-        setState({ error: toApiError(error).message, hash, stage: 'failed' })
-        return null
-      } finally {
-        running.current = false
-      }
-    }
-
-    // Check if Web Locks API is supported
-    if (typeof navigator !== 'undefined' && 'locks' in navigator && typeof navigator.locks?.request === 'function') {
-      let executionResult: TxResult | null = null
-      let acquired = false
-      await navigator.locks.request(`folder-write:${owner}`, { ifAvailable: true }, async (lock) => {
-        if (!lock) {
-          setState({
-            error: 'Another tab is already sending a transaction. Please wait for it to finish.',
-            hash: null,
-            stage: 'failed',
-          })
-          running.current = false
-          return
-        }
-        acquired = true
-        executionResult = await execute()
-      })
-      if (!acquired) {
-        return null
-      }
-      return executionResult
+    const initialWallet = useWalletStore.getState()
+    const controller = new AbortController()
+    const unsubscribe = useWalletStore.subscribe((current) => {
+      if (current.address !== initialWallet.address || current.networkPassphrase !== initialWallet.networkPassphrase) controller.abort()
+    })
+    setState({ ...initialState, stage: 'preparing' })
+    try {
+      const write = await prepare(() => setState((current) => ({ ...current, stage: 'uploading' })))
+      const result = await stellarService.invoke(owner, write, freighterWallet.signTransaction, (stage) =>
+        setState((current) => ({ ...current, stage })),
+        controller.signal,
+      )
+      setState({ error: null, hash: result.hash, stage: 'done' })
+      emitConfirmedWrite(owner, write, result)
+      return result
+    } catch (error) {
+      const hash = error instanceof TransactionError ? (error.options.hash ?? null) : null
+      setState({ error: toApiError(error).message, hash, stage: 'failed' })
+      return null
+    } finally {
+      unsubscribe()
+      running.current = false
     }
 
     // Fallback when Web Locks API is not available
