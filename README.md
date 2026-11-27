@@ -27,7 +27,7 @@ portfolio pages.
 | Loading / empty / error states, demo mode | ✅ | No silent fixture fallback. Fixtures only with `VITE_DEMO_MODE=true`, behind a visible banner. |
 | Config validation | ✅ | Missing or invalid `VITE_*` variables render an error screen. |
 | Accessibility of the main flow | ✅ | Labels, inline errors, focus management, axe checks in tests. Not yet audited with a screen reader. |
-| CI (typecheck, lint, test, build) | ✅ | `.github/workflows/ci.yml` |
+| CI (typecheck, lint, test, build) | ✅ | `.github/workflows/ci.yml` runs the four checks as parallel jobs, tests on Node 20 and 22, caches Vitest/TS build info, and exposes a single required check, `ci-required`. |
 | More templates, other wallets, i18n, edit history, OG images, mobile layout, Playwright E2E | ⬜ | Tracked as [issues](https://github.com/D-Indexer/Indexer-Frontend/issues). |
 
 ## Testnet deployment

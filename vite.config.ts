@@ -5,6 +5,11 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // Hidden source maps are uploaded to the error reporter at release and are
+    // not referenced from the shipped bundles.
+    sourcemap: 'hidden',
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

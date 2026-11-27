@@ -4,6 +4,11 @@
  * Every variable is documented in `.env.example` and `docs/configuration.md`.
  * `parseEnv` is pure so it can be unit-tested; `main.tsx` renders a
  * configuration error screen when `envErrors` is non-empty.
+ *
+ * The dev container (`.devcontainer/`) writes the same values to
+ * `public/runtime-config.js` at container start, so the image can be built once
+ * and pointed at a different contract/backend without a rebuild. `loadRuntimeConfig`
+ * merges that file over the build-time values.
  */
 
 export type StellarNetwork = 'testnet'
@@ -11,6 +16,8 @@ export type StellarNetwork = 'testnet'
 export interface AppConfig {
   apiUrl: string
   demoMode: boolean
+  /** Sentry-compatible DSN. Empty disables error reporting (and its bundle cost). */
+  errorReportingDsn: string
   folderContractId: string
   ipfsGatewayUrl: string
   rumEndpoint: string
@@ -124,10 +131,19 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     }
   }
 
+  const errorReportingDsn = read(raw, 'VITE_ERROR_REPORTING_DSN')
+  if (errorReportingDsn && !isHttpUrl(errorReportingDsn)) {
+    errors.push({
+      variable: 'VITE_ERROR_REPORTING_DSN',
+      message: `"${errorReportingDsn}" is not an http(s) URL. Leave it empty to disable error reporting.`,
+    })
+  }
+
   return {
     config: {
       apiUrl,
       demoMode,
+      errorReportingDsn,
       folderContractId,
       ipfsGatewayUrl,
       rumEndpoint,
