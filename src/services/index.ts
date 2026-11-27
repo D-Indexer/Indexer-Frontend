@@ -9,5 +9,6 @@ export { contractErrorCode, describeContractError, extractContractErrorCode } fr
 export { freighterWallet, WalletError } from './stellar/freighterWallet'
 export { explorerLinks, getNetworkPassphrase, isTestnetPassphrase, shortenKey } from './stellar/network'
 export { stellarService } from './stellar/stellarService'
+export { createReadCache, type ReadCache, type ReadCacheMetrics } from './stellar/readCache'
 export { templateApi } from './templates/templateApi'
 export { initErrorReporting, scrubEvent, scrubText } from './observability/errorReporting'

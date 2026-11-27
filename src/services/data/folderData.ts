@@ -2,7 +2,7 @@ import { env } from '@/config/env'
 import { demoExplorePortfolios } from '@/data/fixtures/explore'
 import { demoFolder, demoPortfolio, demoPortfolioContent, demoTemplates } from '@/data/fixtures'
 import { folderApi } from '@/services/folders/folderApi'
-import { ipfsService } from '@/services/ipfs/ipfsService'
+import { ipfsService, isPortfolioContent } from '@/services/ipfs/ipfsService'
 import { portfolioApi } from '@/services/portfolio/portfolioApi'
 import { templateApi } from '@/services/templates/templateApi'
 import type { Folder, Portfolio, PortfolioPage, PortfolioContent, TemplateWithMetadata } from '@/types'
@@ -39,6 +39,6 @@ export const folderData = {
 
   getPortfolioContent: async (cid: string): Promise<PortfolioContent> => {
     if (env.demoMode && cid === demoPortfolio.ipfsCid) return demoPortfolioContent
-    return ipfsService.fetchJson<PortfolioContent>(cid)
+    return ipfsService.fetchJson<PortfolioContent>(cid, isPortfolioContent)
   },
 }

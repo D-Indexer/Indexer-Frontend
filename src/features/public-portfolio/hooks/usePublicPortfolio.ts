@@ -20,6 +20,8 @@ export interface PublicPortfolio {
   cid: string | null
   content: PortfolioContent | null
   contentError: string | null
+  /** True when the document was fetched but is not a valid portfolio (malformed content). */
+  contentInvalid: boolean
   folder: Folder
   /** Fields where the indexer disagrees with the chain; rendering uses the on-chain values. */
   divergence: Divergence[]
@@ -73,11 +75,13 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
 
   let content: PortfolioContent | null = null
   let contentError: string | null = null
+  let contentInvalid = false
   if (cid) {
     try {
       content = await folderData.getPortfolioContent(cid)
     } catch (error) {
       contentError = toApiError(error).message
+      contentInvalid = error instanceof IpfsError && error.code === 'invalid_shape'
     }
   }
 

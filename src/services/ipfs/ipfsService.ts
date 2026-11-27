@@ -16,6 +16,90 @@ export class IpfsError extends Error {
     this.name = 'IpfsError'
     this.code = code
   }
+
+  let keys = 0
+  const walk = (value: unknown, depth: number): unknown => {
+    if (value === null || typeof value !== 'object') return value
+    if (depth > limits.maxDepth) {
+      throw new IpfsError(`The document is nested deeper than ${limits.maxDepth} levels.`, 'invalid_shape')
+    }
+    if (Array.isArray(value)) return value.map((item) => walk(item, depth + 1))
+
+    const source = value as Record<string, unknown>
+    const target: Record<string, unknown> = Object.create(null) as Record<string, unknown>
+    for (const key of Object.keys(source)) {
+      if (DANGEROUS_KEYS.has(key)) {
+        throw new IpfsError(`The document contains the forbidden key "${key}".`, 'invalid_shape')
+      }
+      keys += 1
+      if (keys > limits.maxKeys) {
+        throw new IpfsError(`The document has more than ${limits.maxKeys} keys.`, 'invalid_shape')
+      }
+      target[key] = walk(source[key], depth + 1)
+    }
+    return target
+  }
+
+  return walk(parsed, 1)
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string')
+
+const isStringRecord = (value: unknown): value is Record<string, string> =>
+  isRecord(value) && Object.values(value).every((item) => typeof item === 'string')
+
+const invalidShape = (what: string): never => {
+  throw new IpfsError(`The document is not a valid ${what}.`, 'invalid_shape')
+}
+
+/** Structural guard for a portfolio document pinned to IPFS. */
+export const isPortfolioContent = (value: unknown): value is PortfolioContent => {
+  if (!isRecord(value)) return false
+  return (
+    value.schema_version === 1 &&
+    typeof value.folder === 'string' &&
+    typeof value.template_id === 'number' &&
+    Number.isInteger(value.template_id) &&
+    typeof value.name === 'string' &&
+    typeof value.headline === 'string' &&
+    typeof value.bio === 'string' &&
+    isStringArray(value.skills) &&
+    isStringArray(value.links) &&
+    isStringRecord(value.sections) &&
+    typeof value.updated_at === 'string'
+  )
+}
+
+/** Structural guard for a template metadata document pinned at `metadataUri`. */
+export const isTemplateMetadata = (value: unknown): value is TemplateMetadata => {
+  if (!isRecord(value)) return false
+  return (
+    typeof value.schema_version === 'number' &&
+    typeof value.template_id === 'number' &&
+    Number.isInteger(value.template_id) &&
+    typeof value.name === 'string' &&
+    typeof value.description === 'string' &&
+    typeof value.target_industry === 'string' &&
+    isStringArray(value.fields)
+  )
+}
+
+/** Parses and validates a portfolio document, throwing `IpfsError('invalid_shape')` on mismatch. */
+export const parsePortfolioContent = (text: string): PortfolioContent => {
+  const value = safeParseJson(text)
+  if (!isPortfolioContent(value)) return invalidShape('portfolio document')
+  return value
+}
+
+/** Parses and validates a template metadata document, throwing `IpfsError('invalid_shape')` on mismatch. */
+export const parseTemplateMetadata = (text: string): TemplateMetadata => {
+  const value = safeParseJson(text)
+  if (!isTemplateMetadata(value)) return invalidShape('template metadata document')
+  return value
 }
 
 /** Largest document accepted from a gateway; portfolios and template metadata are single raw blocks. */
@@ -178,11 +262,15 @@ export const ipfsService = {
 
     const bundled = knownTemplateMetadata[cid]
     if (bundled && (await computeRawCidV1(bundled)) === cid) {
-      return JSON.parse(bundled) as TemplateMetadata
+      try {
+        return parseTemplateMetadata(bundled)
+      } catch {
+        return null
+      }
     }
 
     try {
-      return await ipfsService.fetchJson<TemplateMetadata>(cid)
+      return await ipfsService.fetchJson<TemplateMetadata>(cid, isTemplateMetadata)
     } catch {
       return null
     }
