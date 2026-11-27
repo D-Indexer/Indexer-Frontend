@@ -3,31 +3,31 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, HashRouter } from 'react-router-dom'
 import { App } from './App'
 import { ConfigErrorScreen } from './app/config/ConfigErrorScreen'
-import { envErrors, loadRuntimeConfig, parseEnv, runtimeConfigToRawEnv } from './config/env'
+import { envErrors, resourceHints } from './config/env'
 import './styles/index.css'
 
-const root = ReactDOM.createRoot(document.getElementById('root')!)
-
-// IPFS builds (VITE_IPFS_BUILD=true) are served from a content-addressed path with no server-side
-// rewrites, so they use hash routing: every deep link resolves to the same index.html.
-const Router = import.meta.env.VITE_IPFS_BUILD === 'true' ? HashRouter : BrowserRouter
-
-const render = (issues: typeof envErrors) => {
-  root.render(
-    <React.StrictMode>
-      {issues.length > 0 ? (
-        <ConfigErrorScreen issues={issues} />
-      ) : (
-        <Router>
-          <App />
-        </Router>
-      )}
-    </React.StrictMode>,
-  )
+const injectResourceHints = (hints: typeof resourceHints) => {
+  const head = document.head
+  for (const hint of hints) {
+    if (head.querySelector(`link[rel="${hint.rel}"][href="${hint.href}"]`)) continue
+    const link = document.createElement('link')
+    link.rel = hint.rel
+    link.href = hint.href
+    if (hint.rel === 'preconnect') link.crossOrigin = 'anonymous'
+    head.appendChild(link)
+  }
 }
 
-// The production container renders /config.json from env vars at startup; it overrides the
-// build-time VITE_* values. Without it (dev server, static hosting) the build-time config is used.
-void loadRuntimeConfig().then((runtime) => {
-  render(runtime ? parseEnv(runtimeConfigToRawEnv(runtime)).errors : envErrors)
-})
+injectResourceHints(resourceHints)
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    {envErrors.length > 0 ? (
+      <ConfigErrorScreen issues={envErrors} />
+    ) : (
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    )}
+  </React.StrictMode>,
+)
