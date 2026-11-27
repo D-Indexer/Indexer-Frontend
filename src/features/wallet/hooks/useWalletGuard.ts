@@ -1,5 +1,4 @@
-import { env } from '@/config/env'
-import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+import { isDemoMode } from '@/services/data/dataSourceFactory'
 import { selectIsTestnet, useWalletStore } from '@/store'
 
 export interface WalletGuard {
@@ -18,7 +17,7 @@ export const useWalletGuard = (): WalletGuard => {
   const { online } = useNetworkStatus()
 
   let blockedReason: string | null = null
-  if (env.demoMode) {
+  if (isDemoMode()) {
     blockedReason = 'Demo mode is on, so on-chain actions are disabled. Unset VITE_DEMO_MODE to use testnet.'
   } else if (!online) {
     blockedReason = 'You are offline. Reconnect to the internet to send on-chain actions.'

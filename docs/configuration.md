@@ -13,9 +13,26 @@ listing each problem instead of starting.
 | `VITE_API_URL` | Yes, unless demo mode | none | http(s) URL | Indexer-Backend base URL (`/folders`, `/portfolios`, `/templates`, `/upload`). |
 | `VITE_FOLDER_CONTRACT_ID` | Yes, unless demo mode | none | `C` + 55 base32 chars | Folder contract that transactions are built against. Testnet: `CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV`. |
 | `VITE_STELLAR_NETWORK` | No | `testnet` | must be `testnet` | Network the app expects the wallet to be on. The contract is not deployed on mainnet. |
-| `VITE_SOROBAN_RPC_URL` | No | `https://soroban-testnet.stellar.org` | http(s) URL | Soroban RPC used to simulate, submit and poll transactions and to call `verify_portfolio`. |
+| `VITE_SOROBAN_RPC_URL` | No | `https://soroban-testnet.stellar.org` | http(s) URL | Soroban RPC used to simulate, submit and poll transactions and to call `verify_portfolio`. Kept for compatibility; also used as the last-resort provider when `VITE_SOROBAN_RPC_URLS` is set. |
+| `VITE_SOROBAN_RPC_URLS` | No | none | comma-separated http(s) URLs | Ordered Soroban RPC provider pool. Reads (`getAccount`, simulation, `verify_portfolio`, `get_portfolio`) and `getTransaction` polling fail over to the next provider when one is down, unhealthy or lagging behind the highest ledger seen. Writes are submitted to exactly one provider and never resubmitted. |
 | `VITE_IPFS_GATEWAY_URL` | No | `https://ipfs.io/ipfs` | http(s) URL | Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node. |
+| `VITE_EXPLORER` | No | `stellar.expert` | `stellar.expert`, `stellarchain`, or `none` | Block explorer provider used to link to accounts, contracts, and transactions. Use `none` for local standalone networks to avoid broken links. |
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
+| `VITE_ERROR_REPORTING_DSN` | No | none | http(s) URL | Sentry-compatible DSN for opt-in error reporting. Empty disables it: the SDK is lazy-loaded only when set, so it adds nothing to the bundle. Events are scrubbed of Stellar addresses, folder names, CIDs and XDR before send and tagged with error catalog codes. |
+
+## Runtime Configuration (`/config.json`)
+
+To deploy a single pre-built `dist/` bundle across multiple staging or production environments,
+the frontend supports runtime configuration.
+
+At boot before React renders, `src/main.tsx` requests `/config.json` with `{ cache: 'no-store' }`.
+Any variables present in `/config.json` take precedence over build-time `VITE_*` variables.
+See `public/config.example.json` for an example configuration file.
+
+Precedence order:
+1. Runtime `/config.json` served at the host root.
+2. Build-time `VITE_*` variables baked into bundle via Vite.
+3. System defaults declared in `src/config/env.ts`.
 
 ## Demo mode
 

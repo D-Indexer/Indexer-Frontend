@@ -1,4 +1,4 @@
-export { useAsync } from './useAsync'
+export { useAsync, useProgressiveTemplates } from './useAsync'
 export { useFolder } from './useFolder'
 export { useNetworkStatus } from './useNetworkStatus'
 export type { NetworkStatus } from './useNetworkStatus'
