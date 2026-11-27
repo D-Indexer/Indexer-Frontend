@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { FormField } from '@/components/forms'
 import { Button, Card } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
@@ -21,6 +22,7 @@ interface FolderNameAvailability {
 
 export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
   const [name, setName] = useState('')
+  const [search] = useSearchParams()
   const [fieldError, setFieldError] = useState<string | undefined>()
   const [availability, setAvailability] = useState<FolderNameAvailability>({ folderName: '', owner: '', status: 'idle' })
   const lookupInFlight = useRef<Promise<void> | null>(null)
@@ -124,7 +126,7 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
           label="Folder name"
           helpText="3–57 lowercase letters, digits or hyphens. “.folder” is added for you. One folder per address."
           error={fieldError}
-          value={name}
+          value={name || search.get('claim') || ''}
           autoComplete="off"
           spellCheck={false}
           required

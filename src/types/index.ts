@@ -21,6 +21,17 @@ export interface Portfolio {
   updatedAt: string
 }
 
+/** One row of `GET /portfolios` (ordered by ledger desc): a portfolio plus its owner's Folder name. */
+export interface ExplorePortfolio extends Portfolio {
+  folderName: string
+}
+
+/** Cursor page returned by `GET /portfolios?cursor=&limit=`; `nextCursor` is null on the last page. */
+export interface PortfolioPage {
+  items: ExplorePortfolio[]
+  nextCursor: string | null
+}
+
 /** A registered template (`tmpl_reg`). */
 export interface Template {
   id: number
