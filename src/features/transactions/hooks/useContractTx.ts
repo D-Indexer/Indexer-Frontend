@@ -3,9 +3,11 @@ import { freighterWallet, toApiError } from '@/services'
 import { stellarService, TransactionError, type FolderWrite, type TxResult, type TxStage } from '@/services/stellar/stellarService'
 import { useWalletStore } from '@/store'
 
-export type FlowStage = 'idle' | 'uploading' | TxStage | 'done' | 'failed'
+export type FlowStage = 'idle' | 'uploading' | TxStage | 'done' | 'failed' | 'conflict'
 
 export interface ContractTxState {
+  /** On-chain CID that replaced the editor's base while it was open; set when `stage` is 'conflict'. */
+  conflict: string | null
   error: string | null
   /** Hash of a submitted transaction, also set when it failed or is still pending. */
   hash: string | null
@@ -45,7 +47,11 @@ export const useContractTx = () => {
   const addActivity = useActivityStore((s) => s.addActivity)
   const updateActivity = useActivityStore((s) => s.updateActivity)
 
-  const run = useCallback(async (owner: string, prepare: (setUploading: () => void) => Promise<FolderWrite>): Promise<TxResult | null> => {
+  const run = useCallback(async (
+      owner: string,
+      prepare: (setUploading: () => void) => Promise<FolderWrite>,
+      options: RunOptions = {},
+    ): Promise<TxResult | null> => {
     if (running.current) return null
     running.current = true
     const initialWallet = useWalletStore.getState()
@@ -55,6 +61,13 @@ export const useContractTx = () => {
     })
     setState({ ...initialState, stage: 'preparing' })
     try {
+      if (options.baseCid) {
+        const current = await stellarService.getOnChainPortfolio(owner)
+        if (current && current.ipfsCid !== options.baseCid) {
+          setState({ ...initialState, conflict: current.ipfsCid, stage: 'conflict' })
+          return null
+        }
+      }
       const write = await prepare(() => setState((current) => ({ ...current, stage: 'uploading' })))
       activityId = addActivity({
         address: owner,
@@ -89,6 +102,6 @@ export const useContractTx = () => {
 
   const reset = useCallback(() => setState(initialState), [])
 
-  const busy = state.stage !== 'idle' && state.stage !== 'done' && state.stage !== 'failed'
+  const busy = state.stage !== 'idle' && state.stage !== 'done' && state.stage !== 'failed' && state.stage !== 'conflict'
   return { ...state, busy, reset, run }
 }

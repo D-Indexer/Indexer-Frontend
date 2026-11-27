@@ -36,7 +36,15 @@ const Skills = ({ label = 'Skills', skills }: { label?: string; skills: string[]
     </section>
   ) : null
 
-const Sections = ({ sections, only }: { only?: string[]; sections: Record<string, string> }) => (
+/** Long-form text: Markdown for new documents, the unchanged plain-text paragraph for older ones. */
+const Prose = ({ className = '', content, text }: { className?: string; content: Pick<PortfolioContent, 'content_format'>; text: string }) =>
+  content.content_format === 'markdown' ? (
+    <Markdown className={`portfolio__prose ${className}`.trim()} source={text} />
+  ) : (
+    <p className={`portfolio__prose ${className}`.trim()}>{text}</p>
+  )
+
+const Sections = ({ content, sections, only }: { content: PortfolioContent; only?: string[]; sections: Record<string, string> }) => (
   <>
     {Object.entries(sections)
       .filter(([key, value]) => value && (!only || only.includes(key)))
@@ -88,7 +96,7 @@ const DesignerView = ({ content }: ViewProps) => (
       <Text value={content.bio} />
     </p>
     <div className="portfolio__grid">
-      <Sections sections={content.sections} />
+      <Sections content={content} sections={content.sections} />
     </div>
     <Skills label="Tools and skills" skills={content.skills} />
     <Links content={content} />

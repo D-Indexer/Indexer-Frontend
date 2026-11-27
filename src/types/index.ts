@@ -80,6 +80,8 @@ export interface PortfolioContent {
   link_meta?: PortfolioLink[]
   /** Free-text content for template-specific fields (e.g. `projects`, `case_studies`). */
   sections: Record<string, string>
+  /** `markdown`: bio and sections use the restricted Markdown subset. Absent on older documents (plain text). */
+  content_format?: 'markdown'
   updated_at: string
 }
 

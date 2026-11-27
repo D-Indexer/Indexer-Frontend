@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { FormField } from '@/components/forms'
-import { Button, Card, LoadingState } from '@/components/ui'
+import { Button, Card, ExternalLink, LoadingState, Markdown } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
 import { useTemplates } from '@/hooks'
@@ -87,6 +87,14 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     if (!portfolio) return undefined
     let active = true
     setLoadingContent(true)
+    // Remember the CID this edit is based on, to detect a concurrent update before signing.
+    stellarService
+      .getOnChainPortfolio(owner)
+      .then((onChain) => onChain?.ipfsCid ?? portfolio.ipfsCid)
+      .catch(() => portfolio.ipfsCid)
+      .then((cid) => {
+        if (active) setBaseCid(cid)
+      })
     folderData
       .getPortfolioContent(portfolio.ipfsCid)
       .then((content) => {
@@ -107,7 +115,22 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     return () => {
       active = false
     }
-  }, [portfolio])
+  }, [owner, portfolio])
+
+  /** New documents use Markdown; an existing plain-text document stays plain so it renders as before. */
+  const markdown = !published || published.content_format === 'markdown'
+  const withPreview = (field: ReactNode, text: string, label: string) =>
+    markdown ? (
+      <div className="editor-split">
+        {field}
+        <aside className="editor-split__preview" aria-label={`Preview of ${label}`}>
+          <p className="muted">Preview</p>
+          <Markdown className="portfolio__prose" source={text} />
+        </aside>
+      </div>
+    ) : (
+      field
+    )
 
   const selectedTemplate = templates.data?.find((template) => String(template.id) === values.templateId)
   const sectionFields = (selectedTemplate?.metadata?.fields ?? []).filter((field) => !CORE_FIELDS.has(field))
@@ -165,16 +188,66 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     if (sameAsPublished) return
     const content = buildContent(new Date().toISOString())
 
-    const result = await tx.run(owner, async (setUploading) => {
-      setUploading()
-      const ipfsCid = await ipfsService.uploadPortfolioContent(content)
-      return isUpdate ? { method: 'update_portfolio', ipfsCid } : { method: 'mint_portfolio', templateId, ipfsCid }
-    })
-    if (result) onPublished(result.hash)
+    // Updates get a review step against the published version before anything is uploaded or signed.
+    if (isUpdate && published) {
+      setReview({ changes: diffPortfolioContent(published, content), content })
+      return
+    }
+    await publish(content)
   }
 
   if (loadingContent) {
     return <LoadingState label="Loading your current portfolio content…" minHeight="24rem" />
+  }
+
+  /** Merging = re-basing on the newer version and reviewing my edits against it in the diff view. */
+  const mergeWithNewer = async (newerCid: string) => {
+    try {
+      const newer = await folderData.getPortfolioContent(newerCid)
+      setPublished(newer)
+      setBaseCid(newerCid)
+      if (review) setReview({ changes: diffPortfolioContent(newer, review.content), content: review.content })
+      tx.reset()
+    } catch (error) {
+      setContentNotice(`The newer version could not be loaded from IPFS (${error instanceof Error ? error.message : 'unknown error'}).`)
+    }
+  }
+
+  const conflictNotice = tx.conflict ? (
+    <div className="notice notice--warning notice--stack" role="alert">
+      <p>
+        This portfolio was updated on-chain after you opened the editor (possibly from another device). Saving now would overwrite
+        those changes.
+      </p>
+      <p>
+        <ExternalLink className="mono" href={ipfsService.gatewayUrl(tx.conflict)}>View the newer version</ExternalLink>
+      </p>
+      <div>
+        <Button type="button" onClick={() => void mergeWithNewer(tx.conflict as string)}>Merge: review my changes against it</Button>{' '}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => (review ? void publish(review.content, true) : tx.reset())}
+        >
+          Overwrite anyway
+        </Button>
+      </div>
+    </div>
+  ) : null
+
+  if (review && !tx.busy && tx.stage !== 'done') {
+    return (
+      <Card>
+        {conflictNotice}
+        <DiffReview
+          changes={review.changes}
+          confirmLabel="Confirm and upload update"
+          onBack={() => setReview(null)}
+          onConfirm={() => void publish(review.content)}
+        />
+        <TxStatus {...tx} successMessage="" />
+      </Card>
+    )
   }
 
   return (
@@ -275,7 +348,20 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
           value={values.headline}
           onChange={set('headline')}
         />
-        <FormField control="textarea" id="portfolio-bio" label="Bio" required error={errors.bio} value={values.bio} onChange={set('bio')} />
+        {withPreview(
+          <FormField
+            control="textarea"
+            id="portfolio-bio"
+            label="Bio"
+            required
+            helpText={markdown ? 'Markdown: emphasis, lists, links, headings and code. HTML is not rendered.' : undefined}
+            error={errors.bio}
+            value={values.bio}
+            onChange={set('bio')}
+          />,
+          values.bio,
+          'Bio',
+        )}
         <FormField id="portfolio-skills" label="Skills" helpText="Separate skills with commas." value={values.skills} onChange={set('skills')} />
         <LinksEditor
           id="portfolio-links"

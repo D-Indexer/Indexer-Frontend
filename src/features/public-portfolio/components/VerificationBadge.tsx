@@ -57,6 +57,13 @@ export const VerificationBadge = ({ owner, verification }: VerificationBadgeProp
           {links}
         </aside>
       )
+    case 'verifying':
+      return (
+        <aside className="verification verification--warning" aria-label="Verification" aria-busy="true">
+          <p className="verification__title">Verifying…</p>
+          <p>Checking the contract. The content below comes from the indexer and is not yet verified.</p>
+        </aside>
+      )
     case 'demo':
       return (
         <aside className="verification verification--warning" aria-label="Verification">

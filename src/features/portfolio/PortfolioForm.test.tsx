@@ -4,12 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildFolder, buildPortfolio, CID_V1, CID_V2, connectTestnetWallet, developerTemplate, OWNER, TX_HASH } from '@/testing/fixtures'
 
 const invoke = vi.hoisted(() => vi.fn())
+const onChain = vi.hoisted(() => vi.fn())
 const upload = vi.hoisted(() => vi.fn())
 const data = vi.hoisted(() => ({ listTemplates: vi.fn(), getPortfolioContent: vi.fn() }))
 
 vi.mock('@/services/stellar/stellarService', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/services/stellar/stellarService')>()
-  return { ...original, stellarService: { ...original.stellarService, invoke } }
+  return { ...original, stellarService: { ...original.stellarService, invoke, getOnChainPortfolio: onChain } }
 })
 vi.mock('@/services/ipfs/ipfsService', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/services/ipfs/ipfsService')>()
@@ -22,6 +23,7 @@ const { PortfolioForm } = await import('./components/PortfolioForm')
 describe('PortfolioForm', () => {
   beforeEach(() => {
     invoke.mockReset().mockResolvedValue({ hash: TX_HASH, ledger: 1 })
+    onChain.mockReset().mockResolvedValue({ ipfsCid: CID_V1, templateId: 1, mintedAt: 0 })
     upload.mockReset().mockResolvedValue(CID_V2)
     data.listTemplates.mockResolvedValue([developerTemplate])
     connectTestnetWallet()
@@ -123,6 +125,10 @@ describe('PortfolioForm', () => {
     expect(screen.getByLabelText(/Template/)).toBeDisabled()
 
     await userEvent.click(screen.getByRole('button', { name: 'Upload and update portfolio' }))
+    expect(invoke).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Review your changes' })).toBeInTheDocument()
+    expect(screen.getByText(/No changes compared/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm and upload update' }))
     expect(invoke).toHaveBeenCalledWith(OWNER, { method: 'update_portfolio', ipfsCid: CID_V2 }, expect.any(Function), expect.any(Function))
   })
 
@@ -162,5 +168,44 @@ describe('PortfolioForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Upload and mint portfolio' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('only accepts images and PDFs')
     expect(invoke).not.toHaveBeenCalled()
+  })
+
+  describe('concurrent edits', () => {
+    const published = { schema_version: 1, folder: 'jane.folder', template_id: 1, name: 'Jane Doe', headline: '', bio: 'Old bio', skills: [], links: [], sections: {}, updated_at: '' }
+
+    const openReview = async () => {
+      data.getPortfolioContent.mockResolvedValue(published)
+      render(<PortfolioForm owner={OWNER} folder={buildFolder({ templateId: 1 })} portfolio={buildPortfolio()} onPublished={vi.fn()} />)
+      await screen.findByDisplayValue('Old bio')
+      await userEvent.type(screen.getByLabelText(/^Bio/), ' edited')
+      await userEvent.click(screen.getByRole('button', { name: 'Upload and update portfolio' }))
+      onChain.mockResolvedValue({ ipfsCid: CID_V2, templateId: 1, mintedAt: 0 })
+    }
+
+    it('stops before upload and signing when the on-chain CID changed since the editor opened', async () => {
+      await openReview()
+      await userEvent.click(screen.getByRole('button', { name: 'Confirm and upload update' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(/updated on-chain after you opened the editor/)
+      expect(upload).not.toHaveBeenCalled()
+      expect(invoke).not.toHaveBeenCalled()
+    })
+
+    it('lets the owner overwrite deliberately', async () => {
+      await openReview()
+      await userEvent.click(screen.getByRole('button', { name: 'Confirm and upload update' }))
+      await userEvent.click(await screen.findByRole('button', { name: 'Overwrite anyway' }))
+      expect(upload).toHaveBeenCalledTimes(1)
+      expect(invoke).toHaveBeenCalledTimes(1)
+    })
+
+    it('re-bases on the newer version when merging, then saves without a conflict', async () => {
+      await openReview()
+      await userEvent.click(screen.getByRole('button', { name: 'Confirm and upload update' }))
+      data.getPortfolioContent.mockResolvedValue({ ...published, bio: 'Newer bio' })
+      await userEvent.click(await screen.findByRole('button', { name: /^Merge/ }))
+      await userEvent.click(await screen.findByRole('button', { name: 'Confirm and upload update' }))
+      expect(data.getPortfolioContent).toHaveBeenCalledWith(CID_V2)
+      expect(invoke).toHaveBeenCalledTimes(1)
+    })
   })
 })

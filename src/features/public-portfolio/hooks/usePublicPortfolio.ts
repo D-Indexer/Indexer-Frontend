@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { env } from '@/config/env'
 import { folderData, toApiError } from '@/services'
 import { stellarService } from '@/services/stellar/stellarService'
@@ -8,6 +9,8 @@ export type Verification =
   | { status: 'not_minted' }
   | { status: 'unavailable'; reason: string }
   | { status: 'demo' }
+  /** Content from the indexed CID is shown while the chain reads are still in flight. */
+  | { status: 'verifying' }
 
 export interface Divergence {
   field: 'ipfsCid' | 'templateId'
@@ -29,9 +32,23 @@ export interface PublicPortfolio {
   verification: Verification
 }
 
+interface ContentResult {
+  content: PortfolioContent | null
+  contentError: string | null
+}
+
+const fetchContent = (cid: string): Promise<ContentResult> =>
+  folderData.getPortfolioContent(cid).then(
+    (content) => ({ content, contentError: null }),
+    (error: unknown) => ({ content: null, contentError: toApiError(error).message }),
+  )
+
 /**
  * Resolves `<name>.folder` through the indexer, checks the owner's portfolio on-chain with
  * `verify_portfolio` / `get_portfolio`, and loads the content from IPFS by the on-chain CID.
+ * The IPFS fetch for the indexed CID starts speculatively, in parallel with the chain reads; it is
+ * only reused when the on-chain CID matches. `onProgress` receives a provisional result (marked
+ * `verifying`, never `verified`) as soon as the indexed content has loaded.
  * Returns null when the folder does not exist.
  *
  * Framework-free so the public page and `scripts/verify.ts` share one verdict.
