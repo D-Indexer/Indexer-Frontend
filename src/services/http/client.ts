@@ -1,14 +1,12 @@
 import axios from 'axios'
 import { env } from '@/config/env'
+import { sep10Client } from '@/services/stellar/sep10Client'
 
 export const apiClient = axios.create({
   timeout: 15_000,
 })
-
-// Dynamically set baseURL before each request so runtime config takes effect
 apiClient.interceptors.request.use((config) => {
-  if (env.apiUrl) {
-    config.baseURL = env.apiUrl
-  }
+  const token = sep10Client.token()
+  if (token && config.headers) config.headers.Authorization = `Bearer ${token}`
   return config
 })

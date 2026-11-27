@@ -9,11 +9,8 @@ export const ErrorMessage = ({ code, detail, docsUrl, message }: ErrorMessagePro
   const resolvedDocsUrl = docsUrl ?? (code ? `/docs/errors.md#${code.toLowerCase()}` : undefined)
 
   return (
-    <div className="error-message" role="alert">
-      <p>
-        {code ? <span className="error-message__code mono font-bold">[{code}] </span> : null}
-        {message}
-      </p>
+    <div className="error-message" role="alert" aria-atomic="true">
+      <p>{message}</p>
       {detail ? <p className="error-message__detail">{detail}</p> : null}
       {resolvedDocsUrl ? (
         <p className="error-message__docs">

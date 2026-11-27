@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { DemoBanner } from '@/components/ui'
-import { isDemoMode } from '@/services/data/dataSourceFactory'
+import { DemoBanner, ToastContainer } from '@/components/ui'
+import { env } from '@/config/env'
 import { Footer } from './Footer'
 import { Header } from './Header'
 
@@ -31,6 +31,7 @@ export const AppLayout = () => {
         <Outlet />
       </main>
       <Footer />
+      <ToastContainer />
     </div>
   )
 }
