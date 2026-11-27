@@ -4,6 +4,170 @@ All notable changes to this project are documented in this file. It is generated
 [release-please](https://github.com/googleapis/release-please) from
 [Conventional Commits](https://www.conventionalcommits.org/) on `main` — do not edit it by hand.
 
+## [0.3.0](https://github.com/D-Indexer/Indexer-Frontend/compare/v0.2.0...v0.3.0) (2026-11-27)
+
+
+### Features
+
+* **a11y:** accessibility pass on the main flow ([d8f0ac0](https://github.com/D-Indexer/Indexer-Frontend/commit/d8f0ac085e14f2ebadc6c93389c503b46092cdaa))
+* **a11y:** add forced-colors support for badges, status and focus ([78c8c5b](https://github.com/D-Indexer/Indexer-Frontend/commit/78c8c5b4769dabbb3cc021dbf38218e95cfe415d)), closes [#263](https://github.com/D-Indexer/Indexer-Frontend/issues/263)
+* abort contract flows when wallet changes ([9d4a96b](https://github.com/D-Indexer/Indexer-Frontend/commit/9d4a96bd0f5707794111a0f8f2b4b9b7d3e67fe5))
+* abort flows when wallet changes ([9947c20](https://github.com/D-Indexer/Indexer-Frontend/commit/9947c20e6737a3e2af2e61a14e30f97794ca2ce7))
+* accessible TxStepper with aria-current step +3 more ([ccfe3f2](https://github.com/D-Indexer/Indexer-Frontend/commit/ccfe3f2a187f3a2888ece815d5aed82099994e87))
+* add /status dependency health page +3 more ([b12fd0c](https://github.com/D-Indexer/Indexer-Frontend/commit/b12fd0c8aeb70e4ca2ecff164f466369bf41a022))
+* add accessible Dialog and promise-based ConfirmDialog +3 more ([937a702](https://github.com/D-Indexer/Indexer-Frontend/commit/937a7026273c8ab319ec0dcceb03343b80902cce))
+* add demo-mode PR preview deployments with cleanup +3 more ([76102dc](https://github.com/D-Indexer/Indexer-Frontend/commit/76102dca6b2ecf3877cddd0dd0d2b0d39f30a778))
+* add portfolio operations dashboard ([5109f32](https://github.com/D-Indexer/Indexer-Frontend/commit/5109f3210670f6bedc19ade5b75c59659c3e3706))
+* add soroban account lifecycle safeguards ([d3dc3cb](https://github.com/D-Indexer/Indexer-Frontend/commit/d3dc3cb3c58afde06dfd27dea79dd4b54d78968e))
+* add Soroban account lifecycle safeguards ([4bc218a](https://github.com/D-Indexer/Indexer-Frontend/commit/4bc218ab142f0b3ae70b95092ecdfa9d1fa6bd5d))
+* add soroban state integrity foundations ([1b4f383](https://github.com/D-Indexer/Indexer-Frontend/commit/1b4f38358f238bff5fa1b69bb549be9812c096b9))
+* add Soroban state integrity foundations ([f9845a6](https://github.com/D-Indexer/Indexer-Frontend/commit/f9845a6b5823f7e2b9ab651125a46d3c650ed327))
+* add transaction inspection drawer ([8ef3b69](https://github.com/D-Indexer/Indexer-Frontend/commit/8ef3b69862e15b100a8ce47049eeda389b3e6bb2))
+* add transaction inspection drawer ([3c96f83](https://github.com/D-Indexer/Indexer-Frontend/commit/3c96f8395554e7444bcabeaec3d40b3c42592f46))
+* add V8 coverage thresholds and PR changed-file coverage +3 more ([d8bb785](https://github.com/D-Indexer/Indexer-Frontend/commit/d8bb785c3fcfd0b0934c54794c8bdda837c69bd1))
+* add wallet auth and verification safeguards ([18c8114](https://github.com/D-Indexer/Indexer-Frontend/commit/18c81149e4679e8aa4f8b317b79dd7123761bf05))
+* add wallet authentication and verification safeguards ([f1e7a3e](https://github.com/D-Indexer/Indexer-Frontend/commit/f1e7a3e38c2e1e5911521b2608b300d770ce2fb6))
+* **architecture:** enable strict TS options and ban ! in services ([57b88f1](https://github.com/D-Indexer/Indexer-Frontend/commit/57b88f15bb7328dfead6ccf4015e2f0b04aab55c)), closes [#222](https://github.com/D-Indexer/Indexer-Frontend/issues/222)
+* **chain:** claim folder, mint and update portfolio on testnet ([9ebf98f](https://github.com/D-Indexer/Indexer-Frontend/commit/9ebf98fdd295c840d5ec184eabede0da0a0c3675))
+* **ci:** publish releases to IPFS with DNSLink and gateway checks ([0649e44](https://github.com/D-Indexer/Indexer-Frontend/commit/0649e44a686536647563716f83b81d01f6a537be)), closes [#250](https://github.com/D-Indexer/Indexer-Frontend/issues/250)
+* **config:** add envSchema as single source of truth for env parsing ([82d3e48](https://github.com/D-Indexer/Indexer-Frontend/commit/82d3e48be6e5c6093e76c0e75956983517233399)), closes [#265](https://github.com/D-Indexer/Indexer-Frontend/issues/265)
+* **config:** add runtime config overrides for local stack ([498a329](https://github.com/D-Indexer/Indexer-Frontend/commit/498a3299ebfe69939e6ed2b47208f91a066153f2)), closes [#253](https://github.com/D-Indexer/Indexer-Frontend/issues/253)
+* **config:** load runtime config.json over build-time env ([16c87d8](https://github.com/D-Indexer/Indexer-Frontend/commit/16c87d891fa476f58179fefae6f17244a9f42e60)), closes [#249](https://github.com/D-Indexer/Indexer-Frontend/issues/249)
+* **config:** validate VITE_ env vars at startup ([9e24a18](https://github.com/D-Indexer/Indexer-Frontend/commit/9e24a181bde01fc8822ab5ca8f4df0cc0f6b0a71))
+* **data:** use the real backend API and remove silent mock fallbacks ([1aca754](https://github.com/D-Indexer/Indexer-Frontend/commit/1aca75444ff0fddd27344890699b37f9f8509335))
+* disclose IPFS CID verification state ([a2f27cc](https://github.com/D-Indexer/Indexer-Frontend/commit/a2f27cc35f3417de960675cb9565e23c4f1d87ac))
+* disclose IPFS content verification state ([1bf2bce](https://github.com/D-Indexer/Indexer-Frontend/commit/1bf2bce8851550c88a6f188470d2a8ebc414beec))
+* **editor:** review a field-by-field diff before update_portfolio ([#194](https://github.com/D-Indexer/Indexer-Frontend/issues/194)) ([515d504](https://github.com/D-Indexer/Indexer-Frontend/commit/515d5044564021b1097b3f6ab7794d2276e6cc51))
+* **editor:** safe Markdown for bio and sections with live preview ([#196](https://github.com/D-Indexer/Indexer-Frontend/issues/196)) ([2942922](https://github.com/D-Indexer/Indexer-Frontend/commit/2942922b653aba8ecdd7273411bb117a1c7afafe))
+* **editor:** warn before overwriting a concurrent on-chain update ([#195](https://github.com/D-Indexer/Indexer-Frontend/issues/195)) ([ce81472](https://github.com/D-Indexer/Indexer-Frontend/commit/ce8147291d497476fae69d4a375a2a20bfb9e7b9))
+* **explore:** add /explore page with cursor pagination and lazy verification ([#192](https://github.com/D-Indexer/Indexer-Frontend/issues/192)) ([15c92c1](https://github.com/D-Indexer/Indexer-Frontend/commit/15c92c1c28e03c11b6d8e0b4a934fd784f33f050))
+* extract framework-free verdict for CLI reuse +2 more ([263b39f](https://github.com/D-Indexer/Indexer-Frontend/commit/263b39fbda8a743211a8e7496f7e0a605b260149))
+* **folder:** check name availability before claiming ([4d06f48](https://github.com/D-Indexer/Indexer-Frontend/commit/4d06f48a675857c0e97e247817ee60923c251707))
+* generate CycloneDX SBOM for each release +3 more ([edf0b48](https://github.com/D-Indexer/Indexer-Frontend/commit/edf0b487adfea76e17d0c26cea0de67a344587ea))
+* harden Soroban wallet transaction safety ([afb5538](https://github.com/D-Indexer/Indexer-Frontend/commit/afb553840b6381db183c93ac63294e66266668cb))
+* harden wallet transaction safety ([8624ba0](https://github.com/D-Indexer/Indexer-Frontend/commit/8624ba0f46183cc72344f82060cb33a825a5e13b))
+* hash CIDs in a Web Worker with main-thread fallback +2 more ([a69acca](https://github.com/D-Indexer/Indexer-Frontend/commit/a69accabb6934e14fa954fd03c0639c9b306d13f))
+* improve wallet lifecycle safety ([49a90d3](https://github.com/D-Indexer/Indexer-Frontend/commit/49a90d360794ce7d8214f8a70bc2bfb4fb63fec1))
+* improve wallet lifecycle safety ([badf6aa](https://github.com/D-Indexer/Indexer-Frontend/commit/badf6aa285eff12710b3f0c615ae23afeb991ae1))
+* **ipfs:** canonical JSON serialization ([#177](https://github.com/D-Indexer/Indexer-Frontend/issues/177)) ([43099ad](https://github.com/D-Indexer/Indexer-Frontend/commit/43099ad72530f44f99a34d175f5098dd648a54f2))
+* **ipfs:** immutable IndexedDB content cache keyed by CID ([#178](https://github.com/D-Indexer/Indexer-Frontend/issues/178)) ([5c84033](https://github.com/D-Indexer/Indexer-Frontend/commit/5c840335f3bed7515c8bdd43a8a85ae2061bca18))
+* **ipfs:** safe JSON parsing and shape guards for gateway docs ([78025bc](https://github.com/D-Indexer/Indexer-Frontend/commit/78025bcb0706927f3722b01c6878ab9e61809e58)), closes [#272](https://github.com/D-Indexer/Indexer-Frontend/issues/272)
+* **ipfs:** skip upload and update_portfolio when content is unchanged ([#179](https://github.com/D-Indexer/Indexer-Frontend/issues/179)) ([beb81fb](https://github.com/D-Indexer/Indexer-Frontend/commit/beb81fb9956407d5fe48067974ffa78f5c2bf38c))
+* **ipfs:** streaming byte limit and timeout on gateway downloads ([#180](https://github.com/D-Indexer/Indexer-Frontend/issues/180)) ([b66cc32](https://github.com/D-Indexer/Indexer-Frontend/commit/b66cc32bc27d15dab3e51b55643a1df746906b27))
+* link to newly created portfolios ([628f30d](https://github.com/D-Indexer/Indexer-Frontend/commit/628f30d4d0c60c06eded6e3b0bb4632f41c3d5a6))
+* **offline:** network status, banner, blocked writes, read retry ([cf7b4b0](https://github.com/D-Indexer/Indexer-Frontend/commit/cf7b4b0be833912c2b7ceffede860cdecfe051fb)), closes [#258](https://github.com/D-Indexer/Indexer-Frontend/issues/258)
+* poll live folder contract events ([dfb2d84](https://github.com/D-Indexer/Indexer-Frontend/commit/dfb2d84f496f3188019db11ddbadd2d72d590b77))
+* poll live Folder contract events ([f64e2ce](https://github.com/D-Indexer/Indexer-Frontend/commit/f64e2cea02f014c5d914b4481560fbc66ef6950b))
+* **portfolio:** add accessible skills tag input ([ad8bf31](https://github.com/D-Indexer/Indexer-Frontend/commit/ad8bf31e11d95cc3d9902a0456dd7903ffaf5364))
+* **portfolio:** add editor undo and redo history ([b1248a2](https://github.com/D-Indexer/Indexer-Frontend/commit/b1248a22e2b43e6bbd3331ff0953f5e3ee8c3f3a))
+* **portfolio:** add structured typed links editor ([d0fbe98](https://github.com/D-Indexer/Indexer-Frontend/commit/d0fbe9806c259b2506619a646eb1b2e6929570dd))
+* **public-page:** detect and explain indexer vs on-chain divergence ([#189](https://github.com/D-Indexer/Indexer-Frontend/issues/189)) ([ac6710f](https://github.com/D-Indexer/Indexer-Frontend/commit/ac6710f859e8f149944810de1e2ee1f45a9c1e69))
+* **public-page:** owner toolbar with edit, share and explorer shortcuts ([#190](https://github.com/D-Indexer/Indexer-Frontend/issues/190)) ([aa7513c](https://github.com/D-Indexer/Indexer-Frontend/commit/aa7513c52f147e2a12c42cebef2779b0153332aa))
+* **public-page:** resolve public pages by owner address at /a/:address ([#191](https://github.com/D-Indexer/Indexer-Frontend/issues/191)) ([d50d33b](https://github.com/D-Indexer/Indexer-Frontend/commit/d50d33b6b0d4d54dfe21e8b8443bcb3e594c1996))
+* **public:** verifiable public portfolio page at /p/:folderName ([1ddbe93](https://github.com/D-Indexer/Indexer-Frontend/commit/1ddbe932c4c988c0c7da3eec283911e911d712a7))
+* **pwa:** add installable PWA with offline caching config ([0478b27](https://github.com/D-Indexer/Indexer-Frontend/commit/0478b27d3f4987a1b593d876be7cd3800d159952)), closes [#257](https://github.com/D-Indexer/Indexer-Frontend/issues/257)
+* **rum:** add privacy-preserving web-vitals collection scaffolding ([cdbe812](https://github.com/D-Indexer/Indexer-Frontend/commit/cdbe8124507905ac46dfbda489124a6b60368331)), closes [#238](https://github.com/D-Indexer/Indexer-Frontend/issues/238)
+* safe JSON parsing and shape guards for gateway docs +2 more ([7c49e2f](https://github.com/D-Indexer/Indexer-Frontend/commit/7c49e2f50c9b1aec6fc6a550f3c42bf8bc10ec57))
+* **security:** add gitleaks config with Stellar seed rule ([2566fc2](https://github.com/D-Indexer/Indexer-Frontend/commit/2566fc28d9062e0ea1e8b0ce2368fba839895ef1)), closes [#245](https://github.com/D-Indexer/Indexer-Frontend/issues/245)
+* **security:** sanitize IPFS display text and expose ASCII link hosts ([4f5964f](https://github.com/D-Indexer/Indexer-Frontend/commit/4f5964f403e77487667eb5cb695afe8d3ec80fed)), closes [#241](https://github.com/D-Indexer/Indexer-Frontend/issues/241)
+* split CI into parallel jobs with Node 20/22 matrix and caching +1… ([39f4595](https://github.com/D-Indexer/Indexer-Frontend/commit/39f45951950cc82f4a5af61e27e2df00077aaa15))
+* **status:** add /status dependency health page ([323ed1f](https://github.com/D-Indexer/Indexer-Frontend/commit/323ed1fb782ec60722c09ff8683cb1a70f9ff05d)), closes [#256](https://github.com/D-Indexer/Indexer-Frontend/issues/256)
+* **stellar:** ledger-scoped read cache for contract reads ([6fdf27d](https://github.com/D-Indexer/Indexer-Frontend/commit/6fdf27d20e8617ae87bf3440a61e827860bdac19)), closes [#275](https://github.com/D-Indexer/Indexer-Frontend/issues/275)
+* **stellar:** Soroban RPC failover across configured providers ([4696b53](https://github.com/D-Indexer/Indexer-Frontend/commit/4696b539760096fbb585fc96cedf6aa3d75e9aef))
+* **stellar:** Soroban RPC failover across configured providers ([7dbc7d7](https://github.com/D-Indexer/Indexer-Frontend/commit/7dbc7d7e93c5e146631a617dd478eca3fb0d7071)), closes [#271](https://github.com/D-Indexer/Indexer-Frontend/issues/271)
+* **storage:** versioned namespaced storage wrapper + local data reset ([b4ebd85](https://github.com/D-Indexer/Indexer-Frontend/commit/b4ebd853eee8a69aedf8e7135c80c6ee8632aafd)), closes [#247](https://github.com/D-Indexer/Indexer-Frontend/issues/247)
+* **storybook:** add Storybook 8 workspace config and story fakes ([ddabfe3](https://github.com/D-Indexer/Indexer-Frontend/commit/ddabfe31b62c0adc562d65d5a13867ec0fc0dd70)), closes [#270](https://github.com/D-Indexer/Indexer-Frontend/issues/270)
+* **theme:** add dark theme tokens and system preference support ([c1b55f6](https://github.com/D-Indexer/Indexer-Frontend/commit/c1b55f6c5cd49a4faf7f26e8dbd29b951d001e19)), closes [#259](https://github.com/D-Indexer/Indexer-Frontend/issues/259)
+* **transactions:** accessible TxStepper with aria-current step ([2345782](https://github.com/D-Indexer/Indexer-Frontend/commit/234578234827c303bce53a28c13fe60baacd77d4)), closes [#264](https://github.com/D-Indexer/Indexer-Frontend/issues/264)
+* **transactions:** show contract identicon and method before signing ([7b8de09](https://github.com/D-Indexer/Indexer-Frontend/commit/7b8de09456e2ba48d5da510cac24872e89ca829d)), closes [#246](https://github.com/D-Indexer/Indexer-Frontend/issues/246)
+* **transactions:** typed domain event bus for confirmed writes ([45f30f9](https://github.com/D-Indexer/Indexer-Frontend/commit/45f30f9318adaddcdff09220ae5a5b06e488d8dd)), closes [#274](https://github.com/D-Indexer/Indexer-Frontend/issues/274)
+* **ui:** add accessible Dialog and promise-based ConfirmDialog ([c245fa4](https://github.com/D-Indexer/Indexer-Frontend/commit/c245fa445c568503e8afaa06a4a1b921cd4305bf)), closes [#260](https://github.com/D-Indexer/Indexer-Frontend/issues/260)
+* **ui:** add Identifier component with copy and full-value access ([d85ea4e](https://github.com/D-Indexer/Indexer-Frontend/commit/d85ea4e212fa1dd90e6b8e0f9905d33b4bfba596)), closes [#261](https://github.com/D-Indexer/Indexer-Frontend/issues/261)
+* validate prepared transaction authorization ([ce5a29d](https://github.com/D-Indexer/Indexer-Frontend/commit/ce5a29d67f0425233d8c61a7f2e64f2797e2f9ac))
+* validate prepared transaction authorization ([b751d18](https://github.com/D-Indexer/Indexer-Frontend/commit/b751d18ed07d4c66b739693614dcf39f95bae5cc))
+* **wallet:** connect Freighter and enforce testnet ([f118f9c](https://github.com/D-Indexer/Indexer-Frontend/commit/f118f9cf734b1873e759d521eb4ae09b68d3e0d4))
+* **wallet:** extract WalletProvider interface from freighterWallet ([02f298c](https://github.com/D-Indexer/Indexer-Frontend/commit/02f298c1016fa097e6e31a424f4a1cbfd4f33b70)), closes [#235](https://github.com/D-Indexer/Indexer-Frontend/issues/235)
+
+
+### Bug Fixes
+
+* **a11y:** announce tx stages once and focus outcome ([4e41fad](https://github.com/D-Indexer/Indexer-Frontend/commit/4e41fada000b623c4d11a45185e2a75ad924681f)), closes [#262](https://github.com/D-Indexer/Indexer-Frontend/issues/262)
+* add semantics to empty states ([2115867](https://github.com/D-Indexer/Indexer-Frontend/commit/21158670619b986609088cd79f8369664297902e))
+* announce async UI states ([0f0dc4e](https://github.com/D-Indexer/Indexer-Frontend/commit/0f0dc4e2759881865724dff45998dc746f023b71))
+* guard stale async hook updates ([27d433d](https://github.com/D-Indexer/Indexer-Frontend/commit/27d433d0610ceeb2919351dc4c7096927e86e62f))
+* improve disabled and cid styling ([7cc4a25](https://github.com/D-Indexer/Indexer-Frontend/commit/7cc4a250959f41e5ed1ac97089a8b48e1b0db39b))
+* keep portfolio store entries unique ([4ca13a6](https://github.com/D-Indexer/Indexer-Frontend/commit/4ca13a6fa6dd9330b48575b0e58aea02807f60fd))
+* normalize configured service urls ([a9debf6](https://github.com/D-Indexer/Indexer-Frontend/commit/a9debf66bd2afcc7296a8106f83cccec29cfd57f))
+* partial work towards [#234](https://github.com/D-Indexer/Indexer-Frontend/issues/234) ([127a5b9](https://github.com/D-Indexer/Indexer-Frontend/commit/127a5b9ed0e13b5b5eae08e750d38f8e27990fdc))
+* partial work towards [#243](https://github.com/D-Indexer/Indexer-Frontend/issues/243) ([0fc9f10](https://github.com/D-Indexer/Indexer-Frontend/commit/0fc9f100d1cf0922ca98e043c7e681b1acc7517c))
+* partial work towards [#254](https://github.com/D-Indexer/Indexer-Frontend/issues/254) ([708b412](https://github.com/D-Indexer/Indexer-Frontend/commit/708b412230ada13806ac82877b96ea3772489db3))
+* partial work towards [#255](https://github.com/D-Indexer/Indexer-Frontend/issues/255) ([9ec7c87](https://github.com/D-Indexer/Indexer-Frontend/commit/9ec7c875aaaf16ff5491417b4d253484d5a70f6e))
+* reset portfolio creation success state ([152b02a](https://github.com/D-Indexer/Indexer-Frontend/commit/152b02a5ebdf906047fed078672ebb39c2a89447))
+* resolve TypeScript compilation errors ([2897f46](https://github.com/D-Indexer/Indexer-Frontend/commit/2897f466128ea00ef821ae79858197c30b46d0c5))
+* template renderer registry, scaffolding cli, registration ui, an… ([57c41f8](https://github.com/D-Indexer/Indexer-Frontend/commit/57c41f8ebf4c4294a5d83321dec3f9591ff15b5c))
+* template renderer registry, scaffolding cli, registration ui, and explorer abstraction ([8447bb9](https://github.com/D-Indexer/Indexer-Frontend/commit/8447bb9b246cb8709d4bf98937e7a01f30414b54)), closes [#205](https://github.com/D-Indexer/Indexer-Frontend/issues/205) [#208](https://github.com/D-Indexer/Indexer-Frontend/issues/208) [#209](https://github.com/D-Indexer/Indexer-Frontend/issues/209) [#213](https://github.com/D-Indexer/Indexer-Frontend/issues/213)
+* template themes, metadata integrity status, activity center, and service context ([f7c922b](https://github.com/D-Indexer/Indexer-Frontend/commit/f7c922bf551f24d419672f4a1767e0741bf563a7)), closes [#206](https://github.com/D-Indexer/Indexer-Frontend/issues/206) [#207](https://github.com/D-Indexer/Indexer-Frontend/issues/207) [#210](https://github.com/D-Indexer/Indexer-Frontend/issues/210) [#217](https://github.com/D-Indexer/Indexer-Frontend/issues/217)
+* template themes, metadata integrity status, activity center, and… ([f97ed87](https://github.com/D-Indexer/Indexer-Frontend/commit/f97ed87d626392e30221d77d33fe2ae0b5e65cc6))
+* tighten portfolio form validation state ([7d022a1](https://github.com/D-Indexer/Indexer-Frontend/commit/7d022a1de6cbf9f166a73c2cb546ce1f601cae8f))
+* toasts with live regions, web locks concurrency, router loaders, and error boundaries ([2887a3a](https://github.com/D-Indexer/Indexer-Frontend/commit/2887a3a736dc3de6e318d2d27f158fe4e3e44cfe)), closes [#211](https://github.com/D-Indexer/Indexer-Frontend/issues/211) [#212](https://github.com/D-Indexer/Indexer-Frontend/issues/212) [#218](https://github.com/D-Indexer/Indexer-Frontend/issues/218) [#219](https://github.com/D-Indexer/Indexer-Frontend/issues/219)
+* toasts with live regions, web locks concurrency, router loaders,… ([a8ff6a5](https://github.com/D-Indexer/Indexer-Frontend/commit/a8ff6a594680da7d0ee6ecce561f4b5dba15b67a))
+* validation property tests, error catalog, runtime config, and da… ([adad7c6](https://github.com/D-Indexer/Indexer-Frontend/commit/adad7c6ebd3958edbad3ba3d95fcba0a140e64c7))
+* validation property tests, error catalog, runtime config, and data sources ([8efcd38](https://github.com/D-Indexer/Indexer-Frontend/commit/8efcd38252087f5b2aea752c05c071fade96af9f)), closes [#204](https://github.com/D-Indexer/Indexer-Frontend/issues/204) [#214](https://github.com/D-Indexer/Indexer-Frontend/issues/214) [#215](https://github.com/D-Indexer/Indexer-Frontend/issues/215) [#216](https://github.com/D-Indexer/Indexer-Frontend/issues/216)
+
+
+### Performance Improvements
+
+* derive resource hints from runtime config ([f312388](https://github.com/D-Indexer/Indexer-Frontend/commit/f3123887af8ce204e0b1549604f7d49224fb9631)), closes [#239](https://github.com/D-Indexer/Indexer-Frontend/issues/239)
+* **ipfs:** hash CIDs in a Web Worker with main-thread fallback ([68501b3](https://github.com/D-Indexer/Indexer-Frontend/commit/68501b3e99ab2718dce54227c577c7db38808fee)), closes [#240](https://github.com/D-Indexer/Indexer-Frontend/issues/240)
+* parallelize public portfolio loading with speculative IPFS fetch ([#193](https://github.com/D-Indexer/Indexer-Frontend/issues/193)) ([7e50ec3](https://github.com/D-Indexer/Indexer-Frontend/commit/7e50ec37be68bbb71034eba32fcacb313136ee4b))
+* **templates:** bound metadata concurrency, dedupe fetches ([5dab31c](https://github.com/D-Indexer/Indexer-Frontend/commit/5dab31c4c173e8f749036e0e24b3da4a9990c845))
+* **templates:** bound metadata concurrency, dedupe fetches ([ff416b0](https://github.com/D-Indexer/Indexer-Frontend/commit/ff416b0da1a02cdf99b44025eac7c3ec4ef9db7c)), closes [#273](https://github.com/D-Indexer/Indexer-Frontend/issues/273)
+
+
+### Code Refactoring
+
+* **public-portfolio:** extract framework-free verdict for CLI reuse ([02a0573](https://github.com/D-Indexer/Indexer-Frontend/commit/02a0573759c44199ef0b31a6bbadb721ff6a68e9)), closes [#268](https://github.com/D-Indexer/Indexer-Frontend/issues/268)
+
+
+### Documentation
+
+* add claim, mint, update and verification sequence diagrams ([ea6d578](https://github.com/D-Indexer/Indexer-Frontend/commit/ea6d5781729ec9f0188a5c3bc6a89fa4e65a8061)), closes [#266](https://github.com/D-Indexer/Indexer-Frontend/issues/266)
+* **api:** add TypeDoc config, jsdoc lint rules and CI docs build ([e9d9eaf](https://github.com/D-Indexer/Indexer-Frontend/commit/e9d9eaf0e69075faaa28cae659e79aaa2d751fa7)), closes [#267](https://github.com/D-Indexer/Indexer-Frontend/issues/267)
+* document development workflow ([637e2fd](https://github.com/D-Indexer/Indexer-Frontend/commit/637e2fdedeb178147a55879d38b189c193f3552b))
+* document frontend architecture ([9df7dd6](https://github.com/D-Indexer/Indexer-Frontend/commit/9df7dd60322364ef41e564a9eaf6a46cba8ecacc))
+* document frontend security notes ([ce1a674](https://github.com/D-Indexer/Indexer-Frontend/commit/ce1a674b5d61d4c1d3e377fcdf1c04bc8b0fb875))
+* document runtime configuration ([451a8c6](https://github.com/D-Indexer/Indexer-Frontend/commit/451a8c6be18922e52b73ec26ef296536adf600d1))
+* rebuild frontend readme ([0c83488](https://github.com/D-Indexer/Indexer-Frontend/commit/0c834886f231f6cc199b95eaffc020c9686b9254))
+* rewrite README with honest status and quick start ([13ef9b6](https://github.com/D-Indexer/Indexer-Frontend/commit/13ef9b6493e950716f659e476a02e1ea8c6a579a))
+* sync readme with current frontend ([49005d1](https://github.com/D-Indexer/Indexer-Frontend/commit/49005d1d684cec99c2d2ad78479121bcfbd6a486))
+* update readme for new structure ([a4533a6](https://github.com/D-Indexer/Indexer-Frontend/commit/a4533a6a9c8857b14e2bea4c376a8fa17f9fd0fc))
+
+
+### Build System
+
+* update production bundle ([65232b5](https://github.com/D-Indexer/Indexer-Frontend/commit/65232b50d1febe7de09e40a5fa8e81e66b38b649))
+* update production bundle ([1b6b03f](https://github.com/D-Indexer/Indexer-Frontend/commit/1b6b03fbe595786049e7a71d06f58a9bd6311482))
+
+
+### Continuous Integration
+
+* add demo-mode PR preview deployments with cleanup ([43c12e6](https://github.com/D-Indexer/Indexer-Frontend/commit/43c12e60d705ae4168888ffb48865fe1300634aa)), closes [#248](https://github.com/D-Indexer/Indexer-Frontend/issues/248)
+* add release-please, PR title lint and footer version ([f0945a6](https://github.com/D-Indexer/Indexer-Frontend/commit/f0945a6774048de9ce0ae676608a1ca60c0b9d87)), closes [#251](https://github.com/D-Indexer/Indexer-Frontend/issues/251)
+* add Vitest + Testing Library and a CI workflow ([e05be94](https://github.com/D-Indexer/Indexer-Frontend/commit/e05be94b207163669cbc9900df155e478f3956a0))
+* generate CycloneDX SBOM for each release ([15a7614](https://github.com/D-Indexer/Indexer-Frontend/commit/15a7614e0ec9dc0a23e1d5dc1e93902a427b0946)), closes [#244](https://github.com/D-Indexer/Indexer-Frontend/issues/244)
+* pin actions by SHA, add Dependabot and Scorecard workflow ([79e7a79](https://github.com/D-Indexer/Indexer-Frontend/commit/79e7a79b9c0d1f1f561bcc590068bc5a4b91073a)), closes [#242](https://github.com/D-Indexer/Indexer-Frontend/issues/242)
+* split CI into parallel jobs with Node 20/22 matrix and caching ([70d20c2](https://github.com/D-Indexer/Indexer-Frontend/commit/70d20c2a7e65bf9c672808488f81f76a263b2d6d)), closes [#252](https://github.com/D-Indexer/Indexer-Frontend/issues/252)
+* **test:** add V8 coverage thresholds and PR changed-file coverage ([37b63bc](https://github.com/D-Indexer/Indexer-Frontend/commit/37b63bc3c75aed2abe6e560553163b3efb9f1fbc)), closes [#236](https://github.com/D-Indexer/Indexer-Frontend/issues/236)
+
+
+### Tests
+
+* add Stryker mutation testing for services and utils ([93057dd](https://github.com/D-Indexer/Indexer-Frontend/commit/93057ddff302bd3cb20f658aaa637a73dc1b0271)), closes [#233](https://github.com/D-Indexer/Indexer-Frontend/issues/233)
+* expose RPC server seam and XDR builders for replay tests +2 more ([b6dc6cb](https://github.com/D-Indexer/Indexer-Frontend/commit/b6dc6cbc6302a44fdc55a3ce3201be74a11561f7))
+* **ipfs:** cover backend upload and CID checks ([be766b8](https://github.com/D-Indexer/Indexer-Frontend/commit/be766b8825557ef3cd66f0d5643859c78db8c0cc))
+* reset wallet store and fail leaked timers/globals after each test ([be32a3e](https://github.com/D-Indexer/Indexer-Frontend/commit/be32a3e2e60e069d51f51c644bb6006fcd4b2274)), closes [#237](https://github.com/D-Indexer/Indexer-Frontend/issues/237)
+* **stellar:** expose RPC server seam and XDR builders for replay tests ([f047bdd](https://github.com/D-Indexer/Indexer-Frontend/commit/f047bddeaaa3939c02abb922c96fed74e489a247)), closes [#232](https://github.com/D-Indexer/Indexer-Frontend/issues/232)
+
 ## [0.2.0](https://github.com/D-Indexer/Indexer-Frontend/releases/tag/v0.2.0)
 
 ### Features
