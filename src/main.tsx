@@ -25,9 +25,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     {envErrors.length > 0 ? (
       <ConfigErrorScreen issues={envErrors} />
     ) : (
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <App />
     )}
   </React.StrictMode>,
 )

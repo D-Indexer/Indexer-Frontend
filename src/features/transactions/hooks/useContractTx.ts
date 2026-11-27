@@ -34,6 +34,7 @@ const emitConfirmedWrite = (owner: string, write: FolderWrite, result: TxResult)
 /**
  * Runs one Folder contract write with Freighter as signer. `prepare` can do async work first
  * (e.g. the IPFS upload) and returns the write to send.
+ * Serializes writes per owner across browser tabs using the Web Locks API (`navigator.locks`).
  */
 export const useContractTx = () => {
   const [state, setState] = useState<ContractTxState>(initialState)
@@ -65,6 +66,9 @@ export const useContractTx = () => {
       unsubscribe()
       running.current = false
     }
+
+    // Fallback when Web Locks API is not available
+    return execute()
   }, [])
 
   const reset = useCallback(() => setState(initialState), [])

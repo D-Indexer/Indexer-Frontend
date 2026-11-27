@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLoaderData, useParams } from 'react-router-dom'
 import { AsyncContent, Card, ExternalLink } from '@/components/ui'
 import {
   DivergenceNotice,
@@ -17,7 +17,14 @@ import { sanitizeDisplayText } from '@/utils/format'
 
 export const PublicPortfolioPage = () => {
   const { folderName = '' } = useParams<{ folderName: string }>()
-  const { data, error, loading, refetch } = usePublicPortfolio(folderName)
+  const loaderData = useLoaderData() as PublicPortfolio | null | undefined
+  const hookResult = usePublicPortfolio(folderName)
+
+  // Use pre-fetched data from route loader if available, otherwise fallback to hook
+  const data = loaderData !== undefined ? loaderData : hookResult.data
+  const error = loaderData !== undefined ? null : hookResult.error
+  const loading = loaderData !== undefined ? false : hookResult.loading
+  const refetch = hookResult.refetch
 
   useEffect(() => {
     const name = data?.content ? sanitizeDisplayText(data.content.name, 120) : sanitizeDisplayText(folderName, 120)
