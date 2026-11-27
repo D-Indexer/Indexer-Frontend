@@ -55,6 +55,14 @@ export interface TemplateWithMetadata extends Template {
   metadata: TemplateMetadata | null
 }
 
+export type PortfolioLinkKind = 'github' | 'linkedin' | 'website' | 'email' | 'other'
+
+export interface PortfolioLink {
+  kind: PortfolioLinkKind
+  url: string
+  label: string
+}
+
 /** Portfolio document uploaded to IPFS; its CID is what `mint_portfolio` / `update_portfolio` anchor. */
 export interface PortfolioContent {
   schema_version: 1
@@ -65,6 +73,8 @@ export interface PortfolioContent {
   bio: string
   skills: string[]
   links: string[]
+  /** Structured link metadata; absent in legacy documents. */
+  link_meta?: PortfolioLink[]
   /** Free-text content for template-specific fields (e.g. `projects`, `case_studies`). */
   sections: Record<string, string>
   updated_at: string

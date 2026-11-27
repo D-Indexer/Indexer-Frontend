@@ -57,9 +57,26 @@ describe('PublicPortfolioPage', () => {
       'href',
       `https://stellar.expert/explorer/testnet/account/${OWNER}`,
     )
+    expect(screen.getByRole('link', { name: /example.com/ })).toHaveAttribute('href', 'https://example.com')
+    expect(screen.queryByText('Website')).not.toBeInTheDocument()
     // The on-chain CID wins over a possibly stale indexer CID.
     expect(data.getPortfolioContent).toHaveBeenCalledWith(CID_V2)
     expect(chain.verifyPortfolio).toHaveBeenCalledWith(OWNER)
+  })
+
+  it('renders structured link labels and kinds, including email links', async () => {
+    data.getPortfolioContent.mockResolvedValue({
+      ...content,
+      links: ['mailto:jane@example.com'],
+      link_meta: [{ kind: 'email', url: 'mailto:jane@example.com', label: 'Contact Jane' }],
+    })
+    renderPage()
+
+    const emailLink = await screen.findByRole('link', { name: /Contact Jane/ })
+    expect(emailLink).toHaveAttribute('href', 'mailto:jane@example.com')
+    expect(emailLink).toHaveAttribute('target', '_self')
+    expect(emailLink).not.toHaveAccessibleName(/opens in a new tab/)
+    expect(screen.getByText('Email')).toBeInTheDocument()
   })
 
   it('shows "not found" for an unknown folder', async () => {

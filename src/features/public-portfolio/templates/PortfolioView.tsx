@@ -20,6 +20,7 @@ const Links = ({ links }: { links: string[] }) =>
       ))}
     </ul>
   ) : null
+}
 
 const Skills = ({ label = 'Skills', skills }: { label?: string; skills: string[] }) =>
   skills.length > 0 ? (
@@ -75,7 +76,7 @@ const DeveloperView = ({ content }: ViewProps) => (
     </p>
     <Skills skills={content.skills} />
     <Sections sections={content.sections} />
-    <Links links={content.links} />
+    <Links content={content} />
   </article>
 )
 
@@ -90,7 +91,7 @@ const DesignerView = ({ content }: ViewProps) => (
       <Sections sections={content.sections} />
     </div>
     <Skills label="Tools and skills" skills={content.skills} />
-    <Links links={content.links} />
+    <Links content={content} />
   </article>
 )
 
@@ -108,7 +109,7 @@ const OperationsView = ({ content }: ViewProps) => (
       <div>
         <Skills skills={content.skills} />
         <Sections sections={content.sections} only={['certifications']} />
-        <Links links={content.links} />
+        <Links content={content} />
       </div>
     </div>
   </article>

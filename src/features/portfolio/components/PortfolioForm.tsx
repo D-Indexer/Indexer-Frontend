@@ -17,7 +17,7 @@ const CORE_FIELDS = new Set(['bio', 'skills'])
 interface FormValues {
   bio: string
   headline: string
-  links: string
+  links: PortfolioLink[]
   name: string
   sections: Record<string, string>
   skills: string
@@ -29,7 +29,7 @@ type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'templateId', string
 const emptyValues = (templateId: string): FormValues => ({
   bio: '',
   headline: '',
-  links: '',
+  links: [],
   name: '',
   sections: {},
   skills: '',
@@ -39,7 +39,7 @@ const emptyValues = (templateId: string): FormValues => ({
 const fromContent = (content: PortfolioContent, templateId: string): FormValues => ({
   bio: content.bio ?? '',
   headline: content.headline ?? '',
-  links: (content.links ?? []).join(', '),
+  links: getPortfolioLinks(content),
   name: content.name ?? '',
   sections: content.sections ?? {},
   skills: (content.skills ?? []).join(', '),
@@ -51,8 +51,7 @@ const validate = (values: FormValues): FormErrors => {
   if (!values.templateId) errors.templateId = 'Choose a template.'
   if (!isRequired(values.name)) errors.name = 'Enter the name to show on your portfolio.'
   if (!isRequired(values.bio)) errors.bio = 'Write a short bio.'
-  const invalid = getInvalidUrls(parseDelimitedList(values.links))
-  if (invalid.length > 0) errors.links = `These are not valid http(s) URLs: ${invalid.join(', ')}`
+  if (values.links.some((link) => getPortfolioLinkError(link))) errors.links = 'Fix the highlighted links before publishing.'
   return errors
 }
 
@@ -111,7 +110,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const selectedTemplate = templates.data?.find((template) => String(template.id) === values.templateId)
   const sectionFields = (selectedTemplate?.metadata?.fields ?? []).filter((field) => !CORE_FIELDS.has(field))
 
-  const set = (key: Exclude<keyof FormValues, 'sections'>) => (event: { target: { value: string } }) =>
+  const set = (key: Exclude<keyof FormValues, 'sections' | 'links'>) => (event: { target: { value: string } }) =>
     setValues((current) => ({ ...current, [key]: event.target.value }))
 
   const buildContent = (updatedAt: string): PortfolioContent => ({
@@ -152,7 +151,9 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
     setErrors(nextErrors)
     const firstInvalid = fieldOrder.find((key) => nextErrors[key])
     if (firstInvalid) {
-      document.getElementById(`portfolio-${firstInvalid}`)?.focus()
+      const firstInvalidLink = values.links.findIndex((link) => getPortfolioLinkError(link))
+      const targetId = firstInvalid === 'links' ? `portfolio-links-${firstInvalidLink}-url` : `portfolio-${firstInvalid}`
+      document.getElementById(targetId)?.focus()
       return
     }
 
@@ -248,14 +249,11 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
         />
         <FormField control="textarea" id="portfolio-bio" label="Bio" required error={errors.bio} value={values.bio} onChange={set('bio')} />
         <FormField id="portfolio-skills" label="Skills" helpText="Separate skills with commas." value={values.skills} onChange={set('skills')} />
-        <FormField
+        <LinksEditor
           id="portfolio-links"
-          label="Links"
-          helpText="Separate links with commas. Each must start with http:// or https://."
-          error={errors.links}
           value={values.links}
-          onChange={set('links')}
-          inputMode="url"
+          error={errors.links}
+          onChange={(links) => setValues((current) => ({ ...current, links }))}
         />
 
         {sectionFields.map((field) => (
