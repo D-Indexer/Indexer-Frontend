@@ -78,7 +78,9 @@ npm run dev         # Vite dev server on :5173
 npm run typecheck   # tsc --noEmit
 npm run lint        # ESLint
 npm test            # Vitest + Testing Library
+npm run test:coverage # Vitest with V8 coverage and per-directory thresholds
 npm run build       # production build in dist/
+npm run format      # Prettier (npm run format:check to verify)
 
 # Optional: run claim → mint → update → verify against the testnet contract
 FOLDER_TESTNET_SMOKE=1 npx vitest run src/services/stellar/testnet
@@ -86,14 +88,13 @@ FOLDER_TESTNET_SMOKE=1 npx vitest run src/services/stellar/testnet
 
 Every `VITE_*` variable is documented in [docs/configuration.md](docs/configuration.md).
 
-### CI
+### Coverage
 
-`.github/workflows/ci.yml` runs `typecheck`, `lint`, `test` and `build` as independent parallel
-jobs, so a failure in one does not wait on the others. `test` runs on a Node 20/22 matrix; the
-other jobs use Node 20. Vitest and TypeScript build info are cached between runs. Branch
-protection should require only the aggregator job **`ci-required`**, which fails if any of the
-four jobs fails, is cancelled or is skipped. Wall time is visible per job in the Actions run
-summary; the aggregator prints each job's result.
+`npm run test:coverage` runs Vitest with the V8 provider. Thresholds are enforced per directory in
+`vite.config.ts`: `src/services/**` needs ≥ 90% lines and branches, `src/features/**` needs ≥ 70%.
+Tests, type declarations, `src/testing/**` and `src/data/fixtures/**` are excluded. CI runs the same
+command, so a threshold drop fails the build, and on pull requests it reports coverage for the
+changed files in the job summary.
 
 ## How it works
 
@@ -107,6 +108,25 @@ summary; the aggregator prints each job's result.
    and `get_portfolio` on-chain, and renders the IPFS content with its template.
 
 See [docs/architecture.md](docs/architecture.md) for the module layout.
+
+## JSON Resume import
+
+Portfolio forms can import a local `resume.json` file (JSON Resume schema). The file is read only in the browser and is never uploaded by itself. After parsing, the preview shows the mapped values and requires confirmation before form fields are overwritten.
+
+Field mapping:
+
+- `basics.name` → Name
+- `basics.label` → Headline
+- `basics.summary` → Bio
+- `skills[].name` and `skills[].keywords` → Skills
+- `basics.url` and `basics.profiles[].url` → Links
+- `work` → `work_history` and `experience`
+- `projects` → `projects` and `case_studies`
+- `education` → `education`
+- `certificates` → `certifications`
+- `volunteer`, `awards`, `publications`, and `references` map to matching template fields
+
+Only fields declared by the selected template are inserted into template-specific sections. Invalid JSON, missing `basics`, and wrong field types show a precise error and leave existing form values unchanged.
 
 ## Related repositories
 

@@ -78,25 +78,51 @@ jobs:
           restore-keys: |
             vitest-${{ runner.os }}-node${{ matrix.node }}-
       - run: npm test
-
-  build:
-    name: build (node 20)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Build embed widget and report its size
+        run: npm run build:embed
+      - run: npm run test:coverage
+      - name: Changed-line coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
         with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - name: Cache Vite build
-        uses: actions/cache@v4
-        with:
-          path: node_modules/.vite
-          key: vite-build-${{ runner.os }}-node20-${{ hashFiles('package-lock.json', 'vite.config.ts', 'src/**/*.ts', 'src/**/*.tsx') }}
-          restore-keys: |
-            vite-build-${{ runner.os }}-node20-
+          script: |
+            const fs = require('fs')
+            const summaryPath = 'coverage/coverage-summary.json'
+            if (!fs.existsSync(summaryPath)) {
+              core.setFailed('coverage/coverage-summary.json not found; run npm run test:coverage first')
+              return
+            }
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'))
+            const files = Object.keys(summary).filter((key) => key !== 'total')
+            const { data: changed } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            })
+            const changedFiles = changed
+              .filter((file) => file.status !== 'removed')
+              .map((file) => file.filename)
+            const rows = []
+            for (const file of files) {
+              const relative = file.replace(`${process.cwd()}/`, '')
+              if (!changedFiles.includes(relative)) continue
+              const metrics = summary[file]
+              rows.push(
+                `| \`${relative}\` | ${metrics.lines.pct}% | ${metrics.branches.pct}% | ${metrics.functions.pct}% | ${metrics.statements.pct}% |`,
+              )
+            }
+            const body = rows.length
+              ? [
+                  '### Changed-line coverage',
+                  '',
+                  '| File | Lines | Branches | Functions | Statements |',
+                  '| --- | --- | --- | --- | --- |',
+                  ...rows,
+                ].join('\n')
+              : '### Changed-line coverage\n\nNo changed source files are covered by the test suite.'
+            await core.summary.addRaw(body).write()
+            core.info(body)
       - run: npm run build
 
   # Single required status check: branch protection only needs "ci-required".
