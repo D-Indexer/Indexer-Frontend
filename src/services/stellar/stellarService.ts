@@ -8,11 +8,12 @@ import {
   scValToNative,
   StrKey,
   TransactionBuilder,
-  type xdr,
+  xdr,
 } from '@stellar/stellar-sdk'
 import { env } from '@/config/env'
 import { describeContractError, extractContractErrorCode } from './contractErrors'
 import { getNetworkPassphrase } from './network'
+import { WalletError } from './freighterWallet'
 
 /** Stages reported while a write is in flight, so the UI can say what is happening. */
 export type TxStage = 'preparing' | 'signing' | 'submitting' | 'confirming'
@@ -27,16 +28,22 @@ export type FolderWrite =
 export interface TxResult {
   hash: string
   ledger: number
+  events?: FolderEvent[]
 }
+export interface PreparedTransactionDetails { xdr: string; hash: string; method: FolderWrite['method'] }
 
 export class TransactionError extends Error {
   constructor(
     message: string,
-    readonly options: { contractErrorCode?: number; hash?: string; pending?: boolean } = {},
+    readonly options: { code?: 'unexpected_auth'; contractErrorCode?: number; hash?: string; pending?: boolean } = {},
   ) {
     super(message)
     this.name = 'TransactionError'
   }
+}
+
+const assertNotAborted = (signal?: AbortSignal) => {
+  if (signal?.aborted) throw new TransactionError('Your wallet changed during this action. Nothing was signed.', { code: 'wallet_changed' } as any)
 }
 
 /** Source for read-only simulations; it never signs or submits anything. */
@@ -84,7 +91,7 @@ const loadAccount = async (address: string) => {
   } catch (error) {
     if (error instanceof Error && /not found/i.test(error.message)) {
       throw new TransactionError(
-        'This account does not exist on testnet yet. Fund it with Friendbot (https://friendbot.stellar.org/?addr=<your address>) and try again.',
+        'This account does not exist on testnet yet. Fund it with Friendbot and try again.', { code: 'account_not_found' },
       )
     }
     throw new TransactionError(`Could not load your account from Soroban RPC: ${error instanceof Error ? error.message : String(error)}`)
@@ -123,18 +130,27 @@ export const stellarService = {
    * Builds, simulates and prepares a Folder contract call, has `sign` sign it (Freighter in the
    * app), submits it, and polls until it is final. Contract errors are mapped to readable messages.
    */
-  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void): Promise<TxResult> => {
+  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void, signal?: AbortSignal): Promise<TxResult> => {
     const networkPassphrase = getNetworkPassphrase()
     onStage?.('preparing')
     const account = await loadAccount(owner)
     const { simulation, tx } = await simulate(account, write.method, toArgs(owner, write))
     const prepared = rpc.assembleTransaction(tx, simulation).build()
+    const operation = prepared.operations[0] as any
+    if (prepared.operations.length !== 1 || operation?.type !== 'invokeHostFunction') {
+      throw new TransactionError('The RPC returned an unexpected transaction operation. Nothing was signed.', { code: 'unexpected_auth' })
+    }
 
+    assertNotAborted(signal)
     onStage?.('signing')
     const signedXdr = await sign(prepared.toXDR(), owner, networkPassphrase)
 
+    assertNotAborted(signal)
     onStage?.('submitting')
     const signed = TransactionBuilder.fromXDR(signedXdr, networkPassphrase)
+    if (signed.hash().toString('hex') !== preparedHash || signed.constructor.name === 'FeeBumpTransaction') {
+      throw new WalletError('The wallet returned a transaction different from the one the app prepared. Nothing was submitted.', 'tampered')
+    }
     const sent = await getServer().sendTransaction(signed)
     if (sent.status === 'ERROR' || sent.status === 'TRY_AGAIN_LATER') {
       const detail = sent.errorResult ? sent.errorResult.result().switch().name : sent.status
@@ -169,8 +185,22 @@ export const stellarService = {
     return simulation.result ? scValToNative(simulation.result.retval) === true : false
   },
 
+  /** Ledger data for proof bundles: the latest ledger and when the contract instance expires (null if unreadable). */
+  getLedgerSnapshot: async (): Promise<{ latestLedger: number; liveUntilLedger: number | null }> => {
+    const rpcServer = getServer()
+    const latest = await rpcServer.getLatestLedger()
+    let liveUntilLedger: number | null = null
+    try {
+      const entry = await rpcServer.getContractData(env.folderContractId, xdr.ScVal.scvLedgerKeyContractInstance())
+      liveUntilLedger = entry.liveUntilLedgerSeq ?? null
+    } catch {
+      liveUntilLedger = null
+    }
+    return { latestLedger: latest.sequence, liveUntilLedger }
+  },
+
   /** Read-only `get_portfolio(owner)`: the CID and template currently anchored on-chain. */
-  getOnChainPortfolio: async (owner: string): Promise<{ ipfsCid: string; templateId: number; mintedAt: number } | null> => {
+  getOnChainPortfolio: async (owner: string): Promise<OnChainPortfolioState | null> => {
     try {
       const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'get_portfolio', [new Address(owner).toScVal()])
       if (!simulation.result) return null

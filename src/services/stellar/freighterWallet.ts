@@ -20,7 +20,7 @@ export interface WalletSnapshot extends WalletNetwork {
 export class WalletError extends Error {
   constructor(
     message: string,
-    readonly code: 'not_installed' | 'rejected' | 'unknown' = 'unknown',
+    readonly code: 'not_installed' | 'rejected' | 'tampered' | 'unknown' = 'unknown',
   ) {
     super(message)
     this.name = 'WalletError'

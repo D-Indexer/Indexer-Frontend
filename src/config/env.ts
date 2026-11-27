@@ -17,6 +17,7 @@ export interface AppConfig {
   rumSampleRate: number
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
+  sponsorEnabled: boolean
 }
 
 export interface EnvIssue {
@@ -81,6 +82,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 
   const network = read(raw, 'VITE_STELLAR_NETWORK') || defaults.stellarNetwork
+  const sponsorEnabled = read(raw, 'VITE_SPONSOR_ENABLED') === 'true'
   if (network !== 'testnet') {
     errors.push({
       variable: 'VITE_STELLAR_NETWORK',
@@ -96,6 +98,10 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   const ipfsGatewayUrl = trimTrailingSlash(read(raw, 'VITE_IPFS_GATEWAY_URL') || defaults.ipfsGatewayUrl)
   if (!isHttpUrl(ipfsGatewayUrl)) {
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
+  }
+  const folderContractWasmHash = read(raw, 'VITE_FOLDER_CONTRACT_WASM_HASH').toLowerCase()
+  if (folderContractWasmHash && !/^[0-9a-f]{64}$/.test(folderContractWasmHash)) {
+    errors.push({ variable: 'VITE_FOLDER_CONTRACT_WASM_HASH', message: 'Must be a 32-byte WASM hash encoded as 64 lowercase hexadecimal characters.' })
   }
 
   // Real-user monitoring is opt-in: unset (or invalid) means no collection at all.
@@ -128,6 +134,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
       rumSampleRate,
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
+      sponsorEnabled,
     },
     errors,
   }
