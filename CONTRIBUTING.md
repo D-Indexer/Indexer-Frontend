@@ -19,6 +19,26 @@ Thanks for helping! This guide is short on purpose; the [README](README.md) cove
 
 5. UI changes: include a screenshot, and check keyboard use plus the loading, empty and error states.
 
+## Git hooks
+
+`npm ci` installs [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks) via the
+`prepare` script. The hooks are:
+
+| Hook | Runs |
+| --- | --- |
+| `pre-commit` | `lint-staged`: ESLint `--fix` + Prettier on staged files |
+| `pre-push` | `tsc --noEmit` and `vitest related --run` (tests touching the changed files) |
+
+Skip them when you need to (e.g. a WIP commit or a docs-only push):
+
+```bash
+SKIP_SIMPLE_GIT_HOOKS=1 git commit -m "wip"
+SKIP_SIMPLE_GIT_HOOKS=1 git push
+```
+
+Reinstall after changing the hook config with `npx simple-git-hooks`. Formatting is Prettier with
+`.prettierrc.json` (no semicolons, single quotes, 100 columns); run `npm run format` to apply it.
+
 ## Where code goes
 
 | Path | For |
@@ -37,6 +57,7 @@ Thanks for helping! This guide is short on purpose; the [README](README.md) cove
 - Client-side validation should mirror the contract (`Indexer-Contract/docs/VALIDATION.md`), not invent new rules.
 - Every `VITE_*` variable is public. Secrets belong in the backend.
 - New `VITE_*` variables must be added to `src/config/env.ts`, `.env.example` and `docs/configuration.md`.
+- TypeScript: Strict compiler options (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`) are enabled in `tsconfig.json`. Handle undefined index accesses and optional properties explicitly. Non-null assertions (`!`) are lint-banned in `src/services`.
 - Tests: Vitest + Testing Library. Query by role/label, as a user would. Network calls are mocked,
   except the opt-in testnet smoke test.
 

@@ -14,6 +14,7 @@ describe('parseEnv', () => {
       folderContractId: CONTRACT,
       ipfsGatewayUrl: 'https://ipfs.io/ipfs',
       sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
+      sorobanRpcUrls: ['https://soroban-testnet.stellar.org'],
       stellarNetwork: 'testnet',
     })
   })
@@ -29,8 +30,30 @@ describe('parseEnv', () => {
     expect(config.demoMode).toBe(true)
   })
 
-  it('rejects malformed values', () => {
+  it('parses an ordered provider list and keeps the single URL as a fallback', () => {
+    const { config, errors } = parseEnv({
+      VITE_API_URL: 'http://localhost:3000',
+      VITE_FOLDER_CONTRACT_ID: CONTRACT,
+      VITE_SOROBAN_RPC_URLS: ' https://a.example/rpc/ , https://b.example/rpc,https://a.example/rpc',
+    })
+    expect(errors).toEqual([])
+    expect(config.sorobanRpcUrls).toEqual([
+      'https://a.example/rpc',
+      'https://b.example/rpc',
+      'https://soroban-testnet.stellar.org',
+    ])
+  })
+
+  it('rejects a malformed entry in the provider list', () => {
     const { errors } = parseEnv({
+      VITE_API_URL: 'http://localhost:3000',
+      VITE_FOLDER_CONTRACT_ID: CONTRACT,
+      VITE_SOROBAN_RPC_URLS: 'https://a.example/rpc,not-a-url',
+    })
+    expect(errors.map((issue) => issue.variable)).toEqual(['VITE_SOROBAN_RPC_URLS'])
+  })
+
+  it('rejects malformed values', () => {    const { errors } = parseEnv({
       VITE_API_URL: 'localhost:3000',
       VITE_FOLDER_CONTRACT_ID: 'your_contract_id_here',
       VITE_STELLAR_NETWORK: 'mainnet',

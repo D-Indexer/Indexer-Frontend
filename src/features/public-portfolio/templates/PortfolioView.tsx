@@ -1,32 +1,118 @@
 import { Component, Suspense, type ErrorInfo, type ReactNode } from 'react'
 import { LoadingState } from '@/components/ui'
 import type { PortfolioContent } from '@/types'
-import { GenericLayout } from './layouts/GenericLayout'
-import { getTemplateRenderer } from './registry'
+import { humanizeField, sanitizeDisplayText } from '@/utils/format'
 
 interface ViewProps {
   content: PortfolioContent
 }
 
-interface PortfolioViewProps extends ViewProps {
-  templateId: number | null
-}
+/** IPFS-sourced text, isolated from surrounding bidi context and stripped of invisible characters. */
+const Text = ({ value }: { value: string }) => <bdi>{sanitizeDisplayText(value)}</bdi>
 
-interface TemplateErrorBoundaryProps {
-  children: ReactNode
-  fallbackContent: PortfolioContent
-}
+const Links = ({ links }: { links: string[] }) =>
+  links.length > 0 ? (
+    <ul className="portfolio__links" aria-label="Links">
+      {links.map((link) => (
+        <li key={link}>
+          <ExternalLink href={link}>{sanitizeDisplayText(link.replace(/^https?:\/\//, ''))}</ExternalLink>
+        </li>
+      ))}
+    </ul>
+  ) : null
 
-interface TemplateErrorBoundaryState {
-  hasError: boolean
-}
+const Skills = ({ label = 'Skills', skills }: { label?: string; skills: string[] }) =>
+  skills.length > 0 ? (
+    <section className="portfolio__section" aria-label={label}>
+      <h2>{label}</h2>
+      <ul className="tag-list">
+        {skills.map((skill) => (
+          <li key={skill}>
+            <Text value={skill} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : null
 
-class TemplateErrorBoundary extends Component<TemplateErrorBoundaryProps, TemplateErrorBoundaryState> {
-  override state: TemplateErrorBoundaryState = { hasError: false }
+const Sections = ({ sections, only }: { only?: string[]; sections: Record<string, string> }) => (
+  <>
+    {Object.entries(sections)
+      .filter(([key, value]) => value && (!only || only.includes(key)))
+      .map(([key, value]) => (
+        <section key={key} className="portfolio__section">
+          <h2>{humanizeField(key)}</h2>
+          <p className="portfolio__prose">
+            <Text value={value} />
+          </p>
+        </section>
+      ))}
+  </>
+)
 
-  static getDerivedStateFromError(): TemplateErrorBoundaryState {
-    return { hasError: true }
-  }
+const Header = ({ content }: ViewProps) => (
+  <header className="portfolio__header">
+    <h1>
+      <Text value={content.name} />
+    </h1>
+    {content.headline ? (
+      <p className="portfolio__headline">
+        <Text value={content.headline} />
+      </p>
+    ) : null}
+    <p className="muted mono">
+      <Text value={content.folder} />
+    </p>
+  </header>
+)
+
+/** Template 1, Developer: single page, skills first, then projects and history. */
+const DeveloperView = ({ content }: ViewProps) => (
+  <article className="portfolio portfolio--developer">
+    <Header content={content} />
+    <p className="portfolio__prose">
+      <Text value={content.bio} />
+    </p>
+    <Skills skills={content.skills} />
+    <Sections sections={content.sections} />
+    <Links links={content.links} />
+  </article>
+)
+
+/** Template 2, Designer: visual-first, sections as a card grid. */
+const DesignerView = ({ content }: ViewProps) => (
+  <article className="portfolio portfolio--designer">
+    <Header content={content} />
+    <p className="portfolio__prose portfolio__lead">
+      <Text value={content.bio} />
+    </p>
+    <div className="portfolio__grid">
+      <Sections sections={content.sections} />
+    </div>
+    <Skills label="Tools and skills" skills={content.skills} />
+    <Links links={content.links} />
+  </article>
+)
+
+/** Template 3, Operations: résumé with a sidebar. */
+const OperationsView = ({ content }: ViewProps) => (
+  <article className="portfolio portfolio--operations">
+    <Header content={content} />
+    <div className="portfolio__resume">
+      <div>
+        <p className="portfolio__prose">
+          <Text value={content.bio} />
+        </p>
+        <Sections sections={content.sections} only={['experience', 'references']} />
+      </div>
+      <div>
+        <Skills skills={content.skills} />
+        <Sections sections={content.sections} only={['certifications']} />
+        <Links links={content.links} />
+      </div>
+    </div>
+  </article>
+)
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('TemplateRenderer error, falling back to GenericLayout:', error, errorInfo)

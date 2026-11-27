@@ -1,8 +1,8 @@
-import { Card, ExternalLink, LinkButton } from '@/components/ui'
+import { Card, Identifier, LinkButton } from '@/components/ui'
 import { appRoutes } from '@/config/routes'
 import { explorerLinks, ipfsService } from '@/services'
 import type { Folder, Portfolio } from '@/types'
-import { formatDate } from '@/utils/format'
+import { formatDate, sanitizeDisplayText } from '@/utils/format'
 
 interface FolderSummaryProps {
   folder: Folder
@@ -14,12 +14,14 @@ export const FolderSummary = ({ folder, portfolio }: FolderSummaryProps) => (
     <dl className="definition-list">
       <div>
         <dt>Folder</dt>
-        <dd className="mono">{folder.name}</dd>
+        <dd className="mono">
+          <bdi>{sanitizeDisplayText(folder.name, 120)}</bdi>
+        </dd>
       </div>
       <div>
         <dt>Owner</dt>
-        <dd className="mono">
-          <ExternalLink href={explorerLinks.account(folder.owner)}>{folder.owner}</ExternalLink>
+        <dd>
+          <Identifier label="Owner address" value={folder.owner} href={explorerLinks.account(folder.owner)} />
         </dd>
       </div>
       <div>
@@ -34,8 +36,8 @@ export const FolderSummary = ({ folder, portfolio }: FolderSummaryProps) => (
           </div>
           <div>
             <dt>Portfolio CID</dt>
-            <dd className="mono">
-              <ExternalLink href={ipfsService.gatewayUrl(portfolio.ipfsCid)}>{portfolio.ipfsCid}</ExternalLink>
+            <dd>
+              <Identifier label="Portfolio CID" value={portfolio.ipfsCid} href={ipfsService.gatewayUrl(portfolio.ipfsCid)} />
             </dd>
           </div>
           <div>
