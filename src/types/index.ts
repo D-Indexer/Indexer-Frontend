@@ -50,9 +50,12 @@ export interface TemplateMetadata {
   fields: string[]
 }
 
+export type TemplateMetadataStatus = 'verified' | 'unverified' | 'missing' | 'mismatch' | 'error'
+
 export interface TemplateWithMetadata extends Template {
   /** Null when the metadata could not be fetched or did not match its CID. */
   metadata: TemplateMetadata | null
+  metadataStatus: TemplateMetadataStatus
 }
 
 export type PortfolioLinkKind = 'github' | 'linkedin' | 'website' | 'email' | 'other'

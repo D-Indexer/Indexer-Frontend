@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useReducer, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { FormField } from '@/components/forms'
 import { Button, Card, ExternalLink, LoadingState, Markdown } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
@@ -10,8 +10,7 @@ import type { Folder, Portfolio, PortfolioContent } from '@/types'
 import { humanizeField } from '@/utils/format'
 import { fromJsonResume, parseJsonResume, type JsonResumeMappedValues } from '../jsonResume'
 import { getInvalidUrls, isRequired, parseDelimitedList } from '@/utils/validation'
-import { diffPortfolioContent, type FieldChange } from '../utils/diffPortfolioContent'
-import { DiffReview } from './DiffReview'
+import { createHistoryState, historyReducer } from '../history'
 
 /** Fields every template shares; template-specific fields become free-text sections. */
 const CORE_FIELDS = new Set(['bio', 'skills'])
@@ -22,11 +21,11 @@ interface FormValues {
   links: PortfolioLink[]
   name: string
   sections: Record<string, string>
-  skills: string
+  skills: string[]
   templateId: string
 }
 
-type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'templateId', string>>
+type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'skills' | 'templateId', string>>
 
 const emptyValues = (templateId: string): FormValues => ({
   bio: '',
@@ -34,7 +33,7 @@ const emptyValues = (templateId: string): FormValues => ({
   links: [],
   name: '',
   sections: {},
-  skills: '',
+  skills: [],
   templateId,
 })
 
@@ -44,7 +43,7 @@ const fromContent = (content: PortfolioContent, templateId: string): FormValues 
   links: getPortfolioLinks(content),
   name: content.name ?? '',
   sections: content.sections ?? {},
-  skills: (content.skills ?? []).join(', '),
+  skills: content.skills ?? [],
   templateId,
 })
 
@@ -57,7 +56,7 @@ const validate = (values: FormValues): FormErrors => {
   return errors
 }
 
-const fieldOrder: Array<keyof FormErrors> = ['templateId', 'name', 'bio', 'links']
+const fieldOrder: Array<keyof FormErrors> = ['templateId', 'name', 'bio', 'skills', 'links']
 
 interface PortfolioFormProps {
   folder: Folder
@@ -77,7 +76,8 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
   const tx = useContractTx()
   const { blockedReason } = useWalletGuard()
   const startTemplate = String(portfolio?.templateId ?? folder.templateId ?? initialTemplateId ?? '')
-  const [values, setValues] = useState<FormValues>(() => emptyValues(startTemplate))
+  const [history, dispatchHistory] = useReducer(historyReducer<FormValues>, emptyValues(startTemplate), createHistoryState)
+  const values = history.present
   const [errors, setErrors] = useState<FormErrors>({})
   const [contentNotice, setContentNotice] = useState<string | null>(null)
   const [loadingContent, setLoadingContent] = useState(isUpdate)
@@ -252,9 +252,34 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
 
   return (
     <Card>
-      <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="portfolio-form-title">
+      <form
+        className="form"
+        onSubmit={(event) => void handleSubmit(event)}
+        onKeyDown={handleHistoryShortcut}
+        noValidate
+        aria-labelledby="portfolio-form-title"
+      >
         <h2 id="portfolio-form-title" className="form__title">{isUpdate ? 'Update your portfolio' : 'Mint your portfolio'}</h2>
-        {conflictNotice}
+        <div className="portfolio-history" role="group" aria-label="Portfolio edit history">
+          <Button
+            type="button"
+            variant="secondary"
+            aria-label="Undo changes"
+            disabled={history.past.length === 0}
+            onClick={() => dispatchHistory({ type: 'undo' })}
+          >
+            Undo
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            aria-label="Redo changes"
+            disabled={history.future.length === 0}
+            onClick={() => dispatchHistory({ type: 'redo' })}
+          >
+            Redo
+          </Button>
+        </div>
         {contentNotice ? (
           <div className="notice notice--warning" role="status" aria-atomic="true">
             <p>{contentNotice}</p>
@@ -346,20 +371,18 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
         />
 
         {sectionFields.map((field) => (
-          <div key={field}>
-            {withPreview(
-              <FormField
-                control="textarea"
-                id={`portfolio-section-${field}`}
-                label={humanizeField(field)}
-                value={values.sections[field] ?? ''}
-                rows={4}
-                onChange={(event) => setValues((current) => ({ ...current, sections: { ...current.sections, [field]: event.target.value } }))}
-              />,
-              values.sections[field] ?? '',
-              humanizeField(field),
-            )}
-          </div>
+          <FormField
+            key={field}
+            control="textarea"
+            id={`portfolio-section-${field}`}
+            label={humanizeField(field)}
+            value={values.sections[field] ?? ''}
+            rows={4}
+            onChange={(event) => {
+              const value = event.target.value
+              setValues((current) => ({ ...current, sections: { ...current.sections, [field]: value } }), `section:${field}`)
+            }}
+          />
         ))}
 
         <TxStatus

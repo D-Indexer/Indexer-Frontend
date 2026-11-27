@@ -1,4 +1,6 @@
 export { useAsync, useProgressiveTemplates } from './useAsync'
 export { useFolder } from './useFolder'
+export { useNetworkStatus } from './useNetworkStatus'
+export type { NetworkStatus } from './useNetworkStatus'
 export { usePortfolio } from './usePortfolio'
 export { useTemplates } from './useTemplates'

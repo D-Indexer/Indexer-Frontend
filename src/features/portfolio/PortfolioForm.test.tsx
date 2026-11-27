@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildFolder, buildPortfolio, CID_V1, CID_V2, connectTestnetWallet, developerTemplate, OWNER, TX_HASH } from '@/testing/fixtures'
@@ -42,6 +42,36 @@ describe('PortfolioForm', () => {
     expect(screen.getByLabelText('Link 1 URL')).toHaveAttribute('aria-invalid', 'true')
     expect(screen.getByLabelText('Link 1 URL')).toHaveAccessibleDescription(expect.stringContaining('valid http(s) URL'))
     expect(upload).not.toHaveBeenCalled()
+  })
+
+  it('undoes and redoes edits across fields with scoped shortcuts and accessible controls', async () => {
+    render(<PortfolioForm owner={OWNER} folder={buildFolder()} portfolio={null} initialTemplateId="1" onPublished={vi.fn()} />)
+    await screen.findByRole('option', { name: 'Developer (#1)' })
+    const name = screen.getByLabelText(/^Name/)
+    const bio = screen.getByLabelText(/^Bio/)
+    const undo = screen.getByRole('button', { name: 'Undo changes' })
+    const redo = screen.getByRole('button', { name: 'Redo changes' })
+
+    expect(undo).toBeDisabled()
+    expect(redo).toBeDisabled()
+    await userEvent.type(name, 'Jane')
+    await userEvent.type(bio, 'Builds useful things.')
+    expect(undo).toBeEnabled()
+
+    fireEvent.keyDown(bio, { key: 'z', ctrlKey: true })
+    expect(bio).toHaveValue('')
+    expect(name).toHaveValue('Jane')
+    expect(redo).toBeEnabled()
+
+    fireEvent.keyDown(bio, { key: 'z', ctrlKey: true, shiftKey: true })
+    expect(bio).toHaveValue('Builds useful things.')
+
+    await userEvent.click(undo)
+    expect(bio).toHaveValue('')
+    await userEvent.click(undo)
+    expect(name).toHaveValue('')
+    await userEvent.click(redo)
+    expect(name).toHaveValue('Jane')
   })
 
   it('uploads content through the backend, then mints with the returned CID', async () => {

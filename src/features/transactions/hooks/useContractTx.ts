@@ -11,6 +11,8 @@ export interface ContractTxState {
   error: string | null
   /** Hash of a submitted transaction, also set when it failed or is still pending. */
   hash: string | null
+  /** Contract method being called, shown with the contract identity before signing. */
+  method: string | null
   stage: FlowStage
   prepared: PreparedTransactionDetails | null
 }
@@ -41,6 +43,9 @@ const emitConfirmedWrite = (owner: string, write: FolderWrite, result: TxResult)
 export const useContractTx = () => {
   const [state, setState] = useState<ContractTxState>(initialState)
   const running = useRef(false)
+  const { freighterWallet, stellarService } = useServices()
+  const addActivity = useActivityStore((s) => s.addActivity)
+  const updateActivity = useActivityStore((s) => s.updateActivity)
 
   const run = useCallback(async (
       owner: string,
@@ -64,6 +69,13 @@ export const useContractTx = () => {
         }
       }
       const write = await prepare(() => setState((current) => ({ ...current, stage: 'uploading' })))
+      activityId = addActivity({
+        address: owner,
+        method: write.method,
+        status: 'pending',
+        hash: null,
+      })
+
       const result = await stellarService.invoke(owner, write, freighterWallet.signTransaction, (stage) =>
         setState((current) => ({ ...current, stage })),
         controller.signal,
@@ -73,7 +85,11 @@ export const useContractTx = () => {
       return result
     } catch (error) {
       const hash = error instanceof TransactionError ? (error.options.hash ?? null) : null
-      setState({ conflict: null, error: toApiError(error).message, hash, stage: 'failed' })
+      const message = toApiError(error).message
+      setState({ error: message, hash, stage: 'failed' })
+      if (activityId) {
+        updateActivity(activityId, owner, { status: 'failed', hash, error: message })
+      }
       return null
     } finally {
       unsubscribe()

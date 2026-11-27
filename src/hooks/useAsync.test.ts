@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useAsync } from './useAsync'
+import { useNetworkStatus } from './useNetworkStatus'
 
 describe('useAsync', () => {
   it('starts loading and resolves data', async () => {
@@ -38,5 +39,60 @@ describe('useAsync', () => {
     await waitFor(() => expect(result.current.data).toBe('second'))
     await act(async () => resolveFirst('first'))
     expect(result.current.data).toBe('second')
+  })
+
+  it('refetches errored reads when the connection returns', async () => {
+    const callback = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce('recovered')
+    const { result } = renderHook(() => useAsync(callback, []))
+
+    await waitFor(() => expect(result.current.error?.message).toBe('offline'))
+
+    act(() => {
+      window.dispatchEvent(new Event('offline'))
+    })
+    expect(callback).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      window.dispatchEvent(new Event('online'))
+    })
+    await waitFor(() => expect(result.current.data).toBe('recovered'))
+    expect(result.current.error).toBeNull()
+    expect(callback).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('useNetworkStatus', () => {
+  it('tracks browser online/offline events', () => {
+    const { result } = renderHook(() => useNetworkStatus())
+    expect(result.current.online).toBe(true)
+
+    act(() => {
+      window.dispatchEvent(new Event('offline'))
+    })
+    expect(result.current.online).toBe(false)
+    expect(result.current.browserOffline).toBe(true)
+
+    act(() => {
+      window.dispatchEvent(new Event('online'))
+    })
+    expect(result.current.online).toBe(true)
+  })
+
+  it('tracks backend reachability events', () => {
+    const { result } = renderHook(() => useNetworkStatus())
+
+    act(() => {
+      window.dispatchEvent(new Event('indexer:backend-unreachable'))
+    })
+    expect(result.current.online).toBe(false)
+    expect(result.current.backendUnreachable).toBe(true)
+
+    act(() => {
+      window.dispatchEvent(new Event('indexer:backend-reachable'))
+    })
+    expect(result.current.online).toBe(true)
   })
 })

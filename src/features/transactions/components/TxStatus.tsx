@@ -22,6 +22,26 @@ interface TxStatusProps extends ContractTxState {
   successMessage: string
 }
 
+/** Contract identity shown before signing: identicon, shortened contract ID and called method. */
+const ContractIdentity = ({ method }: { method: string }) => {
+  const contractId = env.folderContractId
+  return (
+    <div className="contract-identity">
+      <ContractIdenticon contractId={contractId} />
+      <div>
+        <p className="small">
+          Contract <span className="mono">{shortenKey(contractId, 6)}</span> · method{' '}
+          <span className="mono">{method}</span>
+        </p>
+        <p className="small">
+          <ExternalLink href={explorerLinks.contract(contractId)}>View contract on stellar.expert</ExternalLink>{' '}
+          · <ExternalLink href={CONTRACT_VERIFICATION_DOCS_URL}>How to verify a contract ID</ExternalLink>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 /** Live region describing an in-flight, successful or failed transaction, with a stellar.expert link. */
 export const TxStatus = ({ error, hash, stage, successMessage, prepared }: TxStatusProps) => {
   const hashLink = hash ? (

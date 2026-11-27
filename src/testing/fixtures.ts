@@ -30,6 +30,7 @@ export const developerTemplate: TemplateWithMetadata = {
   metadataUri: 'ipfs://bafkreiejxg6d3gqvi3737mcwxkv4u7gismaraxgv5zfoqtfuc3nbdgve7i',
   creator: null,
   registeredAt: '2026-11-09T22:14:42.000Z',
+  metadataStatus: 'verified',
   metadata: {
     schema_version: 1,
     template_id: 1,

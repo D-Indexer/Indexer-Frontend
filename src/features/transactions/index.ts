@@ -1,3 +1,4 @@
+export { ActivityCenter } from './components/ActivityCenter'
 export { TxStatus } from './components/TxStatus'
 export { clearDomainEvents, emit, listenerCount, off, on, useDomainEvent } from './events'
 export type { DomainEventListener, DomainEventMap, DomainEventName } from './events'
