@@ -1,4 +1,4 @@
-import { AsyncContent, LinkButton } from '@/components/ui'
+import { AsyncContent, LinkButton, LoadingState } from '@/components/ui'
 import { appRoutes } from '@/config/routes'
 import { useTemplates } from '@/hooks'
 import { sanitizeDisplayText } from '@/utils/format'
@@ -9,13 +9,13 @@ interface TemplateGridProps {
 }
 
 export const TemplateGrid = ({ headingLevel = 2 }: TemplateGridProps) => {
-  const { data, error, loading, refetch } = useTemplates()
+  const { data, error, loading, refetch } = useProgressiveTemplateList()
 
   return (
     <AsyncContent
       data={data}
       error={error}
-      loading={loading}
+      loading={loading && !data}
       loadingLabel="Loading templates…"
       onRetry={() => void refetch()}
       empty={{

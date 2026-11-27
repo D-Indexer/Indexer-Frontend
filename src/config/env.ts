@@ -254,6 +254,15 @@ export const envVarNames = Object.fromEntries(
   const explorer: ExplorerType =
     rawExplorer === 'stellarchain' || rawExplorer === 'none' ? rawExplorer : 'stellar.expert'
 
+  const ipfsMaxConcurrencyRaw = read(raw, 'VITE_IPFS_MAX_CONCURRENCY')
+  const ipfsMaxConcurrency = ipfsMaxConcurrencyRaw ? Number(ipfsMaxConcurrencyRaw) : defaults.ipfsMaxConcurrency
+  if (!Number.isInteger(ipfsMaxConcurrency) || ipfsMaxConcurrency < 1) {
+    errors.push({
+      variable: 'VITE_IPFS_MAX_CONCURRENCY',
+      message: `"${ipfsMaxConcurrencyRaw}" is not a positive integer.`,
+    })
+  }
+
   return {
     config: {
       apiUrl,

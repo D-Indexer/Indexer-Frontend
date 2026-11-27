@@ -17,9 +17,21 @@ import type { Folder, Portfolio, PortfolioPage, PortfolioContent, TemplateWithMe
 export const folderData = {
   listTemplates: async (): Promise<TemplateWithMetadata[]> => {
     const templates = env.demoMode ? demoTemplates : await templateApi.list()
-    return Promise.all(
-      templates.map(async (template) => ({ ...template, metadata: await ipfsService.resolveTemplateMetadata(template) })),
-    )
+    return mapWithConcurrency(templates, env.ipfsMaxConcurrency, async (template) => ({
+      ...template,
+      metadata: await ipfsService.resolveTemplateMetadata(template),
+    }))
+  },
+
+  /**
+   * Lists templates and reports each one as soon as its metadata resolves, so cards can render
+   * progressively. `onTemplate` is called once per template, in resolution order.
+   */
+  streamTemplates: async (onTemplate: (template: TemplateWithMetadata) => void): Promise<void> => {
+    const templates: Template[] = env.demoMode ? demoTemplates : await templateApi.list()
+    await mapWithConcurrency(templates, env.ipfsMaxConcurrency, async (template) => {
+      onTemplate({ ...template, metadata: await ipfsService.resolveTemplateMetadata(template) })
+    })
   },
 
   getFolderByOwner: async (address: string): Promise<Folder | null> =>
