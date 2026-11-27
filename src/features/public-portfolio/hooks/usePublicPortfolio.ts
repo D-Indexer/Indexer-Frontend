@@ -37,28 +37,28 @@ export interface PublicPortfolio {
  * Framework-free so the public page and `scripts/verify.ts` share one verdict.
  */
 export const loadPublicPortfolio = async (folderName: string): Promise<PublicPortfolio | null> => {
-  const folder = await folderData.getFolderByName(folderName)
+  const source = getDataSource()
+  const folder = await source.getFolderByName(folderName)
   if (!folder) return null
 
-  const [indexed, chain] = await Promise.all([
-    folderData.getPortfolio(folder.owner),
-    env.demoMode
+  const [indexed, chainResult] = await Promise.all([
+    source.getPortfolio(folder.owner),
+    source.isDemo
       ? Promise.resolve(null)
-      : Promise.all([stellarService.verifyPortfolio(folder.owner), stellarService.getOnChainPortfolio(folder.owner)]).catch(
-          (error: unknown) => error as Error,
-        ),
+      : source.verifyPortfolio(folder.owner).catch((error: unknown) => error as Error),
   ])
 
   let verification: Verification
   const divergence: Divergence[] = []
   let cid = indexed?.ipfsCid ?? null
   let templateId = indexed?.templateId ?? folder.templateId
-  if (env.demoMode) {
+
+  if (source.isDemo) {
     verification = { status: 'demo' }
-  } else if (chain instanceof Error || chain === null) {
-    verification = { status: 'unavailable', reason: chain ? toApiError(chain).message : 'Unknown error' }
+  } else if (chainResult instanceof Error || chainResult === null) {
+    verification = { status: 'unavailable', reason: chainResult ? toApiError(chainResult).message : 'Unknown error' }
   } else {
-    const [isVerified, onChain] = chain
+    const [isVerified, onChain] = chainResult
     if (isVerified && onChain) {
       verification = { status: 'verified', onChainCid: onChain.ipfsCid, onChain }
       if (cid !== onChain.ipfsCid) divergence.push({ field: 'ipfsCid', indexed: cid, onChain: onChain.ipfsCid })
@@ -78,7 +78,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
   let contentInvalid = false
   if (cid) {
     try {
-      content = await folderData.getPortfolioContent(cid)
+      content = await source.getPortfolioContent(cid)
     } catch (error) {
       contentError = toApiError(error).message
       contentInvalid = error instanceof IpfsError && error.code === 'invalid_shape'

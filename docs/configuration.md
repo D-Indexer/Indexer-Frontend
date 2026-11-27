@@ -19,6 +19,20 @@ listing each problem instead of starting.
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
 | `VITE_ERROR_REPORTING_DSN` | No | none | http(s) URL | Sentry-compatible DSN for opt-in error reporting. Empty disables it: the SDK is lazy-loaded only when set, so it adds nothing to the bundle. Events are scrubbed of Stellar addresses, folder names, CIDs and XDR before send and tagged with error catalog codes. |
 
+## Runtime Configuration (`/config.json`)
+
+To deploy a single pre-built `dist/` bundle across multiple staging or production environments,
+the frontend supports runtime configuration.
+
+At boot before React renders, `src/main.tsx` requests `/config.json` with `{ cache: 'no-store' }`.
+Any variables present in `/config.json` take precedence over build-time `VITE_*` variables.
+See `public/config.example.json` for an example configuration file.
+
+Precedence order:
+1. Runtime `/config.json` served at the host root.
+2. Build-time `VITE_*` variables baked into bundle via Vite.
+3. System defaults declared in `src/config/env.ts`.
+
 ## Demo mode
 
 With `VITE_DEMO_MODE=true` the app does not call the backend. Templates, a sample folder

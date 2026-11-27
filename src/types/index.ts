@@ -71,7 +71,9 @@ export interface PortfolioContent {
 }
 
 export interface ApiError {
+  code?: string
+  docsAnchor?: string
   message: string
-  status?: number
   requestId?: string
+  status?: number
 }

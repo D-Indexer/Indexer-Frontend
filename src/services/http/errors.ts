@@ -12,12 +12,19 @@ export const toApiError = (error: unknown): ApiError => {
   if (axios.isAxiosError<BackendErrorBody>(error)) {
     const body = error.response?.data
     if (!error.response) {
-      return { message: 'Could not reach the Folder backend. Check that it is running and VITE_API_URL is correct.' }
+      return {
+        code: 'FOLDER-API-001',
+        docsAnchor: 'folder-api-001',
+        message: 'Could not reach the Folder backend. Check that it is running and VITE_API_URL is correct.',
+      }
     }
+    const is404 = error.response.status === 404
     return {
+      code: is404 ? 'FOLDER-API-002' : 'FOLDER-API-003',
+      docsAnchor: is404 ? 'folder-api-002' : 'folder-api-003',
       message: body?.error ?? body?.message ?? error.message,
-      status: error.response.status,
       requestId: body?.requestId,
+      status: error.response.status,
     }
   }
 

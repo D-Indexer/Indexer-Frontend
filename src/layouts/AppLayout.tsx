@@ -25,7 +25,7 @@ export const AppLayout = () => {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      {env.demoMode ? <DemoBanner /> : null}
+      {isDemoMode() ? <DemoBanner /> : null}
       <Header />
       <main className="app-main" id="main-content" tabIndex={-1} ref={mainRef}>
         <Outlet />

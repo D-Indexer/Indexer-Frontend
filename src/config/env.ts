@@ -1,5 +1,5 @@
 /**
- * Runtime configuration, read from `VITE_*` variables at build time.
+ * Runtime configuration, loaded from `/config.json` at boot or from `VITE_*` variables at build time.
  *
  * Every variable is documented in `.env.example` and `docs/configuration.md`.
  * `parseEnv` is pure so it can be unit-tested; `main.tsx` renders a
@@ -36,7 +36,7 @@ export interface EnvIssue {
   variable: string
 }
 
-type RawEnv = Record<string, string | boolean | undefined>
+export type RawEnv = Record<string, string | boolean | undefined>
 
 const read = (raw: RawEnv, key: string) => {
   const value = raw[key]
