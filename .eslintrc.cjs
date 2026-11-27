@@ -24,4 +24,12 @@ module.exports = {
       },
     ],
   },
+  overrides: [
+    {
+      files: ['src/services/**/*.ts', 'src/services/**/*.tsx'],
+      rules: {
+        '@typescript-eslint/no-non-null-assertion': 'error',
+      },
+    },
+  ],
 }

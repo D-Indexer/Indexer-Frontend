@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/release-please-config.json",
+  "release-type": "node",
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "folder-frontend",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": false,
+      "include-component-in-tag": false,
+      "initial-version": "0.2.0"
+    }
+  },
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "refactor", "section": "Code Refactoring" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "build", "section": "Build System" },
+    { "type": "ci", "section": "Continuous Integration" },
+    { "type": "test", "section": "Tests" },
+    { "type": "chore", "section": "Miscellaneous Chores", "hidden": true }
+  ]
+}

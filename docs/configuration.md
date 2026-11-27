@@ -17,6 +17,7 @@ listing each problem instead of starting.
 | `VITE_SOROBAN_RPC_URLS` | No | none | comma-separated http(s) URLs | Ordered Soroban RPC provider pool. Reads (`getAccount`, simulation, `verify_portfolio`, `get_portfolio`) and `getTransaction` polling fail over to the next provider when one is down, unhealthy or lagging behind the highest ledger seen. Writes are submitted to exactly one provider and never resubmitted. |
 | `VITE_IPFS_GATEWAY_URL` | No | `https://ipfs.io/ipfs` | http(s) URL | Gateway used to read portfolio and template JSON (`<gateway>/<cid>`). Use `http://localhost:8080/ipfs` with the backend's local Kubo node. |
 | `VITE_DEMO_MODE` | No | `false` | `true` enables it | Serves bundled fixtures, shows a persistent "Demo data" banner and disables wallet transactions. |
+| `VITE_ERROR_REPORTING_DSN` | No | none | http(s) URL | Sentry-compatible DSN for opt-in error reporting. Empty disables it: the SDK is lazy-loaded only when set, so it adds nothing to the bundle. Events are scrubbed of Stellar addresses, folder names, CIDs and XDR before send and tagged with error catalog codes. |
 
 ## Demo mode
 
