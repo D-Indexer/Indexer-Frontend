@@ -83,5 +83,5 @@ export const verifyRawCidV1 = async (cid: string, bytes: Uint8Array): Promise<bo
 /** `ipfs://<cid>[/path]` → `<cid>`; returns null for anything else. */
 export const cidFromIpfsUri = (uri: string): string | null => {
   const match = /^ipfs:\/\/([^/?#]+)/.exec(uri)
-  return match ? match[1] : null
+  return match && match[1] ? match[1] : null
 }
