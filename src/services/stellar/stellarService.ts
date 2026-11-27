@@ -88,7 +88,7 @@ const loadAccount = async (address: string) => {
   } catch (error) {
     if (error instanceof Error && /not found/i.test(error.message)) {
       throw new TransactionError(
-        'This account does not exist on testnet yet. Fund it with Friendbot (https://friendbot.stellar.org/?addr=<your address>) and try again.',
+        'This account does not exist on testnet yet. Fund it with Friendbot and try again.', { code: 'account_not_found' },
       )
     }
     throw new TransactionError(`Could not load your account from Soroban RPC: ${error instanceof Error ? error.message : String(error)}`)
