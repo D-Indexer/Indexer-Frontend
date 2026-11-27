@@ -1,11 +1,10 @@
 import { env } from '@/config/env'
-import { useAsync } from '@/hooks'
 import { folderData, toApiError } from '@/services'
 import { stellarService } from '@/services/stellar/stellarService'
 import type { Folder, PortfolioContent } from '@/types'
 
 export type Verification =
-  | { status: 'verified'; onChainCid: string }
+  | { status: 'verified'; onChainCid: string; onChain: { ipfsCid: string; templateId: number; mintedAt: number } }
   | { status: 'not_minted' }
   | { status: 'unavailable'; reason: string }
   | { status: 'demo' }
@@ -32,6 +31,8 @@ export interface PublicPortfolio {
  * Resolves `<name>.folder` through the indexer, checks the owner's portfolio on-chain with
  * `verify_portfolio` / `get_portfolio`, and loads the content from IPFS by the on-chain CID.
  * Returns null when the folder does not exist.
+ *
+ * Framework-free so the public page and `scripts/verify.ts` share one verdict.
  */
 export const loadPublicPortfolio = async (folderName: string): Promise<PublicPortfolio | null> => {
   const folder = await folderData.getFolderByName(folderName)
@@ -57,7 +58,7 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
   } else {
     const [isVerified, onChain] = chain
     if (isVerified && onChain) {
-      verification = { status: 'verified', onChainCid: onChain.ipfsCid }
+      verification = { status: 'verified', onChainCid: onChain.ipfsCid, onChain }
       if (cid !== onChain.ipfsCid) divergence.push({ field: 'ipfsCid', indexed: cid, onChain: onChain.ipfsCid })
       if (templateId !== onChain.templateId) {
         divergence.push({ field: 'templateId', indexed: templateId, onChain: onChain.templateId })
@@ -82,5 +83,3 @@ export const loadPublicPortfolio = async (folderName: string): Promise<PublicPor
 
   return { cid, content, contentError, divergence, folder, templateId, verification }
 }
-
-export const usePublicPortfolio = (folderName: string) => useAsync(() => loadPublicPortfolio(folderName), [folderName])

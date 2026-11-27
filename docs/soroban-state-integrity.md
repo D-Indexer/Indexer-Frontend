@@ -1,7 +1,5 @@
-# Folder contract state, identity, receipts, and events
+# Live Folder contract-event updates
 
-The public portfolio reader retains the existing `verify_portfolio` / `get_portfolio` simulation path as a compatibility fallback until the deployed `DataKey::Portfolio(Address)` XDR layout is pinned from Indexer-Contract. The state result shape reserves `liveUntilLedgerSeq` for the direct `getLedgerEntries` path.
+`useContractEvents` is a visibility-aware browser polling seam for an owner-scoped `getEvents` query. The dashboard data layer supplies a cursor-aware RPC poller; the hook pauses while the document is hidden, marks a network update when a relevant event arrives, and retries on the next bounded interval after a transient RPC failure.
 
-Set `VITE_FOLDER_CONTRACT_WASM_HASH` to the 64-hex hash pinned in Indexer-Contract's testnet deployment manifest. A mismatch must block writes while leaving read-only portfolio data visible and labelled.
-
-Folder event receipts recognize `folder_cl`, `port_mint`, and `port_upd`; events outside those typed shapes are not rendered as confirmations. Dashboard event polling is visibility-aware and must start from a retained RPC cursor; older events can be unavailable under RPC retention policies.
+Callers must retain their cursor and invalidate folder/portfolio queries after `updated` becomes true. Soroban RPC event retention is limited: a cursor older than the provider's retention window cannot recover historic events and should re-read current state instead.
