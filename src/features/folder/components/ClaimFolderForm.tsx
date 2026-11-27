@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { FormField } from '@/components/forms'
 import { Button, Card } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
@@ -12,6 +13,7 @@ interface ClaimFolderFormProps {
 
 export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
   const [name, setName] = useState('')
+  const [search] = useSearchParams()
   const [fieldError, setFieldError] = useState<string | undefined>()
   const tx = useContractTx()
   const { blockedReason } = useWalletGuard()
@@ -38,7 +40,7 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
           label="Folder name"
           helpText="3–57 lowercase letters, digits or hyphens. “.folder” is added for you. One folder per address."
           error={fieldError}
-          value={name}
+          value={name || search.get('claim') || ''}
           autoComplete="off"
           spellCheck={false}
           required

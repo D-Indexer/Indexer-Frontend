@@ -57,6 +57,7 @@ export const useWalletStore = create<WalletState>((set) => ({
 
   /** Freighter has no revoke API, so this forgets the address in-app and stops auto-reconnecting. */
   disconnect: () => {
+    sep10Client.clear()
     remember(false)
     set({ ...emptyWallet, status: 'idle', error: null }); walletSync.post({ type: 'disconnected' })
   },
