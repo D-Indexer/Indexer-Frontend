@@ -11,6 +11,8 @@
  * merges that file over the build-time values.
  */
 
+declare const __BUILD_COMMIT__: string
+
 export type StellarNetwork = 'testnet'
 
 export interface AppConfig {
@@ -184,6 +186,9 @@ export const resourceHintsFor = (config: AppConfig): ResourceHint[] => {
 }
 
 const parsed = parseEnv(import.meta.env)
+
+/** Commit the bundle was built from, injected by `vite.config.ts` (issue #243). */
+export const buildCommit: string = typeof __BUILD_COMMIT__ === 'string' ? __BUILD_COMMIT__ : 'unknown'
 
 export const env: AppConfig = parsed.config
 export const envErrors: EnvIssue[] = parsed.errors

@@ -13,13 +13,15 @@ import {
 import { appRoutes } from '@/config/routes'
 import { PageContainer } from '@/layouts'
 import { ipfsService } from '@/services'
+import { sanitizeDisplayText } from '@/utils/format'
 
 export const PublicPortfolioPage = () => {
   const { folderName = '' } = useParams<{ folderName: string }>()
   const { data, error, loading, refetch } = usePublicPortfolio(folderName)
 
   useEffect(() => {
-    document.title = data?.content ? `${data.content.name} · ${folderName}` : `${folderName} · Folder`
+    const name = data?.content ? sanitizeDisplayText(data.content.name, 120) : sanitizeDisplayText(folderName, 120)
+    document.title = data?.content ? `${name} · ${folderName}` : `${name} · Folder`
   }, [data, folderName])
 
   return (
@@ -65,7 +67,9 @@ export const PublicPortfolioPage = () => {
               </div>
             ) : (
               <div className="empty-state" role="status">
-                <h1 className="page-title">{portfolio.folder.name}</h1>
+                <h1 className="page-title">
+                  <bdi>{sanitizeDisplayText(portfolio.folder.name, 120)}</bdi>
+                </h1>
                 <p>This folder is claimed, but its owner has not minted a portfolio yet.</p>
               </div>
             )}

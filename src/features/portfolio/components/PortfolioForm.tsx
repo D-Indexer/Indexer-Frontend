@@ -233,7 +233,7 @@ export const PortfolioForm = ({ folder, initialTemplateId, onPublished, owner, p
           <option value="">{templates.loading ? 'Loading templates…' : 'Choose a template'}</option>
           {(templates.data ?? []).map((template) => (
             <option key={template.id} value={template.id}>
-              {template.metadata?.name ?? `Template ${template.id}`} (#{template.id})
+              {sanitizeDisplayText(template.metadata?.name ?? `Template ${template.id}`, 120)} (#{template.id})
             </option>
           ))}
         </FormField>
