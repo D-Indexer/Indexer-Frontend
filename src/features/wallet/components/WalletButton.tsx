@@ -37,8 +37,8 @@ export const WalletButton = () => {
 
   return (
     <div className="wallet">
-      <Button type="button" onClick={() => void connect()} disabled={status === 'connecting'} aria-describedby={error ? 'wallet-error' : undefined}>
-        {status === 'connecting' ? 'Connecting…' : 'Connect Freighter'}
+      <Button type="button" onClick={() => void connect()} disabled={status === 'connecting' || status === 'restoring'} aria-describedby={error ? 'wallet-error' : undefined}>
+        {status === 'locked' ? 'Unlock Freighter, then connect' : status === 'not_installed' ? 'Install Freighter' : status === 'connecting' || status === 'restoring' ? 'Connecting…' : 'Connect Freighter'}
       </Button>
       {error ? (
         <p id="wallet-error" className="wallet__error" role="alert" aria-atomic="true">

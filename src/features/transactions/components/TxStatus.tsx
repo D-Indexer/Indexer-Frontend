@@ -15,24 +15,8 @@ interface TxStatusProps extends ContractTxState {
   successMessage: string
 }
 
-/**
- * Live region describing an in-flight, successful or failed transaction, with a stellar.expert link.
- *
- * Screen-reader behaviour: the region is rendered once and only its text changes, so each stage is
- * announced exactly once (no duplicate polite/assertive announcements). When the flow ends, focus
- * moves to the outcome so it is read in context and the next Tab continues from there.
- */
-export const TxStatus = ({ error, hash, stage, successMessage }: TxStatusProps) => {
-  const outcomeRef = useRef<HTMLDivElement>(null)
-  const previousStage = useRef<FlowStage>(stage)
-  const finished = stage === 'done' || stage === 'failed'
-
-  useEffect(() => {
-    const wasFinished = previousStage.current === 'done' || previousStage.current === 'failed'
-    previousStage.current = stage
-    if (finished && !wasFinished) outcomeRef.current?.focus()
-  }, [finished, stage])
-
+/** Live region describing an in-flight, successful or failed transaction, with a stellar.expert link. */
+export const TxStatus = ({ error, hash, stage, successMessage, prepared }: TxStatusProps) => {
   const hashLink = hash ? (
     <p>
       Transaction: <Identifier label="Transaction hash" value={hash} href={explorerLinks.transaction(hash)} visible={8} /> on
@@ -60,6 +44,7 @@ export const TxStatus = ({ error, hash, stage, successMessage }: TxStatusProps) 
           {hashLink}
         </div>
       ) : null}
+      {prepared ? <details><summary>Show technical details</summary><p><strong>Method:</strong> {prepared.method}</p><p><strong>Transaction hash:</strong> <code>{prepared.hash}</code></p><label>Prepared XDR<textarea readOnly value={prepared.xdr} aria-label="Prepared transaction XDR" /></label><p><ExternalLink href="https://laboratory.stellar.org/#xdr-viewer">Open Stellar Laboratory XDR viewer</ExternalLink></p></details> : null}
     </div>
   )
 }
