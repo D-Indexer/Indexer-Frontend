@@ -59,7 +59,7 @@ export const PublicPortfolioPage = () => {
                 ) : null}
               </>
             ) : portfolio.cid ? (
-              <div className="notice notice--warning notice--stack" role="status">
+              <div className="notice notice--warning notice--stack" aria-atomic="true">
                 <p>The portfolio content could not be loaded from IPFS: {portfolio.contentError}</p>
                 <p>
                   CID: <ExternalLink className="mono" href={ipfsService.gatewayUrl(portfolio.cid)}>{portfolio.cid}</ExternalLink>

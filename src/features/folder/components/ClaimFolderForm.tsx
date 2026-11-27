@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FormField } from '@/components/forms'
-import { Button, Card } from '@/components/ui'
+import { Button, Card, Dialog, useConfirmDialog } from '@/components/ui'
 import { TxStatus, useContractTx } from '@/features/transactions'
 import { useWalletGuard } from '@/features/wallet'
 import { folderData, stellarService } from '@/services'
@@ -102,7 +102,7 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
     }
   }, [blockedReason, folderName, name, owner])
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const error = validateFolderName(name) ?? undefined
     setFieldError(error)
@@ -119,7 +119,7 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
 
   return (
     <Card>
-      <form className="form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-labelledby="claim-title">
+      <form className="form" onSubmit={handleSubmit} noValidate aria-labelledby="claim-title">
         <h2 id="claim-title" className="form__title">Claim your folder name</h2>
         <FormField
           id="folder-name"
@@ -152,6 +152,28 @@ export const ClaimFolderForm = ({ onClaimed, owner }: ClaimFolderFormProps) => {
           {tx.busy ? 'Claiming…' : 'Claim folder'}
         </Button>
       </form>
+      <Dialog
+        open={reviewOpen}
+        title="Review your folder claim"
+        description="Check the name before signing. The transaction is submitted to Stellar testnet."
+        onClose={() => setReviewOpen(false)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setReviewOpen(false)}>
+              Back
+            </Button>
+            <Button onClick={() => void handleConfirm()} disabled={tx.busy || Boolean(blockedReason)}>
+              Continue
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Folder name: <strong className="mono">{toFolderName(name)}</strong>
+        </p>
+        <p className="muted">Owner: {owner}</p>
+      </Dialog>
+      {confirmDialog.dialog}
     </Card>
   )
 }

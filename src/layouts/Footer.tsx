@@ -25,9 +25,7 @@ export const Footer = () => {
           {env.folderContractId ? (
             <>
               {' · contract '}
-              <ExternalLink className="mono" href={explorerLinks.contract(env.folderContractId)}>
-                {shortenKey(env.folderContractId, 6)}
-              </ExternalLink>
+              <Identifier label="Folder contract" value={env.folderContractId} href={explorerLinks.contract(env.folderContractId)} visible={6} />
             </>
           ) : null}
         </span>

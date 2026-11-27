@@ -1,5 +1,6 @@
-import { ExternalLink } from '@/components/ui'
-import { explorerLinks, shortenKey } from '@/services'
+import { useEffect, useRef } from 'react'
+import { Identifier } from '@/components/ui'
+import { explorerLinks } from '@/services'
 import type { ContractTxState, FlowStage } from '../hooks/useContractTx'
 
 const stageLabels: Partial<Record<FlowStage, string>> = {
@@ -18,30 +19,27 @@ interface TxStatusProps extends ContractTxState {
 export const TxStatus = ({ error, hash, stage, successMessage, prepared }: TxStatusProps) => {
   const hashLink = hash ? (
     <p>
-      Transaction:{' '}
-      <ExternalLink className="mono" href={explorerLinks.transaction(hash)}>
-        {shortenKey(hash, 8)}
-      </ExternalLink>{' '}
-      on stellar.expert
+      Transaction: <Identifier label="Transaction hash" value={hash} href={explorerLinks.transaction(hash)} visible={8} /> on
+      stellar.expert
     </p>
   ) : null
 
   return (
-    <div className="tx-status" aria-live="polite">
+    <div className="tx-status" aria-live="polite" aria-atomic="true">
       {stageLabels[stage] ? (
-        <div className="notice" role="status">
+        <div className="notice">
           <span className="loading-state__spinner" aria-hidden="true" />
           <p>{stageLabels[stage]}</p>
         </div>
       ) : null}
       {stage === 'done' ? (
-        <div className="notice notice--success notice--stack" role="status">
+        <div className="notice notice--success notice--stack" ref={outcomeRef} tabIndex={-1}>
           <p>{successMessage}</p>
           {hashLink}
         </div>
       ) : null}
       {stage === 'failed' && error ? (
-        <div className="notice notice--danger notice--stack" role="alert">
+        <div className="notice notice--danger notice--stack" ref={outcomeRef} tabIndex={-1}>
           <p>{error}</p>
           {hashLink}
         </div>

@@ -45,6 +45,77 @@
   background: transparent;
 }
 
+.button--danger {
+  color: white;
+  background: var(--color-danger);
+}
+
+.button--danger:hover {
+  background: #991b1b;
+}
+
+.dialog {
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+}
+
+.dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.dialog__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.dialog__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dialog__title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.dialog__close {
+  min-width: 2rem;
+  min-height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.dialog__description {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.dialog__body {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--space-3);
+}
+
 .card {
   padding: var(--space-6);
   border: 1px solid var(--color-border);
@@ -71,6 +142,7 @@
   align-items: center;
   width: fit-content;
   padding: 0.25rem 0.65rem;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 800;
@@ -393,6 +465,40 @@
   text-underline-offset: 2px;
 }
 
+.identifier {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  max-width: 100%;
+}
+
+.identifier__link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.identifier__copy {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.85em;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.identifier__copy:hover {
+  color: var(--color-text);
+}
+
+.identifier__copy:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .wallet__error {
   flex-basis: 100%;
   max-width: 22rem;
@@ -627,8 +733,16 @@
 }
 
 .verification__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-weight: 800;
   font-size: 1.05rem;
+}
+
+.verification__icon {
+  flex: none;
+  color: currentColor;
 }
 
 .verification--verified {
@@ -643,10 +757,182 @@
   background: var(--color-warning-soft);
 }
 
+.verification--danger {
+  border-color: rgba(185, 28, 28, 0.28);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
 .verification__links {
   margin-bottom: 0 !important;
 }
 
+/* Windows High Contrast / forced-colors: rely on system colors and borders, not hue. */
+@media (forced-colors: active) {
+  .badge,
+  .verification,
+  .notice,
+  .wallet__network,
+  .tag-list li,
+  .status-row,
+  .empty-state,
+  .loading-state,
+  .error-message,
+  .demo-banner,
+  .card,
+  .table-shell,
+  .field__suffix {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    forced-color-adjust: none;
+  }
+
+  .badge--success,
+  .badge--warning,
+  .badge--danger,
+  .verification--verified,
+  .verification--warning,
+  .verification--danger,
+  .notice--success,
+  .notice--warning,
+  .notice--danger,
+  .wallet__network,
+  .wallet__network--wrong,
+  .error-message {
+    border-color: CanvasText;
+    color: CanvasText;
+    background: Canvas;
+  }
+
+  /* Distinguish tones by border style, which survives forced colors. */
+  .badge--success,
+  .verification--verified,
+  .notice--success,
+  .wallet__network {
+    border-style: solid;
+    border-width: 2px;
+  }
+
+  .badge--warning,
+  .verification--warning,
+  .notice--warning {
+    border-style: dashed;
+    border-width: 2px;
+  }
+
+  .badge--danger,
+  .verification--danger,
+  .notice--danger,
+  .wallet__network--wrong,
+  .error-message {
+    border-style: dotted;
+    border-width: 2px;
+  }
+
+  .badge--neutral {
+    border-style: solid;
+  }
+
+  .verification__icon,
+  .external-link,
+  .wallet__address,
+  .price,
+  .hero__eyebrow,
+  .nav__link,
+  .nav__link--active,
+  .button--ghost {
+    color: LinkText;
+  }
+
+  .verification__icon {
+    color: currentColor;
+  }
+
+  .button {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+    forced-color-adjust: none;
+  }
+
+  .button--primary {
+    border-color: ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+
+  .button:disabled,
+  .button[aria-disabled='true'] {
+    border-color: GrayText;
+    color: GrayText;
+    opacity: 1;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    border: 1px solid CanvasText;
+    color: CanvasText;
+    background: Field;
+    forced-color-adjust: none;
+  }
+
+  .field input[aria-invalid='true'],
+  .field textarea[aria-invalid='true'],
+  .field select[aria-invalid='true'] {
+    border: 2px dashed CanvasText;
+  }
+
+  .loading-state__spinner {
+    border: 2px solid CanvasText;
+    border-top-color: Highlight;
+  }
+
+  .app-header,
+  .app-footer {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+
+  .nav__link--active {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
+
+  .skip-link {
+    border: 1px solid CanvasText;
+    color: CanvasText;
+    background: Canvas;
+  }
+
+  /* Outline-based focus that stays visible on every interactive element. */
+  :focus-visible {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+  }
+
+  .field input:focus-visible,
+  .field textarea:focus-visible,
+  .field select:focus-visible {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+  }
+
+  .button:focus-visible,
+  .nav__link:focus-visible,
+  .external-link:focus-visible,
+  .wallet__address:focus-visible,
+  .skip-link:focus-visible {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+  }
+
+  .button:focus-visible,
+  .skip-link:focus-visible {
+    outline-color: Highlight;
+  }
+}
 .portfolio {
   display: grid;
   gap: var(--space-6);

@@ -13,7 +13,7 @@ export const WalletGate = ({ children }: WalletGateProps) => {
   if (blockedReason || !address) {
     try { sessionStorage.setItem('wallet.returnTo', `${location.pathname}${location.search}${location.hash}`) } catch { /* optional */ }
     return (
-      <div className="notice notice--warning" role="status">
+      <div className="notice notice--warning">
         <p>{blockedReason}</p>
       </div>
     )
