@@ -13,7 +13,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'jsdoc'],
   rules: {
     'no-restricted-globals': [
       'error',
@@ -50,11 +50,9 @@ module.exports = {
   },
   overrides: [
     {
-      // The wrapper is the only place allowed to touch Web Storage directly.
-      files: ['src/services/storage/**/*.ts'],
+      files: ['src/services/**/*.ts', 'src/services/**/*.tsx'],
       rules: {
-        'no-restricted-globals': 'off',
-        'no-restricted-properties': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'error',
       },
     },
   ],

@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
+import { ActivityCenter } from '@/features/transactions'
 import { WalletButton } from '@/features/wallet'
 import { appRoutes } from '@/config/routes'
 import { navigationItems } from '@/constants/navigation'
@@ -23,7 +24,10 @@ export const Header = () => {
             </NavLink>
           ))}
         </nav>
-        <WalletButton />
+        <div className="flex items-center gap-3">
+          <ActivityCenter />
+          <WalletButton />
+        </div>
       </div>
     </header>
   )

@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import { freighterWallet, type WalletSnapshot } from '@/services/stellar/freighterWallet'
 import { isTestnetPassphrase } from '@/services/stellar/network'
-import { walletRememberedEntry } from '@/services/storage/keys'
+import { walletSync } from '@/services/stellar/walletSync'
+
+const REMEMBER_KEY = 'folder.wallet.connected'
 
 const remember = (value: boolean) => {
   if (value) walletRememberedEntry.write(true)
@@ -10,7 +12,7 @@ const remember = (value: boolean) => {
 
 const isRemembered = () => walletRememberedEntry.read() === true
 
-export type WalletStatus = 'idle' | 'connecting' | 'connected'
+export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'restoring' | 'locked' | 'not_allowed' | 'not_installed'
 
 interface WalletState {
   address: string | null
@@ -22,6 +24,7 @@ interface WalletState {
   disconnect: () => void
   restore: () => Promise<void>
   update: (snapshot: WalletSnapshot) => void
+  applyRemote: (message: { type: 'disconnected' } | { type: 'connected' | 'changed'; snapshot: WalletSnapshot }) => void
 }
 
 const emptyWallet = { address: null, network: null, networkPassphrase: null }
@@ -36,7 +39,7 @@ export const useWalletStore = create<WalletState>((set) => ({
     try {
       const snapshot = await freighterWallet.connect()
       remember(true)
-      set({ ...snapshot, status: 'connected', error: null })
+      set({ ...snapshot, status: 'connected', error: null }); walletSync.post({ type: 'connected', snapshot })
     } catch (error) {
       set({ ...emptyWallet, status: 'idle', error: error instanceof Error ? error.message : 'Could not connect the wallet.' })
     }
@@ -44,22 +47,31 @@ export const useWalletStore = create<WalletState>((set) => ({
 
   /** Freighter has no revoke API, so this forgets the address in-app and stops auto-reconnecting. */
   disconnect: () => {
+    sep10Client.clear()
     remember(false)
-    set({ ...emptyWallet, status: 'idle', error: null })
+    set({ ...emptyWallet, status: 'idle', error: null }); walletSync.post({ type: 'disconnected' })
   },
 
   restore: async () => {
     if (!isRemembered()) return
+    set({ status: 'restoring', error: null })
     try {
       const snapshot = await freighterWallet.restore()
       if (snapshot) set({ ...snapshot, status: 'connected', error: null })
+      else set({ ...emptyWallet, status: 'locked', error: 'Unlock Freighter to restore your wallet.' })
     } catch {
       // Silent: the user can still connect manually.
     }
   },
 
-  update: (snapshot) => set({ ...snapshot }),
+  update: (snapshot) => { set({ ...snapshot }); walletSync.post({ type: 'changed', snapshot }) },
+  applyRemote: (message) => {
+    if (message.type === 'disconnected') { remember(false); set({ ...emptyWallet, status: 'idle', error: null }) }
+    else { remember(true); set({ ...message.snapshot, status: 'connected', error: null }) }
+  },
 }))
+
+walletSync.listen((message) => useWalletStore.getState().applyRemote(message))
 
 export const selectIsTestnet = (state: Pick<WalletState, 'networkPassphrase'>) =>
   isTestnetPassphrase(state.networkPassphrase)

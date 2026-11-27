@@ -1,4 +1,6 @@
+export { ActivityCenter } from './components/ActivityCenter'
 export { TxStatus } from './components/TxStatus'
-export { ContractIdenticon } from './components/ContractIdenticon'
+export { clearDomainEvents, emit, listenerCount, off, on, useDomainEvent } from './events'
+export type { DomainEventListener, DomainEventMap, DomainEventName } from './events'
 export { useContractTx } from './hooks/useContractTx'
 export type { ContractTxState, FlowStage } from './hooks/useContractTx'

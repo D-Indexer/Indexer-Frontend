@@ -4,5 +4,5 @@ export const navigationItems = [
   { label: 'Home', href: appRoutes.home },
   { label: 'My Folder', href: appRoutes.dashboard },
   { label: 'Templates', href: appRoutes.templates },
-  { label: 'Settings', href: appRoutes.settings },
+  { label: 'Explore', href: appRoutes.explore },
 ] as const
