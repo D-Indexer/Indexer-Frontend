@@ -1,6 +1,7 @@
 import { AsyncContent, LinkButton } from '@/components/ui'
 import { appRoutes } from '@/config/routes'
 import { useTemplates } from '@/hooks'
+import { sanitizeDisplayText } from '@/utils/format'
 import { TemplateCard } from './TemplateCard'
 
 interface TemplateGridProps {
@@ -31,7 +32,8 @@ export const TemplateGrid = ({ headingLevel = 2 }: TemplateGridProps) => {
               headingLevel={headingLevel}
               action={
                 <LinkButton to={`${appRoutes.dashboard}?template=${template.id}`} variant="secondary">
-                  Use template<span className="sr-only"> {template.metadata?.name ?? template.id}</span>
+                  Use template
+                  <span className="sr-only"> {sanitizeDisplayText(template.metadata?.name ?? String(template.id), 120)}</span>
                 </LinkButton>
               }
             />

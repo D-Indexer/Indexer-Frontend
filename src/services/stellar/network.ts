@@ -14,6 +14,6 @@ export const explorerLinks = {
   transaction: (hash: string) => `${EXPLORER_BASE}/tx/${hash}`,
 }
 
-/** `GABC…WXYZ` style shortening for addresses and hashes. */
+/** `GABC…WXYZ` style shortening for addresses and hashes. Prefer the `Identifier` component in UI. */
 export const shortenKey = (value: string, visible = 4) =>
   value.length <= visible * 2 + 1 ? value : `${value.slice(0, visible)}…${value.slice(-visible)}`

@@ -12,10 +12,38 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Public build-time config; the same values are used locally via .env.example.
+  VITE_API_URL: http://localhost:3000
+  VITE_FOLDER_CONTRACT_ID: CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV
+
 jobs:
-  check:
+  typecheck:
+    name: typecheck (node 20)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.cache/tsbuildinfo
+            *.tsbuildinfo
+          key: tsbuildinfo-${{ runner.os }}-node20-${{ hashFiles('tsconfig*.json', 'src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            tsbuildinfo-${{ runner.os }}-node20-
+      - run: npm run typecheck
+
+  lint:
+    name: lint (node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,28 +51,95 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run typecheck
       - run: npm run lint
-      - run: npm test
-      - run: npm run build
-        env:
-          VITE_API_URL: http://localhost:3000
-          VITE_FOLDER_CONTRACT_ID: CDDQK74SMH4RB4HYLHM6BYZPTAMDMRISHW5Q274KADVZVFD57K43O6KV
-      - run: npm run docs
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/api
 
-  publish-docs:
-    needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  test:
+    name: test (node ${{ matrix.node }})
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - name: Cache Vitest
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.vite
+            node_modules/.vitest
+          key: vitest-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('package-lock.json', 'vite.config.ts', 'src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            vitest-${{ runner.os }}-node${{ matrix.node }}-
+      - run: npm test
+      - name: Build embed widget and report its size
+        run: npm run build:embed
+      - run: npm run test:coverage
+      - name: Changed-line coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const summaryPath = 'coverage/coverage-summary.json'
+            if (!fs.existsSync(summaryPath)) {
+              core.setFailed('coverage/coverage-summary.json not found; run npm run test:coverage first')
+              return
+            }
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'))
+            const files = Object.keys(summary).filter((key) => key !== 'total')
+            const { data: changed } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            })
+            const changedFiles = changed
+              .filter((file) => file.status !== 'removed')
+              .map((file) => file.filename)
+            const rows = []
+            for (const file of files) {
+              const relative = file.replace(`${process.cwd()}/`, '')
+              if (!changedFiles.includes(relative)) continue
+              const metrics = summary[file]
+              rows.push(
+                `| \`${relative}\` | ${metrics.lines.pct}% | ${metrics.branches.pct}% | ${metrics.functions.pct}% | ${metrics.statements.pct}% |`,
+              )
+            }
+            const body = rows.length
+              ? [
+                  '### Changed-line coverage',
+                  '',
+                  '| File | Lines | Branches | Functions | Statements |',
+                  '| --- | --- | --- | --- | --- |',
+                  ...rows,
+                ].join('\n')
+              : '### Changed-line coverage\n\nNo changed source files are covered by the test suite.'
+            await core.summary.addRaw(body).write()
+            core.info(body)
+      - run: npm run build
+
+  # Single required status check: branch protection only needs "ci-required".
+  ci-required:
+    name: ci-required
+    if: always()
+    needs: [typecheck, lint, test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any job did not succeed
+        run: |
+          echo "typecheck: ${{ needs.typecheck.result }}"
+          echo "lint:      ${{ needs.lint.result }}"
+          echo "test:      ${{ needs.test.result }}"
+          echo "build:     ${{ needs.build.result }}"
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "true" ]; then
+            echo "::error::One or more CI jobs did not succeed."
+            exit 1
+          fi

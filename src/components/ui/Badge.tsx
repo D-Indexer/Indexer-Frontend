@@ -8,5 +8,9 @@ interface BadgeProps {
 }
 
 export const Badge = ({ children, tone = 'neutral' }: PropsWithChildren<BadgeProps>) => {
-  return <span className={classNames('badge', `badge--${tone}`)}>{children}</span>
+  return (
+    <span className={classNames('badge', `badge--${tone}`)} data-tone={tone}>
+      {children}
+    </span>
+  )
 }

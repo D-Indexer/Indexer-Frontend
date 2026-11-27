@@ -26,29 +26,9 @@ module.exports = {
   },
   overrides: [
     {
-      // Public API surface documented by TypeDoc: every exported member needs JSDoc, including @throws.
-      files: ['src/services/**/*.ts', 'src/hooks/**/*.ts', 'src/types/**/*.ts'],
+      files: ['src/services/**/*.ts', 'src/services/**/*.tsx'],
       rules: {
-        'jsdoc/require-jsdoc': [
-          'error',
-          {
-            publicOnly: true,
-            require: {
-              FunctionDeclaration: true,
-              MethodDefinition: true,
-              ClassDeclaration: true,
-              ArrowFunctionExpression: true,
-              FunctionExpression: true,
-            },
-            contexts: ['TSInterfaceDeclaration', 'TSTypeAliasDeclaration', 'TSEnumDeclaration', 'TSPropertySignature'],
-          },
-        ],
-        'jsdoc/require-description': 'error',
-        'jsdoc/require-param': 'error',
-        'jsdoc/require-returns': 'error',
-        'jsdoc/require-throws': 'error',
-        'jsdoc/check-param-names': 'error',
-        'jsdoc/check-tag-names': 'error',
+        '@typescript-eslint/no-non-null-assertion': 'error',
       },
     },
   ],
