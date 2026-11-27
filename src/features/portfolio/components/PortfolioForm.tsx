@@ -21,11 +21,11 @@ interface FormValues {
   links: PortfolioLink[]
   name: string
   sections: Record<string, string>
-  skills: string
+  skills: string[]
   templateId: string
 }
 
-type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'templateId', string>>
+type FormErrors = Partial<Record<'name' | 'bio' | 'links' | 'skills' | 'templateId', string>>
 
 const emptyValues = (templateId: string): FormValues => ({
   bio: '',
@@ -33,7 +33,7 @@ const emptyValues = (templateId: string): FormValues => ({
   links: [],
   name: '',
   sections: {},
-  skills: '',
+  skills: [],
   templateId,
 })
 
@@ -43,7 +43,7 @@ const fromContent = (content: PortfolioContent, templateId: string): FormValues 
   links: getPortfolioLinks(content),
   name: content.name ?? '',
   sections: content.sections ?? {},
-  skills: (content.skills ?? []).join(', '),
+  skills: content.skills ?? [],
   templateId,
 })
 
@@ -56,7 +56,7 @@ const validate = (values: FormValues): FormErrors => {
   return errors
 }
 
-const fieldOrder: Array<keyof FormErrors> = ['templateId', 'name', 'bio', 'links']
+const fieldOrder: Array<keyof FormErrors> = ['templateId', 'name', 'bio', 'skills', 'links']
 
 interface PortfolioFormProps {
   folder: Folder
