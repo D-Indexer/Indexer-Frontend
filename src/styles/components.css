@@ -767,6 +767,18 @@
   gap: var(--space-2);
 }
 
+.contract-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.contract-identicon {
+  flex: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
 .field__required {
   color: var(--color-muted);
   font-weight: 500;

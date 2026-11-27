@@ -15,6 +15,30 @@ module.exports = {
   },
   plugins: ['@typescript-eslint', 'jsdoc'],
   rules: {
+    'no-restricted-globals': [
+      'error',
+      {
+        name: 'localStorage',
+        message: 'Use the typed storage wrapper in src/services/storage instead.',
+      },
+      {
+        name: 'sessionStorage',
+        message: 'Use the typed storage wrapper in src/services/storage instead.',
+      },
+    ],
+    'no-restricted-properties': [
+      'error',
+      {
+        object: 'window',
+        property: 'localStorage',
+        message: 'Use the typed storage wrapper in src/services/storage instead.',
+      },
+      {
+        object: 'window',
+        property: 'sessionStorage',
+        message: 'Use the typed storage wrapper in src/services/storage instead.',
+      },
+    ],
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-unused-vars': [
       'error',

@@ -1,0 +1,37 @@
+# Gitleaks configuration for Indexer-Frontend.
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+title = "Indexer-Frontend"
+
+[extend]
+# Keep the upstream default rules (AWS keys, private keys, generic tokens, ...).
+useDefault = true
+
+[[rules]]
+id = "stellar-secret-seed"
+description = "Stellar ed25519 secret seed (S...), checksum validated"
+# StrKey secret seed: version byte 18 << 3 = 0x90 ('S'), 32 payload bytes, 2 CRC16 bytes.
+# The checksum is verified by scripts/check-stellar-seeds.mjs, which CI runs on the same diff.
+regex = '''\bS[A-Z2-7]{55}\b'''
+entropy = 3.5
+keywords = ["S"]
+
+[rules.allowlist]
+description = "This config and the docs describe the pattern, they never hold a real seed"
+paths = [
+  '''(^|/)\.gitleaks\.toml$''',
+  '''(^|/)docs/security/secret-scanning\.md$''',
+]
+
+[[rules]]
+id = "stellar-secret-seed-in-env"
+description = "Stellar secret seed assigned to a variable"
+regex = '''(?i)(secret|seed|private)[a-z0-9_]*\s*[:=]\s*["']?(S[A-Z2-7]{55})'''
+secretGroup = 2
+entropy = 3.5
+keywords = ["secret", "seed", "private"]
+
+[allowlist]
+description = "Lockfiles"
+paths = [
+  '''(^|/)package-lock\.json$''',
+]

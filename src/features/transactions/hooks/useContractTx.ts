@@ -9,6 +9,8 @@ export interface ContractTxState {
   error: string | null
   /** Hash of a submitted transaction, also set when it failed or is still pending. */
   hash: string | null
+  /** Contract method being called, shown with the contract identity before signing. */
+  method: string | null
   stage: FlowStage
   prepared: PreparedTransactionDetails | null
 }

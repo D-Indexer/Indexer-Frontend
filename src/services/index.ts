@@ -9,6 +9,7 @@ export { IpfsError, ipfsService, serializePortfolioContent } from './ipfs/ipfsSe
 export { portfolioApi } from './portfolio/portfolioApi'
 export { contractErrorCode, describeContractError, extractContractErrorCode } from './stellar/contractErrors'
 export { freighterWallet, WalletError } from './stellar/freighterWallet'
+export { contractIdenticon, IDENTICON_GRID, type ContractIdenticon } from './stellar/contractIdenticon'
 export { explorerLinks, getNetworkPassphrase, isTestnetPassphrase, shortenKey } from './stellar/network'
 export { stellarService } from './stellar/stellarService'
 export { createReadCache, type ReadCache, type ReadCacheMetrics } from './stellar/readCache'
