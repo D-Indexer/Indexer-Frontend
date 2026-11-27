@@ -10,9 +10,10 @@ export interface ContractTxState {
   /** Hash of a submitted transaction, also set when it failed or is still pending. */
   hash: string | null
   stage: FlowStage
+  prepared: PreparedTransactionDetails | null
 }
 
-const initialState: ContractTxState = { error: null, hash: null, stage: 'idle' }
+const initialState: ContractTxState = { error: null, hash: null, stage: 'idle', prepared: null }
 
 /**
  * Runs one Folder contract write with Freighter as signer. `prepare` can do async work first

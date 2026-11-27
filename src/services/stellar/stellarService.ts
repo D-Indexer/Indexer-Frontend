@@ -28,6 +28,7 @@ export interface TxResult {
   hash: string
   ledger: number
 }
+export interface PreparedTransactionDetails { xdr: string; hash: string; method: FolderWrite['method'] }
 
 export class TransactionError extends Error {
   constructor(
