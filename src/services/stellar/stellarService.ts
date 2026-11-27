@@ -39,6 +39,10 @@ export class TransactionError extends Error {
   }
 }
 
+const assertNotAborted = (signal?: AbortSignal) => {
+  if (signal?.aborted) throw new TransactionError('Your wallet changed during this action. Nothing was signed.', { code: 'wallet_changed' } as any)
+}
+
 /** Source for read-only simulations; it never signs or submits anything. */
 const READ_ONLY_SOURCE = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
 
@@ -123,16 +127,18 @@ export const stellarService = {
    * Builds, simulates and prepares a Folder contract call, has `sign` sign it (Freighter in the
    * app), submits it, and polls until it is final. Contract errors are mapped to readable messages.
    */
-  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void): Promise<TxResult> => {
+  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void, signal?: AbortSignal): Promise<TxResult> => {
     const networkPassphrase = getNetworkPassphrase()
     onStage?.('preparing')
     const account = await loadAccount(owner)
     const { simulation, tx } = await simulate(account, write.method, toArgs(owner, write))
     const prepared = rpc.assembleTransaction(tx, simulation).build()
 
+    assertNotAborted(signal)
     onStage?.('signing')
     const signedXdr = await sign(prepared.toXDR(), owner, networkPassphrase)
 
+    assertNotAborted(signal)
     onStage?.('submitting')
     const signed = TransactionBuilder.fromXDR(signedXdr, networkPassphrase)
     const sent = await getServer().sendTransaction(signed)
