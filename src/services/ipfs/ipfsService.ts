@@ -66,10 +66,12 @@ const UNSUPPORTED_TYPE_HINT =
  */
 export const serializePortfolioContent = (content: PortfolioContent) => canonicalizeJson(content)
 
-const verifyCid = async (cid: string, bytes: Uint8Array, source: string) => {
+export type ContentVerification = 'hash-verified' | 'unverified'
+const verifyCid = async (cid: string, bytes: Uint8Array, source: string): Promise<ContentVerification> => {
   if (isRawCidV1(cid) && (await computeRawCidV1(bytes)) !== cid) {
     throw new IpfsError(`${source} returned content that does not match CID ${cid}.`)
   }
+  return isRawCidV1(cid) ? 'hash-verified' : 'unverified'
 }
 
 /** Raw CIDv1 the backend would return for this content; lets callers detect "unchanged" before uploading. */
@@ -161,6 +163,9 @@ export const ipfsService = {
     if (isRawCidV1(cid)) await cidCache.put(cid, bytes)
     return parsed
   },
+
+  /** Backwards-compatible JSON reader; callers needing UI disclosure use fetchJsonWithVerification. */
+  fetchJson: async <T>(cid: string): Promise<T> => (await ipfsService.fetchJsonWithVerification<T>(cid)).value,
 
   /**
    * Resolves a template's metadata: first from the bundled copies of the registered template files
