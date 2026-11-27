@@ -25,6 +25,8 @@ export interface AppConfig {
   rumEndpoint: string
   rumSampleRate: number
   sorobanRpcUrl: string
+  /** Ordered Soroban RPC endpoints; the first is preferred, the rest are failover providers. */
+  sorobanRpcUrls: string[]
   stellarNetwork: StellarNetwork
   sponsorEnabled: boolean
 }
@@ -104,6 +106,25 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
     errors.push({ variable: 'VITE_SOROBAN_RPC_URL', message: `"${sorobanRpcUrl}" is not an http(s) URL.` })
   }
 
+  // `VITE_SOROBAN_RPC_URLS` is a comma-separated, ordered list. The single-URL variable stays
+  // supported: it is used when the list is empty, and appended as a last-resort provider otherwise.
+  const sorobanRpcUrls: string[] = []
+  const rawList = read(raw, 'VITE_SOROBAN_RPC_URLS')
+  for (const entry of rawList.split(',')) {
+    const url = trimTrailingSlash(entry.trim())
+    if (!url) continue
+    if (!isHttpUrl(url)) {
+      errors.push({ variable: 'VITE_SOROBAN_RPC_URLS', message: `"${url}" is not an http(s) URL.` })
+    } else if (!sorobanRpcUrls.includes(url)) {
+      sorobanRpcUrls.push(url)
+    }
+  }
+  if (sorobanRpcUrls.length === 0) {
+    sorobanRpcUrls.push(sorobanRpcUrl)
+  } else if (isHttpUrl(sorobanRpcUrl) && !sorobanRpcUrls.includes(sorobanRpcUrl)) {
+    sorobanRpcUrls.push(sorobanRpcUrl)
+  }
+
   const ipfsGatewayUrl = trimTrailingSlash(read(raw, 'VITE_IPFS_GATEWAY_URL') || defaults.ipfsGatewayUrl)
   if (!isHttpUrl(ipfsGatewayUrl)) {
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
@@ -151,6 +172,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
       rumEndpoint,
       rumSampleRate,
       sorobanRpcUrl,
+      sorobanRpcUrls,
       stellarNetwork: 'testnet',
       sponsorEnabled,
     },

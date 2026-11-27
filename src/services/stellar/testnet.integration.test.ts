@@ -16,6 +16,10 @@ vi.mock('@/config/env', () => ({
   env: {
     folderContractId: process.env.VITE_FOLDER_CONTRACT_ID ?? CONTRACT_ID,
     sorobanRpcUrl: process.env.VITE_SOROBAN_RPC_URL ?? 'https://soroban-testnet.stellar.org',
+    sorobanRpcUrls: (process.env.VITE_SOROBAN_RPC_URLS ?? process.env.VITE_SOROBAN_RPC_URL ?? 'https://soroban-testnet.stellar.org')
+      .split(',')
+      .map((url) => url.trim())
+      .filter(Boolean),
     stellarNetwork: 'testnet',
   },
 }))

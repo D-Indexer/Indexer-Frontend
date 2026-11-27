@@ -49,10 +49,10 @@ const assertNotAborted = (signal?: AbortSignal) => {
 /** Source for read-only simulations; it never signs or submits anything. */
 const READ_ONLY_SOURCE = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
 
-let server: rpc.Server | null = null
-const getServer = () => {
-  server ??= new rpc.Server(env.sorobanRpcUrl, { allowHttp: env.sorobanRpcUrl.startsWith('http://') })
-  return server
+let pool: ReturnType<typeof createRpcPool> | null = null
+const getPool = () => {
+  pool ??= createRpcPool(env.sorobanRpcUrls ?? [env.sorobanRpcUrl])
+  return pool
 }
 
 /** Test seam: swaps the RPC server (e.g. one backed by recorded exchanges) and returns a restore fn. */
@@ -87,7 +87,7 @@ const errorFromText = (text: string, hash?: string) => {
 
 const loadAccount = async (address: string) => {
   try {
-    return await getServer().getAccount(address)
+    return await getPool().read((server) => server.getAccount(address))
   } catch (error) {
     if (error instanceof Error && /not found/i.test(error.message)) {
       throw new TransactionError(
@@ -111,7 +111,7 @@ const simulate = async (source: Account, method: string, args: xdr.ScVal[]) => {
     .setTimeout(120)
     .build()
 
-  const simulation = await getServer().simulateTransaction(tx)
+  const simulation = await getPool().read((server) => server.simulateTransaction(tx))
   if (rpc.Api.isSimulationError(simulation)) {
     throw errorFromText(simulation.error) ?? new TransactionError(`Simulation failed: ${simulation.error.split('\n')[0]}`)
   }
@@ -163,7 +163,7 @@ export const stellarService = {
     }
 
     onStage?.('confirming')
-    const final = await getServer().pollTransaction(sent.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy })
+    const final = await getPool().poll(sent.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy })
     if (final.status === rpc.Api.GetTransactionStatus.SUCCESS) {
       return { hash: sent.hash, ledger: final.ledger }
     }
