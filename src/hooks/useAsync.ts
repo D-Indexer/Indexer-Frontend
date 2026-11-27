@@ -10,6 +10,7 @@ interface AsyncState<T> {
 
 export const useAsync = <T>(callback: () => Promise<T>, dependencies: React.DependencyList = []) => {
   const requestIdRef = useRef(0)
+  const { online } = useNetworkStatus()
   const [state, setState] = useState<AsyncState<T>>({
     data: null,
     error: null,
@@ -38,6 +39,13 @@ export const useAsync = <T>(callback: () => Promise<T>, dependencies: React.Depe
       requestIdRef.current += 1
     }
   }, [execute])
+
+  // Deferred retry: when connectivity returns, refetch reads that previously failed.
+  const hadErrorRef = useRef(false)
+  hadErrorRef.current = state.error !== null
+  useEffect(() => {
+    if (online && hadErrorRef.current) void execute()
+  }, [online, execute])
 
   return { ...state, refetch: execute }
 }

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TESTNET_PASSPHRASE } from '@/services/stellar/network'
@@ -56,6 +56,24 @@ describe('wallet', () => {
     expect(screen.getByText(/Switch Freighter to Testnet/)).toBeInTheDocument()
 
     useWalletStore.setState({ networkPassphrase: TESTNET_PASSPHRASE, network: 'TESTNET' })
+    rerender(<WalletGate>{(address) => <p>ready {address}</p>}</WalletGate>)
+    await waitFor(() => expect(screen.getByText(`ready ${ADDRESS}`)).toBeInTheDocument())
+  })
+
+  it('blocks writes while offline and unblocks on reconnect', async () => {
+    useWalletStore.setState({ address: ADDRESS, network: 'TESTNET', networkPassphrase: TESTNET_PASSPHRASE, status: 'connected' })
+    const { rerender } = render(<WalletGate>{(address) => <p>ready {address}</p>}</WalletGate>)
+    await waitFor(() => expect(screen.getByText(`ready ${ADDRESS}`)).toBeInTheDocument())
+
+    act(() => {
+      window.dispatchEvent(new Event('offline'))
+    })
+    rerender(<WalletGate>{(address) => <p>ready {address}</p>}</WalletGate>)
+    expect(screen.getByText(/You are offline/)).toBeInTheDocument()
+
+    act(() => {
+      window.dispatchEvent(new Event('online'))
+    })
     rerender(<WalletGate>{(address) => <p>ready {address}</p>}</WalletGate>)
     await waitFor(() => expect(screen.getByText(`ready ${ADDRESS}`)).toBeInTheDocument())
   })
