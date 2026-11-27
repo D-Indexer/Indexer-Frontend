@@ -8,7 +8,7 @@ import {
   scValToNative,
   StrKey,
   TransactionBuilder,
-  type xdr,
+  xdr,
 } from '@stellar/stellar-sdk'
 import { env } from '@/config/env'
 import { describeContractError, extractContractErrorCode } from './contractErrors'
@@ -32,11 +32,15 @@ export interface TxResult {
 export class TransactionError extends Error {
   constructor(
     message: string,
-    readonly options: { code?: 'account_not_found' | 'unexpected_auth'; contractErrorCode?: number; hash?: string; pending?: boolean } = {},
+    readonly options: { code?: 'unexpected_auth'; contractErrorCode?: number; hash?: string; pending?: boolean } = {},
   ) {
     super(message)
     this.name = 'TransactionError'
   }
+}
+
+const assertNotAborted = (signal?: AbortSignal) => {
+  if (signal?.aborted) throw new TransactionError('Your wallet changed during this action. Nothing was signed.', { code: 'wallet_changed' } as any)
 }
 
 /** Source for read-only simulations; it never signs or submits anything. */
@@ -123,7 +127,7 @@ export const stellarService = {
    * Builds, simulates and prepares a Folder contract call, has `sign` sign it (Freighter in the
    * app), submits it, and polls until it is final. Contract errors are mapped to readable messages.
    */
-  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void): Promise<TxResult> => {
+  invoke: async (owner: string, write: FolderWrite, sign: TxSigner, onStage?: (stage: TxStage) => void, signal?: AbortSignal): Promise<TxResult> => {
     const networkPassphrase = getNetworkPassphrase()
     onStage?.('preparing')
     const account = await loadAccount(owner)
@@ -134,9 +138,11 @@ export const stellarService = {
       throw new TransactionError('The RPC returned an unexpected transaction operation. Nothing was signed.', { code: 'unexpected_auth' })
     }
 
+    assertNotAborted(signal)
     onStage?.('signing')
     const signedXdr = await sign(prepared.toXDR(), owner, networkPassphrase)
 
+    assertNotAborted(signal)
     onStage?.('submitting')
     const signed = TransactionBuilder.fromXDR(signedXdr, networkPassphrase)
     const sent = await getServer().sendTransaction(signed)
@@ -171,6 +177,20 @@ export const stellarService = {
   verifyPortfolio: async (owner: string): Promise<boolean> => {
     const { simulation } = await simulate(new Account(READ_ONLY_SOURCE, '0'), 'verify_portfolio', [new Address(owner).toScVal()])
     return simulation.result ? scValToNative(simulation.result.retval) === true : false
+  },
+
+  /** Ledger data for proof bundles: the latest ledger and when the contract instance expires (null if unreadable). */
+  getLedgerSnapshot: async (): Promise<{ latestLedger: number; liveUntilLedger: number | null }> => {
+    const rpcServer = getServer()
+    const latest = await rpcServer.getLatestLedger()
+    let liveUntilLedger: number | null = null
+    try {
+      const entry = await rpcServer.getContractData(env.folderContractId, xdr.ScVal.scvLedgerKeyContractInstance())
+      liveUntilLedger = entry.liveUntilLedgerSeq ?? null
+    } catch {
+      liveUntilLedger = null
+    }
+    return { latestLedger: latest.sequence, liveUntilLedger }
   },
 
   /** Read-only `get_portfolio(owner)`: the CID and template currently anchored on-chain. */
