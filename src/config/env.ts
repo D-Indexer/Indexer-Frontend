@@ -13,10 +13,11 @@ export interface AppConfig {
   demoMode: boolean
   folderContractId: string
   ipfsGatewayUrl: string
+  rumEndpoint: string
+  rumSampleRate: number
   sorobanRpcUrl: string
   stellarNetwork: StellarNetwork
-  webAuthEndpoint: string
-  webAuthSigningKey: string
+  sponsorEnabled: boolean
 }
 
 export interface EnvIssue {
@@ -47,6 +48,7 @@ export const isContractId = (value: string) => /^C[A-Z2-7]{55}$/.test(value)
 
 export const defaults = {
   ipfsGatewayUrl: 'https://ipfs.io/ipfs',
+  rumSampleRate: 1,
   sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
   stellarNetwork: 'testnet',
 } as const
@@ -80,6 +82,7 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   }
 
   const network = read(raw, 'VITE_STELLAR_NETWORK') || defaults.stellarNetwork
+  const sponsorEnabled = read(raw, 'VITE_SPONSOR_ENABLED') === 'true'
   if (network !== 'testnet') {
     errors.push({
       variable: 'VITE_STELLAR_NETWORK',
@@ -96,9 +99,30 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
   if (!isHttpUrl(ipfsGatewayUrl)) {
     errors.push({ variable: 'VITE_IPFS_GATEWAY_URL', message: `"${ipfsGatewayUrl}" is not an http(s) URL.` })
   }
-  const webAuthEndpoint = trimTrailingSlash(read(raw, 'VITE_WEB_AUTH_ENDPOINT'))
-  const webAuthSigningKey = read(raw, 'VITE_WEB_AUTH_SIGNING_KEY')
-  if (webAuthEndpoint && !isHttpUrl(webAuthEndpoint)) errors.push({ variable: 'VITE_WEB_AUTH_ENDPOINT', message: 'Must be an http(s) URL.' })
+  const folderContractWasmHash = read(raw, 'VITE_FOLDER_CONTRACT_WASM_HASH').toLowerCase()
+  if (folderContractWasmHash && !/^[0-9a-f]{64}$/.test(folderContractWasmHash)) {
+    errors.push({ variable: 'VITE_FOLDER_CONTRACT_WASM_HASH', message: 'Must be a 32-byte WASM hash encoded as 64 lowercase hexadecimal characters.' })
+  }
+
+  // Real-user monitoring is opt-in: unset (or invalid) means no collection at all.
+  const rumEndpoint = read(raw, 'VITE_RUM_ENDPOINT')
+  if (rumEndpoint && !isHttpUrl(rumEndpoint)) {
+    errors.push({ variable: 'VITE_RUM_ENDPOINT', message: `"${rumEndpoint}" is not an http(s) URL.` })
+  }
+
+  const rawSampleRate = read(raw, 'VITE_RUM_SAMPLE_RATE')
+  let rumSampleRate = defaults.rumSampleRate
+  if (rawSampleRate) {
+    const parsedRate = Number(rawSampleRate)
+    if (!Number.isFinite(parsedRate) || parsedRate < 0 || parsedRate > 1) {
+      errors.push({
+        variable: 'VITE_RUM_SAMPLE_RATE',
+        message: `"${rawSampleRate}" must be a number between 0 and 1.`,
+      })
+    } else {
+      rumSampleRate = parsedRate
+    }
+  }
 
   return {
     config: {
@@ -106,16 +130,45 @@ export const parseEnv = (raw: RawEnv): { config: AppConfig; errors: EnvIssue[] }
       demoMode,
       folderContractId,
       ipfsGatewayUrl,
+      rumEndpoint,
+      rumSampleRate,
       sorobanRpcUrl,
       stellarNetwork: 'testnet',
-      webAuthEndpoint,
-      webAuthSigningKey,
+      sponsorEnabled,
     },
     errors,
   }
+}
+
+export interface ResourceHint {
+  href: string
+  rel: 'preconnect' | 'dns-prefetch'
+}
+
+/**
+ * Origins the app talks to at runtime, derived from config so the browser can open
+ * connections before the first request. `main.tsx` injects them into `<head>`.
+ */
+export const resourceHintsFor = (config: AppConfig): ResourceHint[] => {
+  const origins = [config.sorobanRpcUrl, config.apiUrl, config.ipfsGatewayUrl]
+    .filter((value) => value !== '')
+    .map((value) => {
+      try {
+        return new URL(value).origin
+      } catch {
+        return ''
+      }
+    })
+    .filter((origin, index, all) => origin !== '' && all.indexOf(origin) === index)
+
+  return origins.flatMap((origin) => [
+    { href: origin, rel: 'preconnect' as const },
+    { href: origin, rel: 'dns-prefetch' as const },
+  ])
 }
 
 const parsed = parseEnv(import.meta.env)
 
 export const env: AppConfig = parsed.config
 export const envErrors: EnvIssue[] = parsed.errors
+export const resourceHints: ResourceHint[] = resourceHintsFor(env)
