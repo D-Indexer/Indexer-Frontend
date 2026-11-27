@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { freighterWallet, toApiError } from '@/services'
-import { stellarService, TransactionError, type FolderWrite, type PreparedTransactionDetails, type TxResult, type TxStage } from '@/services/stellar/stellarService'
+import { stellarService, TransactionError, type FolderWrite, type TxResult, type TxStage } from '@/services/stellar/stellarService'
+import { useWalletStore } from '@/store'
 
 export type FlowStage = 'idle' | 'uploading' | TxStage | 'done' | 'failed'
 
@@ -25,12 +26,17 @@ export const useContractTx = () => {
   const run = useCallback(async (owner: string, prepare: (setUploading: () => void) => Promise<FolderWrite>): Promise<TxResult | null> => {
     if (running.current) return null
     running.current = true
+    const initialWallet = useWalletStore.getState()
+    const controller = new AbortController()
+    const unsubscribe = useWalletStore.subscribe((current) => {
+      if (current.address !== initialWallet.address || current.networkPassphrase !== initialWallet.networkPassphrase) controller.abort()
+    })
     setState({ ...initialState, stage: 'preparing' })
     try {
       const write = await prepare(() => setState((current) => ({ ...current, stage: 'uploading' })))
       const result = await stellarService.invoke(owner, write, freighterWallet.signTransaction, (stage) =>
         setState((current) => ({ ...current, stage })),
-        (prepared) => setState((current) => ({ ...current, prepared })),
+        controller.signal,
       )
       setState({ error: null, hash: result.hash, stage: 'done' })
       return result
@@ -39,6 +45,7 @@ export const useContractTx = () => {
       setState({ error: toApiError(error).message, hash, stage: 'failed' })
       return null
     } finally {
+      unsubscribe()
       running.current = false
     }
   }, [])

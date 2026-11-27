@@ -80,6 +80,7 @@ npm run lint        # ESLint
 npm test            # Vitest + Testing Library
 npm run test:coverage # Vitest with V8 coverage and per-directory thresholds
 npm run build       # production build in dist/
+npm run format      # Prettier (npm run format:check to verify)
 
 # Optional: run claim → mint → update → verify against the testnet contract
 FOLDER_TESTNET_SMOKE=1 npx vitest run src/services/stellar/testnet
@@ -107,6 +108,25 @@ changed files in the job summary.
    and `get_portfolio` on-chain, and renders the IPFS content with its template.
 
 See [docs/architecture.md](docs/architecture.md) for the module layout.
+
+## JSON Resume import
+
+Portfolio forms can import a local `resume.json` file (JSON Resume schema). The file is read only in the browser and is never uploaded by itself. After parsing, the preview shows the mapped values and requires confirmation before form fields are overwritten.
+
+Field mapping:
+
+- `basics.name` → Name
+- `basics.label` → Headline
+- `basics.summary` → Bio
+- `skills[].name` and `skills[].keywords` → Skills
+- `basics.url` and `basics.profiles[].url` → Links
+- `work` → `work_history` and `experience`
+- `projects` → `projects` and `case_studies`
+- `education` → `education`
+- `certificates` → `certifications`
+- `volunteer`, `awards`, `publications`, and `references` map to matching template fields
+
+Only fields declared by the selected template are inserted into template-specific sections. Invalid JSON, missing `basics`, and wrong field types show a precise error and leave existing form values unchanged.
 
 ## Related repositories
 

@@ -1,0 +1,77 @@
+/* Print / "Save as PDF" layout for public portfolios. */
+.print-only {
+  display: none;
+}
+
+@page {
+  margin: 16mm;
+}
+
+@media print {
+  .skip-link,
+  .demo-banner,
+  .app-header,
+  .app-footer,
+  .owner-toolbar,
+  .public-actions,
+  .verification,
+  .notice,
+  .share-dialog__backdrop {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  body,
+  .app-shell,
+  .app-main,
+  .page-container {
+    background: #fff !important;
+    color: #000;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    box-shadow: none;
+  }
+
+  .card {
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .portfolio__section,
+  .portfolio__header,
+  .print-footer {
+    break-inside: avoid;
+  }
+
+  .portfolio a[href]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  .print-footer {
+    display: flex;
+    gap: 12pt;
+    align-items: center;
+    margin-top: 18pt;
+    padding-top: 8pt;
+    border-top: 1px solid #000;
+    font-size: 9pt;
+  }
+
+  .print-footer p {
+    margin: 0 0 4pt;
+    overflow-wrap: anywhere;
+  }
+
+  .print-footer__qr svg {
+    display: block;
+    width: 28mm;
+    height: 28mm;
+  }
+}

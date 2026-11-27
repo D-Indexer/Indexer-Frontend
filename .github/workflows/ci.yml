@@ -26,6 +26,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Build embed widget and report its size
+        run: npm run build:embed
       - run: npm run test:coverage
       - name: Changed-line coverage
         if: github.event_name == 'pull_request'

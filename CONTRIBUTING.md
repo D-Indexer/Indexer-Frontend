@@ -19,6 +19,26 @@ Thanks for helping! This guide is short on purpose; the [README](README.md) cove
 
 5. UI changes: include a screenshot, and check keyboard use plus the loading, empty and error states.
 
+## Git hooks
+
+`npm ci` installs [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks) via the
+`prepare` script. The hooks are:
+
+| Hook | Runs |
+| --- | --- |
+| `pre-commit` | `lint-staged`: ESLint `--fix` + Prettier on staged files |
+| `pre-push` | `tsc --noEmit` and `vitest related --run` (tests touching the changed files) |
+
+Skip them when you need to (e.g. a WIP commit or a docs-only push):
+
+```bash
+SKIP_SIMPLE_GIT_HOOKS=1 git commit -m "wip"
+SKIP_SIMPLE_GIT_HOOKS=1 git push
+```
+
+Reinstall after changing the hook config with `npx simple-git-hooks`. Formatting is Prettier with
+`.prettierrc.json` (no semicolons, single quotes, 100 columns); run `npm run format` to apply it.
+
 ## Where code goes
 
 | Path | For |
